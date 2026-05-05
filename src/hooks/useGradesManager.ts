@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { firebaseService } from '../services/firebaseService';
-import { Student, Grade, GradesState } from '../schema';
+import type { Student, Grade, GradesState } from '../schema';
 
 /**
  * Hook to manage grades for a specific course and class.

@@ -12,8 +12,9 @@ import {
   deleteDoc,
   addDoc
 } from "firebase/firestore";
-import { signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
-import { Course, Student, Grade, CourseEntry } from "../schema";
+import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import type { User } from "firebase/auth";
+import type { Course, Student, Grade, CourseEntry } from "../schema";
 
 export const firebaseService = {
   
