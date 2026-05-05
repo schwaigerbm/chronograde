@@ -1,0 +1,9 @@
+Test → test
+Notenstand → gradeStatus
+Stundenwiederholung → lessonReview
+Gruppenzuteilung → groupAssignment
+Mitarbeit → classParticipation
+Mitschriftüberprüfung → notebookCheck
+Referat → presentation
+Hausübung → homework
+Schulübung → writtenExam
