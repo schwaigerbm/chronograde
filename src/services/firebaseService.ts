@@ -1,35 +1,50 @@
 // src/services/firebaseService.ts
-import { db, auth, googleProvider } from "../lib/firebase";
+import { db } from "../lib/firebase";
 import { 
   collection, 
   query, 
   where, 
-  orderBy, 
   onSnapshot, 
   doc, 
   setDoc, 
   getDocs, 
   deleteDoc,
-  addDoc
+  addDoc,
+  limit
 } from "firebase/firestore";
-import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import type { User } from "firebase/auth";
-import type { Course, Student, Grade, CourseEntry } from "../schema";
+import CryptoJS from "crypto-js";
+import type { Course, Student, Grade, CourseEntry, AppUser } from "../schema";
 
 export const firebaseService = {
   
-  // --- 1. AUTHENTIFIZIERUNG ---
+  // --- 1. CUSTOM AUTHENTIFIZIERUNG (Firestore Based) ---
   
-  loginWithGoogle: async () => {
-    return await signInWithPopup(auth, googleProvider);
-  },
+  /**
+   * Login with username and password.
+   * Hashes password with MD5 and checks against 'users' collection.
+   */
+  loginWithCredentials: async (username: string, password: string): Promise<AppUser> => {
+    const hashedPassword = CryptoJS.MD5(password).toString();
+    
+    const q = query(
+      collection(db, "users"),
+      where("username", "==", username),
+      where("password", "==", hashedPassword),
+      limit(1)
+    );
 
-  logout: async () => {
-    return await signOut(auth);
-  },
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      throw new Error("Ungültiger Benutzername oder Passwort.");
+    }
 
-  subscribeToAuth: (callback: (user: User | null) => void) => {
-    return onAuthStateChanged(auth, callback);
+    const userData = snapshot.docs[0].data();
+    return {
+      username: userData.username,
+      role: userData.role,
+      name: userData.name
+    } as AppUser;
   },
 
   // --- 2. KURS-VERWALTUNG (Courses) ---
@@ -38,8 +53,7 @@ export const firebaseService = {
   subscribeToCourses: (callback: (courses: Course[]) => void) => {
     const q = query(
       collection(db, "courses"),
-      where("archived", "==", false),
-      orderBy("priority", "asc")
+      where("archived", "==", false)
     );
     return onSnapshot(q, (snapshot) => {
       const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
@@ -64,10 +78,8 @@ export const firebaseService = {
 
   // --- 3. SCHÜLER-VERWALTUNG (Students) ---
 
-  // Lädt alle Schüler (optional gefiltert nach Klasse)
   subscribeToStudents: (classId: string | null, callback: (students: Student[]) => void) => {
-    let q = query(collection(db, "students"), orderBy("lastName", "asc"));
-    
+    let q = query(collection(db, "students"));
     if (classId) {
       q = query(q, where("classId", "==", classId));
     }
@@ -93,8 +105,6 @@ export const firebaseService = {
 
   // --- 4. NOTEN-VERWALTUNG (Grades) ---
 
-  // Abonniert die Noten-Matrix eines Schülers für einen Kurs
-  // Pfad: students/{studentId}/grades/{courseId}
   subscribeToGrades: (studentId: string, courseId: string, callback: (grades: { [columnId: string]: Grade }) => void) => {
     const docRef = doc(db, `students/${studentId}/grades`, courseId);
     return onSnapshot(docRef, (snapshot) => {
@@ -106,7 +116,6 @@ export const firebaseService = {
     });
   },
 
-  // Speichert eine einzelne Note innerhalb des Kurs-Dokuments des Schülers
   updateGradeEntry: async (studentId: string, courseId: string, columnId: string, grade: Grade) => {
     const docRef = doc(db, `students/${studentId}/grades`, courseId);
     return await setDoc(docRef, {
@@ -117,9 +126,6 @@ export const firebaseService = {
     }, { merge: true });
   },
 
-  // --- 5. SPALTEN-VERWALTUNG (Matrix-Setup) ---
-
-  // Aktualisiert die Spaltendefinition eines Kurses
   updateCourseColumns: async (courseId: string, columns: CourseEntry[]) => {
     const docRef = doc(db, "courses", courseId);
     return await setDoc(docRef, { columns }, { merge: true });

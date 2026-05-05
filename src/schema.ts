@@ -45,3 +45,10 @@ export interface GradesState {
     [columnId: string]: Grade;
   };
 }
+
+// 6. AUTH-USER (Custom Auth)
+export interface AppUser {
+  username: string;
+  role?: string;
+  name?: string;
+}
