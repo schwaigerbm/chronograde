@@ -10,7 +10,8 @@ import {
   getDocs, 
   deleteDoc,
   addDoc,
-  limit
+  limit,
+  orderBy
 } from "firebase/firestore";
 import CryptoJS from "crypto-js";
 import type { Course, Student, Grade, CourseEntry, AppUser } from "../schema";
@@ -75,30 +76,48 @@ export const firebaseService = {
       });
     }
   },
+// --- 3. SCHÜLER-VERWALTUNG (Students) ---
 
-  // --- 3. SCHÜLER-VERWALTUNG (Students) ---
+// Lädt alle Schüler (einmalig)
+getStudents: async (): Promise<Student[]> => {
+  const q = query(collection(db, "students"), orderBy("lastName", "asc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+},
 
-  subscribeToStudents: (classId: string | null, callback: (students: Student[]) => void) => {
-    let q = query(collection(db, "students"));
-    if (classId) {
-      q = query(q, where("classId", "==", classId));
-    }
+// Lädt alle Schüler (optional gefiltert nach Klasse, Echtzeit)
+subscribeToStudents: (classId: string | null, callback: (students: Student[]) => void) => {
+  let q = query(collection(db, "students"), orderBy("lastName", "asc"));
 
-    return onSnapshot(q, (snapshot) => {
-      const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
-      callback(students);
-    });
-  },
+  if (classId) {
+    q = query(q, where("classId", "==", classId));
+  }
 
-  saveStudent: async (student: Partial<Student> & { firstName: string, lastName: string }) => {
-    if (student.id) {
-      const docRef = doc(db, "students", student.id);
-      return await setDoc(docRef, student, { merge: true });
-    } else {
-      return await addDoc(collection(db, "students"), student);
-    }
-  },
+  return onSnapshot(q, (snapshot) => {
+    const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+    callback(students);
+  });
+},
 
+// Schüler hinzufügen
+addStudent: async (student: Omit<Student, 'id'>) => {
+  return await addDoc(collection(db, "students"), student);
+},
+
+// Schüler aktualisieren
+updateStudent: async (id: string, data: Partial<Student>) => {
+  const docRef = doc(db, "students", id);
+  return await setDoc(docRef, data, { merge: true });
+},
+
+saveStudent: async (student: Partial<Student> & { firstName: string, lastName: string }) => {
+  if (student.id) {
+    const docRef = doc(db, "students", student.id);
+    return await setDoc(docRef, student, { merge: true });
+  } else {
+    return await addDoc(collection(db, "students"), student);
+  }
+},
   deleteStudent: async (studentId: string) => {
     return await deleteDoc(doc(db, "students", studentId));
   },

@@ -4,9 +4,14 @@ import {
   GraduationCap, 
   Settings, 
   LogOut, 
-  LayoutDashboard,
+  Home,
+  Star,
+  Folder,
+  Calendar,
+  LogIn
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
+import { StudentsView } from './components/StudentsView';
 
 // --- LOGIN VIEW ---
 interface LoginViewProps {
@@ -85,7 +90,9 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
             {isLoggingIn ? (
               <div className="spinner" />
             ) : (
-              "Anmelden"
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <LogIn size={18} /> Anmelden
+              </span>
             )}
           </button>
         </form>
@@ -119,7 +126,38 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ onLogout }: DashboardProps) => {
-  const [activeTab, setActiveTab] = useState('beurteilungen');
+  const [activeTab, setActiveTab] = useState('start');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'schüler':
+        return <StudentsView />;
+      case 'start':
+        return (
+          <div className="content-area" style={{ padding: '40px', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <GraduationCap size={80} color="#2563eb" style={{ marginBottom: '24px' }} />
+              <h2 className="content-title">Willkommen bei Chronograde</h2>
+              <p className="content-subtitle">Wählen Sie ein Modul in der Sidebar aus, um zu beginnen.</p>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="view-container">
+            <div className="view-header">
+              <div className="title-group">
+                <h1 className="main-title" style={{ textTransform: 'capitalize' }}>{activeTab}</h1>
+                <h2 className="sub-title">Modul wird vorbereitet</h2>
+              </div>
+            </div>
+            <div className="content-area" style={{ padding: '40px', justifyContent: 'center', alignItems: 'center', fontStyle: 'italic', color: '#64748b' }}>
+              Inhalt für {activeTab} wird geladen... (Warten auf Spezifikation)
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="dashboard-layout">
@@ -132,16 +170,34 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
         <nav className="sidebar-nav">
           <SidebarItem 
+            icon={<Home size={20} />} 
+            label="Start" 
+            active={activeTab === 'start'} 
+            onClick={() => setActiveTab('start')}
+          />
+          <SidebarItem 
+            icon={<Star size={20} />} 
+            label="Beurteilungen" 
+            active={activeTab === 'beurteilungen'} 
+            onClick={() => setActiveTab('beurteilungen')}
+          />
+          <SidebarItem 
+            icon={<Folder size={20} />} 
+            label="Gruppen" 
+            active={activeTab === 'gruppen'} 
+            onClick={() => setActiveTab('gruppen')}
+          />
+          <SidebarItem 
             icon={<Users size={20} />} 
             label="Schüler" 
             active={activeTab === 'schüler'} 
             onClick={() => setActiveTab('schüler')}
           />
           <SidebarItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Beurteilungen" 
-            active={activeTab === 'beurteilungen'} 
-            onClick={() => setActiveTab('beurteilungen')}
+            icon={<Calendar size={20} />} 
+            label="Termine" 
+            active={activeTab === 'termine'} 
+            onClick={() => setActiveTab('termine')}
           />
           <SidebarItem 
             icon={<Settings size={20} />} 
@@ -161,16 +217,7 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
       {/* Main Content */}
       <main className="main-content">
-        <header className="content-header">
-          <h2 className="content-title">
-            {activeTab}
-          </h2>
-          <p className="content-subtitle">Verwalten Sie Ihre {activeTab} und Daten.</p>
-        </header>
-
-        <div className="content-area">
-          Inhalt für {activeTab} wird geladen... (Warten auf Spezifikation)
-        </div>
+        {renderContent()}
       </main>
     </div>
   );
@@ -178,7 +225,6 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
 // --- MAIN APP COMPONENT ---
 const App = () => {
-  // ONLY App calls useAuth to ensure a single source of truth
   const { user, loading, login, logout } = useAuth();
 
   if (loading) {
@@ -189,7 +235,6 @@ const App = () => {
     );
   }
 
-  // Pass login to LoginView and logout to Dashboard
   return user ? <Dashboard onLogout={logout} /> : <LoginView onLogin={login} />;
 };
 
