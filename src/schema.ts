@@ -12,30 +12,34 @@ export interface Student {
 export interface CourseEntry {
   id: string;
   title: string;       // z.B. "1. Schularbeit"
-  type: 'test' | 'gradeStatus' | 'groupAssignment' | 'classParticipation' | 'notebookCheck' | 'presentation' | 'homework' | 'writtenExamy'; // Art der Leistung
+  type: 'manual' | 'collaborationSum' | 'collaborationEntry' | 'groupAssignment' | 'presenceSum' | 'presenceEntry' ; // Art der Leistung
   date: string;        // Geplantes Datum
   calc: boolean;        // Automatische Berechnung
   calcFactor: number;   // Berechnungseinfluss
+  calcType: 'percent' | 'grade' | 'sign'
   subEntries?: CourseEntry[]; // Untergeordnete Einträge
+  priority: number;       // int: Zum chronologischen oder manuellen Ordnen der Einträge
 }
 
 // 3. KURSE (Fächer)
 export interface Course {
   id: string;
   name: string;        // z.B. "Mathematik"
+  year: string;        // Schuljahr (z.B. "2025/26")
   classId: string;     // Zugehörige Klasse (z.B. "10A")
   priority: number;    // int: Zum Ordnen in der Seitenleiste/Übersicht
   archived: boolean;   // true = wird im Dashboard nicht mehr angezeigt
   columns: CourseEntry[]; 
+  enrolledStudents: string[]; // Liste der Schüler-IDs (Enrollment)
 }
+ 
 
 // 4. NOTEN (Die Einträge in der Sub-Collection der Schüler)
 export interface Grade {
   value: string | number; // Die eigentliche Note (z.B. 2, "1+", oder "Fehlt")
-  type: string;           // z.B. "Schularbeit", "Mitarbeit"
   date: string;           // Datum der Leistung
   note?: string;          // Optionales Hover-Kommentar (Text)
-  priority: number;       // int: Zum chronologischen oder manuellen Ordnen der Einträge
+  
 }
 
 // 5. UI-STATE (Hilfs-Typ für React, um die Matrix im RAM zu halten)

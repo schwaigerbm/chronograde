@@ -48,33 +48,46 @@ export const firebaseService = {
     } as AppUser;
   },
 
-  // --- 2. KURS-VERWALTUNG (Courses) ---
-
-  // Abonniert alle nicht-archivierten Kurse
-  subscribeToCourses: (callback: (courses: Course[]) => void) => {
-    const q = query(
-      collection(db, "courses"),
-      where("archived", "==", false)
-    );
+  // Abonniert Kurse (gefiltert nach archiviert)
+  subscribeToCourses: (archived: boolean, callback: (courses: Course[]) => void) => {
+    const q = query(collection(db, "courses"));
+    
+    // Wir filtern lokal, um Dokumente ohne 'archived' Feld (Legacy) korrekt als 'false' zu behandeln
     return onSnapshot(q, (snapshot) => {
-      const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+      const courses = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+          id: doc.id, 
+          ...data,
+          archived: data.archived || false // Fallback für fehlendes Feld
+        } as Course;
+      }).filter(c => c.archived === archived);
+      
       callback(courses);
     });
   },
 
   // Erstellt oder aktualisiert einen Kurs
   saveCourse: async (course: Partial<Course> & { name: string }) => {
+    const archived = course.archived ?? false; // Sicherstellen, dass archived immer gesetzt ist
     if (course.id) {
-      const docRef = doc(db, "courses", course.id);
-      return await setDoc(docRef, course, { merge: true });
+      const { id, ...data } = course;
+      const docRef = doc(db, "courses", id);
+      return await setDoc(docRef, { ...data, archived }, { merge: true });
     } else {
       return await addDoc(collection(db, "courses"), {
         ...course,
         archived: false,
         columns: [],
-        priority: 0
+        priority: 0,
+        enrolledStudents: []
       });
     }
+  },
+
+  // Löscht einen Kurs endgültig
+  deleteCourse: async (courseId: string) => {
+    return await deleteDoc(doc(db, "courses", courseId));
   },
 // --- 3. SCHÜLER-VERWALTUNG (Students) ---
 

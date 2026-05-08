@@ -1,0 +1,512 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Plus, 
+  LayoutGrid, 
+  Wrench, 
+  Users, 
+  Archive, 
+  RotateCcw, 
+  Trash2, 
+  Search, 
+  X, 
+  AlertTriangle,
+  ChevronUp,
+  ChevronDown,
+  UserMinus,
+  ArrowUp,
+  ArrowDown
+} from 'lucide-react';
+import { firebaseService } from '../services/firebaseService';
+import type { Course, Student } from '../schema';
+
+export const CourseManager = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Sort State
+  const [sortConfig, setSortConfig] = useState<{ key: 'name' | 'year', direction: 'asc' | 'desc' } | null>(null);
+
+  // Modals state
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [currentCourse, setCurrentCourse] = useState<Partial<Course> | null>(null);
+  
+  // Enrollment State
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+
+  // Load courses
+  useEffect(() => {
+    setIsLoading(true);
+    const unsubscribe = firebaseService.subscribeToCourses(showArchived, (data) => {
+      setCourses(data);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, [showArchived]);
+
+  // Load students for enrollment
+  useEffect(() => {
+    firebaseService.getStudents().then(setStudents);
+  }, []);
+
+  // Filtering logic
+  const filteredCourses = useMemo(() => {
+    return courses.filter(c => 
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      c.year.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [courses, searchTerm]);
+
+  // Sorting logic
+  const sortedCourses = useMemo(() => {
+    let sortableCourses = [...filteredCourses];
+    if (sortConfig !== null) {
+      sortableCourses.sort((a, b) => {
+        const aValue = a[sortConfig.key] || '';
+        const bValue = b[sortConfig.key] || '';
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableCourses;
+  }, [filteredCourses, sortConfig]);
+
+  const requestSort = (key: 'name' | 'year') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleOpenAdd = () => {
+    setCurrentCourse({ name: '', year: '', archived: false });
+    setIsCourseModalOpen(true);
+  };
+
+  const handleOpenEdit = (course: Course) => {
+    setCurrentCourse(course);
+    setIsCourseModalOpen(true);
+  };
+
+  const handleOpenEnrollment = (course: Course) => {
+    setCurrentCourse(course);
+    setIsEnrollmentModalOpen(true);
+    setStudentSearchTerm('');
+  };
+
+  const handleOpenDelete = (course: Course) => {
+    setCurrentCourse(course);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleOpenArchive = (course: Course) => {
+    setCurrentCourse(course);
+    setIsArchiveModalOpen(true);
+  };
+
+  const handleOpenRestore = (course: Course) => {
+    setCurrentCourse(course);
+    setIsRestoreModalOpen(true);
+  };
+
+  const handleSaveCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentCourse?.name || !currentCourse?.year) return;
+
+    try {
+      await firebaseService.saveCourse(currentCourse as any);
+      setIsCourseModalOpen(false);
+      setCurrentCourse(null);
+    } catch (error) {
+      console.error("Error saving course:", error);
+    }
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!currentCourse) return;
+    try {
+      await firebaseService.saveCourse({ ...currentCourse, archived: true } as any);
+      setIsArchiveModalOpen(false);
+      setCurrentCourse(null);
+    } catch (error) {
+      console.error("Error archiving course:", error);
+    }
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!currentCourse) return;
+    try {
+      await firebaseService.saveCourse({ ...currentCourse, archived: false } as any);
+      setIsRestoreModalOpen(false);
+      setCurrentCourse(null);
+    } catch (error) {
+      console.error("Error restoring course:", error);
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!currentCourse?.id) return;
+    try {
+      await firebaseService.deleteCourse(currentCourse.id);
+      setIsDeleteModalOpen(false);
+      setCurrentCourse(null);
+    } catch (error) {
+      console.error("Error deleting course:", error);
+    }
+  };
+
+  // Enrollment Functions
+  const enrolledStudents = useMemo(() => {
+    if (!currentCourse?.enrolledStudents) return [];
+    return currentCourse.enrolledStudents
+      .map(id => students.find(s => s.id === id))
+      .filter((s): s is Student => !!s);
+  }, [currentCourse?.enrolledStudents, students]);
+
+  const filteredSearchStudents = useMemo(() => {
+    if (!studentSearchTerm) return [];
+    return students.filter(s => 
+      !currentCourse?.enrolledStudents?.includes(s.id) &&
+      (s.firstName.toLowerCase().includes(studentSearchTerm.toLowerCase()) || 
+       s.lastName.toLowerCase().includes(studentSearchTerm.toLowerCase()))
+    ).slice(0, 5);
+  }, [students, studentSearchTerm, currentCourse?.enrolledStudents]);
+
+  const addStudentToCourse = async (studentId: string) => {
+    if (!currentCourse?.id) return;
+    const newList = [...(currentCourse.enrolledStudents || []), studentId];
+    const updatedCourse = { ...currentCourse, enrolledStudents: newList };
+    setCurrentCourse(updatedCourse);
+    await firebaseService.saveCourse(updatedCourse as any);
+    setStudentSearchTerm('');
+  };
+
+  const removeStudentFromCourse = async (studentId: string) => {
+    if (!currentCourse?.id) return;
+    const newList = (currentCourse.enrolledStudents || []).filter(id => id !== studentId);
+    const updatedCourse = { ...currentCourse, enrolledStudents: newList };
+    setCurrentCourse(updatedCourse);
+    await firebaseService.saveCourse(updatedCourse as any);
+  };
+
+  const moveStudent = async (index: number, direction: 'up' | 'down') => {
+    if (!currentCourse?.id || !currentCourse.enrolledStudents) return;
+    
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentCourse.enrolledStudents.length) return;
+
+    setCurrentCourse(prev => {
+      if (!prev || !prev.enrolledStudents) return prev;
+      const newList = [...prev.enrolledStudents];
+      const [movedItem] = newList.splice(index, 1);
+      newList.splice(targetIndex, 0, movedItem);
+      
+      const updated = { ...prev, enrolledStudents: newList };
+      // Wir speichern im Hintergrund
+      firebaseService.saveCourse(updated as any).catch(err => console.error("Reorder failed", err));
+      return updated;
+    });
+  };
+
+  return (
+    <div className="view-container">
+      <div className="view-header">
+        <div className="title-group">
+          <h1 className="main-title" style={{ color: '#0f172a', fontWeight: 800 }}>Gruppen</h1>
+          <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%' }}>
+            <h2 className="sub-title" style={{ color: '#64748b', fontWeight: 500 }}>Verwaltung aller Benotungsgruppen</h2>
+            <div className="flex items-center" style={{ gap: '32px' }}>
+              <label className="switch-container">
+                <span className={`switch-label ${!showArchived ? 'active' : ''}`}>Aktiv</span>
+                <div className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={showArchived} 
+                    onChange={() => setShowArchived(!showArchived)} 
+                  />
+                  <span className="slider"></span>
+                </div>
+                <span className={`switch-label ${showArchived ? 'active' : ''}`}>Archiv</span>
+              </label>
+              <button className="btn-primary btn-sm" onClick={handleOpenAdd} style={{ width: 'auto', marginTop: 0 }}>
+                <Plus size={16} /> Gruppe hinzufügen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="search-bar" style={{ marginBottom: '24px' }}>
+        <div className="search-input-wrapper" style={{ maxWidth: '400px' }}>
+          <Search size={18} className="search-icon" />
+          <input 
+            type="text" 
+            placeholder="Gruppen suchen (Name oder Jahr)..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-input"
+          />
+        </div>
+      </div>
+
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th onClick={() => requestSort('name')} className="cursor-pointer select-none" style={{ cursor: 'pointer' }}>
+                <div className="flex items-center gap-2">
+                  Name {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                </div>
+              </th>
+              <th onClick={() => requestSort('year')} className="cursor-pointer select-none" style={{ cursor: 'pointer' }}>
+                <div className="flex items-center gap-2">
+                  Schuljahr {sortConfig?.key === 'year' && (sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                </div>
+              </th>
+              <th className="text-right">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr><td colSpan={3} className="text-center py-8">Lade Gruppen...</td></tr>
+            ) : sortedCourses.length === 0 ? (
+              <tr><td colSpan={3} className="text-center py-8 text-muted">Keine Gruppen gefunden.</td></tr>
+            ) : sortedCourses.map(course => (
+              <tr key={course.id}>
+                <td className="font-semibold">{course.name}</td>
+                <td>{course.year}</td>
+                <td className="text-right actions-cell">
+                  <button className="btn-icon" title="Matrix">
+                    <LayoutGrid size={18} />
+                  </button>
+                  <button className="btn-icon" onClick={() => handleOpenEdit(course)} title="Bearbeiten">
+                    <Wrench size={18} />
+                  </button>
+                  <button className="btn-icon" onClick={() => handleOpenEnrollment(course)} title="Schüler">
+                    <Users size={18} />
+                  </button>
+                  {!showArchived ? (
+                    <button className="btn-icon" onClick={() => handleOpenArchive(course)} title="Archivieren">
+                      <Archive size={18} />
+                    </button>
+                  ) : (
+                    <>
+                      <button className="btn-icon" onClick={() => handleOpenRestore(course)} title="Wiederherstellen">
+                        <RotateCcw size={18} />
+                      </button>
+                      <button className="btn-icon danger" onClick={() => handleOpenDelete(course)} title="Löschen">
+                        <Trash2 size={18} />
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Course Modal */}
+      {isCourseModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>{currentCourse?.id ? 'Gruppe bearbeiten' : 'Gruppe hinzufügen'}</h3>
+              <button className="btn-icon" onClick={() => setIsCourseModalOpen(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSaveCourse}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Name des Fachs / der Gruppe</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={currentCourse?.name || ''}
+                    onChange={e => setCurrentCourse(prev => ({ ...prev!, name: e.target.value }))}
+                    placeholder="z.B. Mathematik"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Schuljahr</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={currentCourse?.year || ''}
+                    onChange={e => setCurrentCourse(prev => ({ ...prev!, year: e.target.value }))}
+                    placeholder="z.B. 2025/26"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={() => setIsCourseModalOpen(false)}>Abbrechen</button>
+                <button type="submit" className="btn-primary" style={{ width: 'auto', marginTop: 0 }}>Speichern</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Enrollment Modal */}
+      {isEnrollmentModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Schüler-Zuweisung: {currentCourse?.name}</h3>
+              <button className="btn-icon" onClick={() => setIsEnrollmentModalOpen(false)}><X size={20} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="search-bar" style={{ marginBottom: '20px' }}>
+                <div className="search-input-wrapper">
+                  <Search size={18} className="search-icon" />
+                  <input 
+                    type="text" 
+                    placeholder="Schüler suchen..." 
+                    value={studentSearchTerm}
+                    onChange={(e) => setStudentSearchTerm(e.target.value)}
+                    className="form-input"
+                  />
+                  {studentSearchTerm && filteredSearchStudents.length > 0 && (
+                    <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                      {filteredSearchStudents.map(student => (
+                        <div 
+                          key={student.id} 
+                          className="search-result-item"
+                          onClick={() => addStudentToCourse(student.id)}
+                          style={{ padding: '10px 16px', cursor: 'pointer' }}
+                        >
+                          {student.lastName}, {student.firstName}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <h4 style={{ fontWeight: 600, marginBottom: '8px' }}>Teilnehmerliste</h4>
+              <div className="enrolled-list">
+                {enrolledStudents.length === 0 ? (
+                  <p className="text-muted text-center py-4">Noch keine Schüler zugewiesen.</p>
+                ) : (
+                  <table className="data-table">
+                    <tbody>
+                      {enrolledStudents.map((student, index) => (
+                        <tr key={student.id}>
+                          <td style={{ width: '40px', color: '#64748b' }}>{index + 1}</td>
+                          <td>{student.lastName}, {student.firstName}</td>
+                          <td className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button 
+                                className="btn-icon btn-sm" 
+                                onClick={() => moveStudent(index, 'up')}
+                                disabled={index === 0}
+                                title="Hoch"
+                              >
+                                <ArrowUp size={14} />
+                              </button>
+                              <button 
+                                className="btn-icon btn-sm" 
+                                onClick={() => moveStudent(index, 'down')}
+                                disabled={index === enrolledStudents.length - 1}
+                                title="Runter"
+                              >
+                                <ArrowDown size={14} />
+                              </button>
+                              <button 
+                                className="btn-icon btn-sm danger" 
+                                onClick={() => removeStudentFromCourse(student.id)}
+                                title="Entfernen"
+                              >
+                                <UserMinus size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-primary" onClick={() => setIsEnrollmentModalOpen(false)} style={{ width: 'auto', marginTop: 0 }}>Fertig</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Confirmation Modal */}
+      {isArchiveModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3 className="flex items-center gap-2">
+                <Archive size={20} /> Gruppe archivieren
+              </h3>
+            </div>
+            <div className="modal-body">
+              <p>Wollen Sie die Gruppe <strong>{currentCourse?.name}</strong> wirklich archivieren?</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-primary" onClick={handleConfirmArchive} style={{ width: 'auto', marginTop: 0 }}>Ja, archivieren</button>
+              <button className="btn-secondary" onClick={() => setIsArchiveModalOpen(false)}>Nein</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restore Confirmation Modal */}
+      {isRestoreModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3 className="flex items-center gap-2">
+                <RotateCcw size={20} /> Gruppe wiederherstellen
+              </h3>
+            </div>
+            <div className="modal-body">
+              <p>Wollen Sie die Gruppe <strong>{currentCourse?.name}</strong> wirklich wiederherstellen?</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-primary" onClick={handleConfirmRestore} style={{ width: 'auto', marginTop: 0 }}>Ja, wiederherstellen</button>
+              <button className="btn-secondary" onClick={() => setIsRestoreModalOpen(false)}>Nein</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3 className="text-danger flex items-center gap-2">
+                <AlertTriangle size={20} /> Löschen bestätigen
+              </h3>
+            </div>
+            <div className="modal-body">
+              <p>Wollen Sie die Gruppe <strong>{currentCourse?.name}</strong> ({currentCourse?.year}) wirklich endgültig löschen? Alle zugehörigen Noten werden ebenfalls entfernt.</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-danger" onClick={handleDeleteCourse}>Ja, löschen</button>
+              <button className="btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { StudentsView } from './components/StudentsView';
+import { CourseManager } from './components/CourseManager';
 
 // --- LOGIN VIEW ---
 interface LoginViewProps {
@@ -132,6 +133,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     switch (activeTab) {
       case 'schüler':
         return <StudentsView />;
+      case 'courses':
+        return <CourseManager />;
       case 'start':
         return (
           <div className="content-area" style={{ padding: '40px', justifyContent: 'center', alignItems: 'center' }}>
@@ -184,8 +187,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
           <SidebarItem 
             icon={<Folder size={20} />} 
             label="Gruppen" 
-            active={activeTab === 'gruppen'} 
-            onClick={() => setActiveTab('gruppen')}
+            active={activeTab === 'courses'} 
+            onClick={() => setActiveTab('courses')}
           />
           <SidebarItem 
             icon={<Users size={20} />} 

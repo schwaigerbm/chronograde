@@ -15,7 +15,7 @@ Jeder Menüpunkt besteht aus einem Icon und einem Tooltip (oder Label bei Hover)
 | :--- | :--- | :--- |
 | **Start** | `home` | `index-gui.md` |
 | **Beurteilungen** | `star-rate` / `grade` | `assessments-gui.md` |
-| **Gruppen** | `groups` / `folder` | `groups-gui.md` |
+| **Gruppen** | `groups` / `folder` | `courses-gui.md` |
 | **Schüler** | `person` / `school` | **`students-gui.md`** |
 | **Einstellungen** | `settings` / `gear` | `settings-gui.md` |
 | **Termine** | `calendar_today` | `appointments-gui.md` |
