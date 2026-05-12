@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   GraduationCap, 
@@ -8,11 +8,15 @@ import {
   Star,
   Folder,
   Calendar,
-  LogIn
+  LogIn,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { StudentsView } from './components/StudentsView';
 import { CourseManager } from './components/CourseManager';
+import { GradesMatrix } from './components/GradesMatrix';
+import { firebaseService } from './services/firebaseService';
+import type { Course } from './schema';
 
 // --- LOGIN VIEW ---
 interface LoginViewProps {
@@ -128,13 +132,63 @@ interface DashboardProps {
 
 const Dashboard = ({ onLogout }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState('start');
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = firebaseService.subscribeToCourses(false, (data) => {
+      setCourses(data);
+      // Sync selectedCourse if it exists
+      setSelectedCourse(prev => {
+        if (!prev) return null;
+        return data.find(c => c.id === prev.id) || null;
+      });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleOpenMatrix = (course: Course) => {
+    setSelectedCourse(course);
+    setActiveTab('beurteilungen');
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'schüler':
         return <StudentsView />;
       case 'courses':
-        return <CourseManager />;
+        return <CourseManager onOpenMatrix={handleOpenMatrix} />;
+      case 'beurteilungen':
+        if (!selectedCourse) {
+          return (
+            <div className="view-container">
+              <div className="view-header">
+                <div className="title-group">
+                  <h1 className="main-title">Beurteilungen</h1>
+                  <h2 className="sub-title">Bitte wählen Sie eine Gruppe aus</h2>
+                </div>
+              </div>
+              <div className="content-area p-8">
+                <div className="course-grid">
+                  {courses.map(course => (
+                    <button 
+                      key={course.id} 
+                      className="course-card"
+                      onClick={() => setSelectedCourse(course)}
+                    >
+                      <h3 className="course-card-title">{course.name}</h3>
+                      <p className="course-card-year">{course.year}</p>
+                      <div className="course-card-link">
+                        Matrix öffnen <ChevronRight size={14} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return <GradesMatrix course={selectedCourse} />;
       case 'start':
         return (
           <div className="content-area" style={{ padding: '40px', justifyContent: 'center', alignItems: 'center' }}>

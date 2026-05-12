@@ -19,7 +19,7 @@ import {
 import { firebaseService } from '../services/firebaseService';
 import type { Course, Student } from '../schema';
 
-export const CourseManager = () => {
+export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course) => void }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [showArchived, setShowArchived] = useState(false);
@@ -230,14 +230,14 @@ export const CourseManager = () => {
             <div className="flex items-center" style={{ gap: '32px' }}>
               <label className="switch-container">
                 <span className={`switch-label ${!showArchived ? 'active' : ''}`}>Aktiv</span>
-                <div className="switch">
+                <label className="switch">
                   <input 
                     type="checkbox" 
                     checked={showArchived} 
                     onChange={() => setShowArchived(!showArchived)} 
                   />
                   <span className="slider"></span>
-                </div>
+                </label>
                 <span className={`switch-label ${showArchived ? 'active' : ''}`}>Archiv</span>
               </label>
               <button className="btn-primary btn-sm" onClick={handleOpenAdd} style={{ width: 'auto', marginTop: 0 }}>
@@ -288,7 +288,7 @@ export const CourseManager = () => {
                 <td className="font-semibold">{course.name}</td>
                 <td>{course.year}</td>
                 <td className="text-right actions-cell">
-                  <button className="btn-icon" title="Matrix">
+                  <button className="btn-icon" title="Matrix" onClick={() => onOpenMatrix(course)}>
                     <LayoutGrid size={18} />
                   </button>
                   <button className="btn-icon" onClick={() => handleOpenEdit(course)} title="Bearbeiten">

@@ -35,11 +35,19 @@ export interface Course {
  
 
 // 4. NOTEN (Die Einträge in der Sub-Collection der Schüler)
+export interface GradeEntry {
+  id: string;
+  value: string | number;
+  date: string;
+  note?: string;
+}
+
 export interface Grade {
-  value: string | number; // Die eigentliche Note (z.B. 2, "1+", oder "Fehlt")
-  date: string;           // Datum der Leistung
+  value?: string | number; // Die eigentliche Note (z.B. 2, "1+", oder "Fehlt")
+  date?: string;           // Datum der Leistung
   note?: string;          // Optionales Hover-Kommentar (Text)
-  
+  entries?: GradeEntry[]; // Für collaborationSum/presenceSum
+  updatedAt?: string;
 }
 
 // 5. UI-STATE (Hilfs-Typ für React, um die Matrix im RAM zu halten)
