@@ -94,6 +94,32 @@ export const useGradesManager = (course: Course | null) => {
     [course?.id, grades]
   );
 
+  const bulkAddEntries = useCallback(
+    async (columnId: string, updates: { studentId: string, entry: GradeEntry }[]) => {
+      if (!course?.id) return;
+      
+      const bulkUpdates = updates.map(u => {
+        const currentGrade = grades[u.studentId]?.[columnId] || { entries: [] };
+        return {
+          studentId: u.studentId,
+          columnId,
+          grade: {
+            ...currentGrade,
+            entries: [...(currentGrade.entries || []), u.entry]
+          }
+        };
+      });
+
+      try {
+        await firebaseService.bulkUpdateGrades(course.id, bulkUpdates);
+      } catch (err) {
+        console.error('Error in bulk update:', err);
+        throw err;
+      }
+    },
+    [course?.id, grades]
+  );
+
   const deleteGradeEntry = useCallback(
     async (studentId: string, columnId: string, entryId: string) => {
       if (!course?.id) return;
@@ -122,6 +148,7 @@ export const useGradesManager = (course: Course | null) => {
     error,
     updateGrade,
     addGradeEntry,
+    bulkAddEntries,
     deleteGradeEntry
   };
 };

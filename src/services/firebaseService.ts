@@ -161,5 +161,19 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
   updateCourseColumns: async (courseId: string, columns: CourseEntry[]) => {
     const docRef = doc(db, "courses", courseId);
     return await setDoc(docRef, { columns }, { merge: true });
+  },
+
+  // Massen-Update von Noten (z.B. für Anwesenheit im ganzen Kurs)
+  bulkUpdateGrades: async (courseId: string, updates: { studentId: string, columnId: string, grade: Grade }[]) => {
+    const promises = updates.map(u => {
+      const docRef = doc(db, `students/${u.studentId}/grades`, courseId);
+      return setDoc(docRef, {
+        [u.columnId]: {
+          ...u.grade,
+          updatedAt: new Date().toISOString()
+        }
+      }, { merge: true });
+    });
+    return await Promise.all(promises);
   }
 };

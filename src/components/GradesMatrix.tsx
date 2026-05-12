@@ -16,6 +16,7 @@ import {
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
 import { AddColumnModal } from './AddColumnModal';
+import { AttendanceModal } from './AttendanceModal';
 import type { Course, Student, CourseEntry, Grade, GradeEntry } from '../schema';
 
 interface GradesMatrixProps {
@@ -29,11 +30,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     loading, 
     updateGrade, 
     addGradeEntry, 
+    bulkAddEntries,
     deleteGradeEntry 
   } = useGradesManager(course);
 
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
-  const [activeCell, setActiveCell] = useState<{ studentId: string, columnId: string } | null>(null);
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+  const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
   const [showPresenceDetails, setShowPresenceDetails] = useState<Record<string, boolean>>({});
 
   const handleAddColumn = async (columnData: Omit<CourseEntry, 'id'>) => {
@@ -50,6 +53,34 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
   const togglePresenceDetails = (columnId: string) => {
     setShowPresenceDetails(prev => ({ ...prev, [columnId]: !prev[columnId] }));
+  };
+
+  const handleOpenAttendanceModal = (columnId: string) => {
+    setActiveAttendanceColumnId(columnId);
+    setIsAttendanceModalOpen(true);
+  };
+
+  const handleSaveAttendance = async (date: string, attendanceData: Record<string, 'check' | 'x'>) => {
+    if (!activeAttendanceColumnId) return;
+
+    const updates = Object.entries(attendanceData).map(([studentId, value]) => ({
+      studentId,
+      entry: {
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID) 
+            ? crypto.randomUUID() 
+            : Date.now().toString(36) + Math.random().toString(36).substring(2),
+        value,
+        date
+      }
+    }));
+
+    try {
+      await bulkAddEntries(activeAttendanceColumnId, updates);
+      setIsAttendanceModalOpen(false);
+      setActiveAttendanceColumnId(null);
+    } catch (err) {
+      console.error("Fehler beim Speichern der Anwesenheit:", err);
+    }
   };
 
   if (loading) return <div className="loading-state">Lade Leistungsmatrix...</div>;
@@ -78,13 +109,22 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                   <div className="header-content">
                     <span>{col.title}</span>
                     {col.type === 'presenceSum' && (
-                      <button 
-                        className="btn-icon btn-xs" 
-                        onClick={() => togglePresenceDetails(col.id)}
-                        title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
-                      >
-                        {showPresenceDetails[col.id] ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                      </button>
+                      <div className="header-actions" style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                        <button 
+                          className="btn-icon btn-xs" 
+                          onClick={() => handleOpenAttendanceModal(col.id)}
+                          title="Anwesenheit erfassen"
+                        >
+                          <Plus size={14} />
+                        </button>
+                        <button 
+                          className="btn-icon btn-xs" 
+                          onClick={() => togglePresenceDetails(col.id)}
+                          title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
+                        >
+                          {showPresenceDetails[col.id] ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                      </div>
                     )}
                     <span className="date-label">{col.date}</span>
                   </div>
@@ -124,6 +164,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         isOpen={isAddColumnModalOpen}
         onClose={() => setIsAddColumnModalOpen(false)}
         onSave={handleAddColumn}
+      />
+
+      <AttendanceModal 
+        isOpen={isAttendanceModalOpen}
+        onClose={() => setIsAttendanceModalOpen(false)}
+        students={students}
+        onSave={handleSaveAttendance}
       />
     </div>
   );
@@ -192,8 +239,9 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
               {grade?.entries?.map(entry => (
                 <div 
                   key={entry.id} 
-                  className={`dot entry-dot ${entry.value === '+' ? 'plus' : entry.value === '-' ? 'minus' : 'neutral'}`}
+                  className={`entry-dot ${entry.value === '+' ? 'plus' : entry.value === '-' ? 'minus' : 'neutral'}`}
                 >
+                  {entry.value}
                   <div className="tooltip">
                     <div className="tooltip-content">
                       <p className="tooltip-note">{entry.note || 'Keine Notiz'}</p>
@@ -205,7 +253,7 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
                           onDeleteEntry(entry.id);
                         }}
                       >
-                        <Trash2 size={10} /> Löschen
+                        <Trash2 size={12} /> Eintrag löschen
                       </button>
                     </div>
                   </div>
@@ -236,6 +284,16 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
       case 'presenceSum':
         const total = grade?.entries?.length || 0;
         const present = grade?.entries?.filter(e => e.value === 'check').length || 0;
+        const percent = total > 0 ? Math.round((present / total) * 100) : null;
+
+        if (isHidden) {
+          return (
+            <div className="presence-percentage" style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>
+              {percent !== null ? `${percent}%` : '-'}
+            </div>
+          );
+        }
+
         return (
           <div className="presence-cell">
             <div className="entries-list">
@@ -249,24 +307,6 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
               ))}
               {total > 0 && <span className="presence-summary">{present}/{total}</span>}
             </div>
-            <button 
-              className="add-entry-btn"
-              onClick={() => setShowMenu(true)}
-            >
-              <PlusCircle size={14} />
-            </button>
-            {showMenu && (
-              <PresenceSelector 
-                onSelect={(val) => {
-                  const id = (typeof crypto !== 'undefined' && crypto.randomUUID) 
-                    ? crypto.randomUUID() 
-                    : Date.now().toString(36) + Math.random().toString(36).substring(2);
-                  onAddEntry({ id, value: val, date: new Date().toISOString().split('T')[0] });
-                  setShowMenu(false);
-                }}
-                onClose={() => setShowMenu(false)}
-              />
-            )}
           </div>
         );
 
@@ -364,20 +404,6 @@ const CollaborationEntryModal = ({ onSave, onClose }: { onSave: (val: string, no
           </button>
         </div>
       </div>
-    </div>
-  );
-};
-
-const PresenceSelector = ({ onSelect, onClose }: { onSelect: (val: string) => void, onClose: () => void }) => {
-  return (
-    <div className="context-menu presence-menu" onClick={(e) => e.stopPropagation()}>
-      <button className="presence-btn present" onClick={() => onSelect('check')}>
-        <Check size={20} />
-      </button>
-      <button className="presence-btn absent" onClick={() => onSelect('x')}>
-        <XIcon size={20} />
-      </button>
-      <button className="btn-icon btn-sm" onClick={onClose}><XIcon size={14} /></button>
     </div>
   );
 };

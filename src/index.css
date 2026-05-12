@@ -594,6 +594,7 @@ input:checked + .slider:before {
 
 .matrix-table {
   border-spacing: 0;
+  border-collapse: separate; /* Required for sticky headers with certain transforms */
 }
 
 .matrix-table th, .matrix-table td {
@@ -604,19 +605,31 @@ input:checked + .slider:before {
 
 .matrix-header-cell {
   background-color: #f8fafc;
-  min-width: 120px;
-  text-align: center;
+  min-width: 60px; /* Reduced since labels are slanted */
+  height: 120px; /* Increased to accommodate slanted labels */
+  text-align: left;
   position: sticky;
   top: 0;
   z-index: 10;
+  vertical-align: bottom;
+  padding-bottom: 10px !important;
 }
 
 .header-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 12px;
+  justify-content: flex-end;
+  height: 100%;
+  transform: rotate(-45deg) translateX(15px);
+  transform-origin: bottom left;
+  white-space: nowrap;
+  width: 30px;
+}
+
+.header-content span {
+  font-weight: 700;
+  font-size: 13px;
 }
 
 .date-label {
@@ -639,6 +652,8 @@ input:checked + .slider:before {
 .matrix-table thead .sticky-col {
   z-index: 30;
   background-color: #f8fafc;
+  height: 120px;
+  vertical-align: bottom;
 }
 
 .matrix-cell {
@@ -705,11 +720,18 @@ input:checked + .slider:before {
   justify-content: center;
 }
 
-.dot {
-  width: 12px;
-  height: 12px;
+.entry-dot {
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: white;
+  cursor: help;
 }
 
 .entry-dot.plus { background-color: #22c55e; }
@@ -733,46 +755,72 @@ input:checked + .slider:before {
 
 /* --- TOOLTIPS --- */
 .tooltip {
-  display: none;
+  visibility: hidden;
+  opacity: 0;
   position: absolute;
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   z-index: 100;
+  transition: all 0.2s ease;
+  pointer-events: none; /* Avoid flickering */
 }
 
-.dot:hover .tooltip {
-  display: block;
+/* Triangle for tooltip */
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+.entry-dot:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto; /* Allow interaction when visible */
 }
 
 .tooltip-content {
   background-color: #1e293b;
   color: white;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
   white-space: nowrap;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  min-width: 120px;
 }
 
-.tooltip-note { margin: 0 0 4px 0; font-weight: 600; }
-.tooltip-date { margin: 0; opacity: 0.7; font-size: 10px; }
+.tooltip-note { margin: 0 0 6px 0; font-weight: 600; font-size: 13px; }
+.tooltip-date { margin: 0; opacity: 0.7; font-size: 11px; }
 
 .delete-link {
-  margin-top: 6px;
-  background: none;
+  margin-top: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
   border: none;
   color: #fca5a5;
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  width: 100%;
+  transition: background-color 0.2s;
 }
 
-.delete-link:hover { color: #fee2e2; }
+.delete-link:hover { 
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fee2e2; 
+}
 
 /* --- PRESENCE --- */
 .presence-hidden {
