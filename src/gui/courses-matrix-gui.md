@@ -17,6 +17,8 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 ## 3. Daten-Tabelle (Notenübersicht)
 Anzeige der Leistungsmatrix für die gewählte Gruppe.
 
+* **Design-Vorgabe (Platzersparnis):** Um bei vielen Beurteilungen Platz zu sparen, sollen alle **Spaltenüberschriften leicht abgeschrägt** (diagonal) dargestellt werden.
+* **UX-Vorgabe (Kontextmenüs):** Beim Öffnen von Kontextmenüs in der Matrix (z.B. für Noten oder Zeichen) ist darauf zu achten, dass diese **keine eigenen Scrollbalken** innerhalb des Matrix-Fensters erzeugen. Die Positionierung muss so optimiert sein, dass sie über der Matrix "schweben".
 * **Zeilen:** Entsprechen den Schülern, die dem jeweiligen `course` zugeordnet sind.
 * **Spalten:** Entsprechen den definierten Beurteilungen (`course entries`).
 * **Zellen (Schnittpunkt):** Hier wird die jeweilige Note/Bewertung (`grade`) eingetragen und angezeigt.
@@ -38,7 +40,7 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
 ### Verzweigung A: Gruppenzuordnung (`groupAssignment`)
 * **Felder:** Keine weiteren Eingabefelder.
 * **Aktion:** Nur `Speichern` Button sichtbar. Der Dialog wird sofort beendet.
-* **Tabellen-Update:** * Neue Spalte "Gruppe" wird hinzugefügt (Titel horizontal geschrieben).
+* **Tabellen-Update:** Eine neue Spalte "Gruppe" wird hinzugefügt.
 * **Zellen-Interaktion:**
     * Klick in die Zelle: Eingabe einer Zahl wird aktiviert.
     * Validierung: Erlaubt sind nur Zahlen von 1 bis 9.
@@ -52,7 +54,7 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
     * Schalter (Toggle): `In Berechnung aufnehmen` (EIN/AUS)
     * Schieberegler (Slider): `Einfluss` (0 - 100%)
 * **Aktion:** `Speichern` beendet den Dialog.
-* **Tabellen-Update:** Neue Spalte mit dem eingegebenen Namen (Titel horizontal geschrieben).
+* **Tabellen-Update:** Neue Spalte mit dem eingegebenen Namen.
 * **Zellen-Interaktion (Hover/Klick öffnet Kontextmenü):**
     * Bei Typ `percent`: Schieberegler (0 - 100%) wird angezeigt.
     * Bei Typ `grade`: Dropdown/Auswahl der Schulnoten (1-Sehr Gut, 2-Gut, 3-Befriedigend, 4-Genügend, 5-Nicht Genügend).
@@ -61,7 +63,7 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
 ### Verzweigung C: Mitarbeit (`collaborationSum`)
 * **Felder:** Keine weiteren Dialog-Schritte notwendig.
 * **Aktion:** `Speichern` beendet den Dialog sofort.
-* **Tabellen-Update:** Neue Spalte "Mitarbeit" (Titel horizontal geschrieben). Wenn bei *irgendeinem* Schüler mindestens 4 Mitarbeitszeichen existieren, wird die Spaltenbezeichnung zwingend waagrecht dargestellt.
+* **Tabellen-Update:** Neue Spalte "Mitarbeit".
 * **Zellen-Interaktion (Hover/Klick):**
     * Hover über Zelle: Kontextmenü mit Auswahl `+`, `-`, `~` erscheint.
     * Nach Auswahl eines Zeichens:
@@ -69,25 +71,37 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
         * Optional: `Datum` kann angepasst werden (Standard: aktuelles Datum).
     * Darstellung in der Zelle:
         * Alle vergebenen Zeichen werden in der Zelle chronologisch nebeneinander angezeigt.
-        * Farbcodierung: `+` = **Grün**, `~` = **Orange**, `-` = **Rot**.
+        * Farbcodierung & Symbole:
+            * `+` = **Grün** mit Zeichen `+` in der Mitte.
+            * `~` = **Gelb/Orange** mit Zeichen `~` in der Mitte.
+            * `-` = **Rot** mit Zeichen `-` in der Mitte.
     * Hover über bestehendes Zeichen:
         * Zeigt die zugehörige `Notiz` an.
-        * Zeigt einen Löschen-Button unterhalb der Notiz an.
+        * Zeigt einen Löschen-Button an. (UX-Hinweis: Die Anzeige muss stabil bleiben, damit der Button sicher angeklickt werden kann).
 
 ### Verzweigung D: Anwesenheit (`presenceSum`)
 * **Felder:** Keine weiteren Dialog-Schritte notwendig.
 * **Aktion:** `Speichern` beendet den Dialog sofort.
-* **Tabellen-Update:** Neue Spalte "Anwesenheit" (Titel horizontal geschrieben).
-    * *Spalten-Kopfzeile:* Enthält Pfeilbuttons (Links/Rechts) zum Ein-/Ausblenden der Details.
-        * *Eingeblendet:* Anwesenheitszeichen sind sichtbar.
-        * *Ausgeblendet:* Alle Zellen der Spalte werden grau und ohne Inhalt dargestellt.
-* **Zellen-Interaktion (Hover/Klick):**
-    * Hover über Zelle: Kontextmenü mit Auswahl `Häkchen` (Anwesend) oder `X` (Abwesend).
-    * Nach Auswahl: Es wird **keine** Notiz abgefragt. Das Datum kann optional angepasst werden.
-    * Darstellung in der Zelle:
-        * Zeichen werden chronologisch (nach Datum) von links nach rechts gereiht.
-    * Hover über bestehendes Zeichen: Zeigt das hinterlegte Datum an.
-    * Zusammenfassung: Am rechten Ende der Zeichenkette in der Zelle wird eine summierte Schrägstrich-Variante eingeblendet (z.B. `3/4` -> entspricht 3 Häkchen von insgesamt 4 Einträgen).
+* **Tabellen-Update:** Neue Spalte "Anwesenheit".
+* **Spalten-Kopfzeile Interaktionen:**
+    * Unter der Beschriftung befindet sich ein **"+" Button**: Öffnet ein Modal zur schnellen Erfassung der Anwesenheit für die gesamte Gruppe.
+    * Unter der Beschriftung befindet sich ein **Pfeil-Button (Rechts/Links)**: Dient zum Ein-/Ausblenden der Details.
+
+#### Modal zur Anwesenheitserfassung ("+" Button)
+* **Inhalt:** Liste aller Schüler des Kurses mit:
+    * Laufende Nummer
+    * Nachname, Vorname
+    * Spalte zum Setzen von `Häkchen` (Anwesend) oder `X` (Abwesend).
+* **Datumsauswahl:** Im Modal kann das Datum gewählt werden (Standard: Aktuelles Datum).
+* **Aktionen:** `Speichern` (Daten werden für alle Schüler übernommen) oder `Abbrechen`.
+
+#### Zellen-Darstellung & Toggle-Funktion
+* **Zustand "Details ausgeblendet" (Pfeil nach rechts):**
+    * Die Zelle zeigt die aktuelle Anwesenheit in **Prozent** (z.B. `75%`).
+    * Berechnung: (Summe aller Einträge minus Einträge mit `X`) / Summe aller Einträge.
+* **Zustand "Details eingeblendet" (Pfeil nach links):**
+    * Alle Häkchen und `X` werden chronologisch in der Zelle angezeigt.
+    * Hover über ein Zeichen zeigt das hinterlegte Datum an.
 
 ## 5. Implementierungshinweise & Testing (gemini.md)
 * **Testing der Service-Layer:** Um die oben genannte `serviceFirebase` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollten in Jest zwingend `beforeAll` und `afterAll` Hooks implementiert werden. Dies gewährleistet, dass Testdaten (wie Mock-Schüler oder generierte Noten) vor den Testläufen sauber angelegt und im Nachgang wieder restlos aus der Firestore-Testumgebung gelöscht (Clean-up) werden.
