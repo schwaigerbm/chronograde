@@ -17,6 +17,8 @@ export interface CourseEntry {
   calc: boolean;        // Automatische Berechnung
   calcFactor: number;   // Berechnungseinfluss
   calcType: 'percent' | 'grade' | 'sign'
+  isColorEnabled?: boolean; // Farbmodus aktiv
+  showDateInHeader?: boolean; // Datum im Header anzeigen
   subEntries?: CourseEntry[]; // Untergeordnete Einträge
   priority: number;       // int: Zum chronologischen oder manuellen Ordnen der Einträge
 }

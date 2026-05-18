@@ -20,6 +20,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
   const [calcType, setCalcType] = useState<CourseEntry['calcType']>('grade');
   const [calc, setCalc] = useState(true);
   const [calcFactor, setCalcFactor] = useState(100);
+  const [showDateInHeader, setShowDateInHeader] = useState(true);
 
   if (!isOpen) return null;
 
@@ -42,6 +43,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
       calc,
       calcFactor,
       calcType,
+      showDateInHeader: type === 'groupAssignment' ? false : showDateInHeader,
       priority: Date.now(),
     };
     onSave(newColumn);
@@ -56,6 +58,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
     setCalcType('grade');
     setCalc(true);
     setCalcFactor(100);
+    setShowDateInHeader(true);
     onClose();
   };
 
@@ -136,6 +139,20 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                     </label>
                   ))}
                 </div>
+              </div>
+              <div className="toggle-box">
+                <div>
+                  <div className="option-label">Datum im Header anzeigen</div>
+                  <div className="option-desc">Sichtbarkeit des Datums in der Matrix</div>
+                </div>
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={showDateInHeader} 
+                    onChange={() => setShowDateInHeader(!showDateInHeader)} 
+                  />
+                  <span className="slider"></span>
+                </label>
               </div>
               <div className="toggle-box">
                 <div>

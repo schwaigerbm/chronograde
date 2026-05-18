@@ -601,35 +601,54 @@ input:checked + .slider:before {
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   padding: 0;
+  transition: background-color 0.1s ease;
+}
+
+.matrix-table td {
+  padding: 8px 12px; /* Reduziertes Padding für kompaktere Zeilen */
+  font-size: 15px;
 }
 
 .matrix-header-cell {
   background-color: #f8fafc;
-  min-width: 60px; /* Reduced since labels are slanted */
-  height: 120px; /* Increased to accommodate slanted labels */
+  min-width: 40px; 
+  height: 180px; /* Leicht erhöht für mehr Platz */
   text-align: left;
   position: sticky;
   top: 0;
   z-index: 10;
   vertical-align: bottom;
-  padding-bottom: 10px !important;
+  padding: 10px 0 !important;
 }
 
 .header-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start; /* Ändere auf flex-start, da wir durch Rotation den Ursprung ändern */
   height: 100%;
-  transform: rotate(-45deg) translateX(15px);
-  transform-origin: bottom left;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
   white-space: nowrap;
-  width: 30px;
+  width: 100%;
+  gap: 8px; /* Abstand zwischen Text, Datum und Actions */
 }
 
-.header-content span {
+.header-content > span {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.header-menu-trigger {
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 50;
+  margin-top: auto; /* Drückt das Menü ans (optisch) obere Ende des Headers */
+  transform: rotate(90deg); /* Drei Punkte horizontal anzeigen, da der Container gedreht ist */
+}
+
+.matrix-header-cell:hover .header-menu-trigger {
+  opacity: 1;
 }
 
 .date-label {
@@ -644,7 +663,7 @@ input:checked + .slider:before {
   z-index: 20;
   background-color: white;
   min-width: 200px;
-  padding: 12px 16px !important;
+  padding: 8px 16px !important; /* Reduziertes Padding */
   text-align: left !important;
   border-right: 2px solid var(--border-color) !important;
 }
@@ -652,13 +671,31 @@ input:checked + .slider:before {
 .matrix-table thead .sticky-col {
   z-index: 30;
   background-color: #f8fafc;
-  height: 120px;
+  height: 180px;
   vertical-align: bottom;
+  text-align: center !important; /* SCHÜLER zentriert */
+  padding-bottom: 20px !important;
 }
 
 .matrix-cell {
   position: relative;
-  min-height: 50px;
+  min-height: 40px; /* Reduzierte Minimalhöhe */
+}
+
+/* Crosshair Highlight Effect */
+.matrix-table tbody tr:hover td,
+.matrix-table tbody tr:hover th.sticky-col {
+  background-color: #f1f5f9; /* Dezentes Highlight für die ganze Zeile */
+}
+
+.matrix-table td.col-hovered, 
+.matrix-table th.col-hovered {
+  background-color: #f1f5f9; /* Dezentes Highlight für die Spalte */
+}
+
+/* Wenn Zeile UND Spalte gehovered werden, noch einen Tick dunkler machen (optional) */
+.matrix-table tbody tr:hover td.col-hovered {
+  background-color: #e2e8f0;
 }
 
 .grade-cell-inner {
@@ -672,7 +709,7 @@ input:checked + .slider:before {
 /* --- CELL TYPES --- */
 .group-input {
   width: 100%;
-  height: 40px;
+  height: 36px;
   text-align: center;
   border: none;
   background: transparent;
@@ -682,12 +719,21 @@ input:checked + .slider:before {
 
 .group-input:focus {
   background-color: rgba(37, 99, 235, 0.05);
+  border: 1px solid var(--danger-color); /* Feedback bei Falscheingabe via Validierung wird in JS ergänzt */
+}
+
+.group-input:focus:valid {
+  border: 1px solid var(--primary-color);
+}
+
+.group-input::placeholder {
+  color: #e2e8f0;
 }
 
 .manual-cell-content {
   width: 100%;
   height: 100%;
-  min-height: 40px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -699,7 +745,8 @@ input:checked + .slider:before {
 }
 
 .empty-placeholder {
-  color: #cbd5e1;
+  color: #e2e8f0; /* Sehr helles Grau für den Empty State */
+  font-weight: 300;
 }
 
 /* --- COLLABORATION --- */
@@ -824,7 +871,32 @@ input:checked + .slider:before {
 
 /* --- PRESENCE --- */
 .presence-hidden {
-  background-color: #f1f5f9;
+  background-color: #f8fafc;
+}
+
+.presence-entry {
+  position: relative;
+  cursor: help;
+}
+
+.tooltip-mini {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1e293b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  z-index: 100;
+  margin-bottom: 4px;
+}
+
+.presence-entry:hover .tooltip-mini {
+  display: block;
 }
 
 .icon-present { color: #16a34a; }
@@ -837,19 +909,32 @@ input:checked + .slider:before {
   margin-left: 4px;
 }
 
+.presence-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.presence-toggle.check { background-color: #f0fdf4; border-color: #16a34a; }
+.presence-toggle.x { background-color: #fef2f2; border-color: #dc2626; }
+.presence-toggle.unset { background-color: #f8fafc; border-color: #e2e8f0; color: #cbd5e1; }
+
 /* --- SELECTORS & CONTEXT MENUS --- */
 .context-menu {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed; 
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
   padding: 8px;
   min-width: 140px;
+  transform: translate(-50%, 10px);
 }
 
 .menu-options {
