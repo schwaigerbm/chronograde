@@ -585,8 +585,9 @@ input:checked + .slider:before {
 
 /* --- MATRIX TABLE SPECIFICS --- */
 .matrix-scroll-area {
-  overflow: auto;
-  max-height: calc(100vh - 250px);
+  overflow-x: auto;
+  overflow-y: hidden; /* Verhindert vertikale Scrollbalken auf dem Container, falls nicht nötig */
+  max-height: calc(100vh - 200px);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   background-color: white;
@@ -594,7 +595,8 @@ input:checked + .slider:before {
 
 .matrix-table {
   border-spacing: 0;
-  border-collapse: separate; /* Required for sticky headers with certain transforms */
+  border-collapse: separate;
+  width: auto; /* Verhindert, dass die Tabelle sich unnötig dehnt */
 }
 
 .matrix-table th, .matrix-table td {
@@ -605,46 +607,91 @@ input:checked + .slider:before {
 }
 
 .matrix-table td {
-  padding: 8px 12px; /* Reduziertes Padding für kompaktere Zeilen */
-  font-size: 15px;
+  padding: 4px 8px; /* Noch kompakter */
+  font-size: 14px;
 }
 
 .matrix-header-cell {
   background-color: #f8fafc;
   min-width: 40px; 
-  height: 180px; /* Leicht erhöht für mehr Platz */
+  height: 220px; /* Erhöht für Titel + Datum + Icons */
   text-align: left;
   position: sticky;
   top: 0;
   z-index: 10;
   vertical-align: bottom;
-  padding: 10px 0 !important;
+  padding: 0 !important;
 }
 
 .header-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* Ändere auf flex-start, da wir durch Rotation den Ursprung ändern */
+  justify-content: flex-start;
   height: 100%;
+  width: 100%;
+  padding: 15px 4px;
+  gap: 8px;
+}
+
+.vertical-title {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   white-space: nowrap;
-  width: 100%;
-  gap: 8px; /* Abstand zwischen Text, Datum und Actions */
-}
-
-.header-content > span {
   font-weight: 700;
   font-size: 14px;
+  margin-bottom: 10px;
+  flex: 1; /* Nimmt den restlichen Platz ein und schiebt den Rest nach unten */
+  display: flex;
+  align-items: center;
 }
 
-.header-menu-trigger {
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 50;
-  margin-top: auto; /* Drückt das Menü ans (optisch) obere Ende des Headers */
-  transform: rotate(90deg); /* Drei Punkte horizontal anzeigen, da der Container gedreht ist */
+.horizontal-date {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 8px;
+  /* Nicht gedreht! */
+}
+
+.header-inline-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.action-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.btn-header-action {
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-header-action:hover {
+  background-color: #f1f5f9;
+  color: var(--primary-color);
+  border-color: var(--border-color);
+}
+
+.btn-header-action.danger:hover {
+  color: var(--danger-color);
+  background-color: var(--danger-bg);
 }
 
 .matrix-header-cell:hover .header-menu-trigger {

@@ -18,6 +18,7 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 Anzeige der Leistungsmatrix für die gewählte Gruppe.
 
 * **Design-Vorgabe (Platzersparnis):** Um bei vielen Beurteilungen Platz zu sparen, müssen alle **Spaltenüberschriften senkrecht** dargestellt werden. Technisch soll dies via `writing-mode: vertical-rl; transform: rotate(180deg);` realisiert werden, um eine saubere Baseline-Ausrichtung am unteren Rand zu gewährleisten. Das Aktionsmenü (Drei-Punkte) wird fix im Header platziert.
+* **Design-Vorgabe (Spaltenbreite):** Die Spalte für die Gruppenzuordnung muss exakt die gleiche schmale Breite aufweisen wie die Beurteilungsspalten für manuelle Vergabe von Noten oder Zeichen.
 * **UX-Vorgabe (Scrollbalken-Verbot):** Es darf **unter keinen Umständen** vorkommen, dass beim Öffnen von Kontextmenüs oder Modals innerhalb der Matrix rechtsseitige Scrollbalken am Matrix-Fenster erscheinen. Die Menüs müssen so aufgebaut sein, dass sie außerhalb des Tabellenflusses (z.B. via Portals oder intelligenter Positionierung) schweben.
 * **UX-Vorgabe (Crosshair-Highlighting):** Um die Navigation in großen Tabellen zu erleichtern, muss ein "Crosshair"-Effekt implementiert werden: Beim Hover über eine Zelle sollen sowohl die gesamte Zeile als auch die dazugehörige Spalte dezent visuell hervorgehoben werden.
 * **Zeilen:** Entsprechen den Schülern, die dem jeweiligen `course` zugeordnet sind. Die Beschriftung der "Schüler"-Spalte muss zentriert/prominent im Tabellenkopf platziert sein. Reduziertes Padding in den Zeilen sorgt für eine kompaktere Darstellung.
@@ -40,7 +41,7 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
 
 ### Verzweigung A: Gruppenzuordnung (`groupAssignment`)
 * **Felder:** Keine weiteren Eingabefelder.
-* **Besonderheit:** Diese Spalte ist **besonders schmal** konzipiert (nur für einstellige Zahlen 1-9) und besitzt **kein Datum** (weder im Header noch im Datensatz).
+* **Besonderheit:** Diese Spalte ist **besonders schmal** konzipiert (identisch zur Breite der Beurteilungsspalten für Note oder Zeichen) und besitzt **kein Datum** (weder im Header noch im Datensatz).
 * **Aktion:** Nur `Speichern` Button sichtbar. Der Dialog wird sofort beendet.
 * **Tabellen-Update:** Eine neue Spalte "Gruppe" wird hinzugefügt.
 * **Zellen-Interaktion:**
@@ -108,18 +109,23 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
     * **Wichtig:** Initial wird in der Zelle **kein Datum** bei den Zeichen angezeigt.
     * **Hover:** Erst beim Hover über ein Zeichen wird das hinterlegte Datum eingeblendet.
 
-### 4.1 Spalten-Management (Header-Aktionen)
-Jede Beurteilungsspalte bietet im Kopfbereich (bei Hover oder permanent dezent) ein Aktionsmenü:
-* **Bearbeiten:** Öffnet ein Modal, in dem die Eigenschaften der Spalte angepasst werden können:
-    * `Name` (Titel)
-    * `Datum` (sofern zutreffend)
-    * `Datum im Header anzeigen` (für manuelle Spalten)
-    * `Berechnungseinfluss` (Gewichtung/calcFactor)
-    * `Farbmodus` (Toggle/Schalter)
-* **Löschen:** Die gesamte Spalte inklusive aller darin enthaltenen Noten/Einträge wird nach einer Sicherheitsabfrage entfernt.
-* **Sortieren / Verschieben:**
-    * **Nach links verschieben:** Die Spalte rückt eine Position nach links.
-    * **Nach rechts verschieben:** Die Spalte rückt eine Position nach rechts.
+### 4.1 Spalten-Management (Header-Aktionen & Layout)
+Jede Beurteilungsspalte bietet im Kopfbereich direkte Interaktionsmöglichkeiten:
+
+*   **Layout-Struktur:** 
+    *   **Titel:** Senkrecht dargestellt (`writing-mode: vertical-rl`). Alle Titel liegen auf einer einheitlichen horizontalen Fluchtlinie (unten bündig).
+    *   **Datum:** Wird **horizontal** (nicht gedreht) in einer eigenen Zeile unmittelbar unter der senkrechten Beschriftung angezeigt (sofern aktiviert). Format: `DD.MM.YY`.
+    *   **Direkt-Aktionen (Icons):** Anstatt eines versteckten Drei-Punkt-Menüs werden Icons für häufige Aktionen direkt unter dem Datum/Titel platziert:
+        *   `Info/Edit-Icon`: Öffnet das Bearbeitungs-Modal.
+        *   `Pfeil-Links/Rechts`: Verschiebt die Spalte sofort in die entsprechende Richtung.
+        *   `Papierkorb-Icon`: Löschen der Spalte (nach Bestätigung).
+*   **Bearbeiten-Modal:** Ermöglicht die Anpassung von:
+    *   `Name` (Titel)
+    *   `Datum`
+    *   `Datum im Header anzeigen` (Toggle)
+    *   `Berechnungseinfluss` (Gewichtung)
+    *   `Farbmodus` (Heatmap-Toggle)
+
 
 #### Farbmodus (Heatmap)
 Wenn der Farbmodus für eine Spalte aktiv ist, werden die Zellenhintergründe basierend auf dem Wert eingefärbt:

@@ -3,3 +3,5 @@
 Sollte die Anwesenheitsspalte eingebledet sein. So steht in der Zelle die Anwesenheit in Prozent. Diese ergibt 100 % wenn alle einträge der Person auf Häckhächen sind. Bzw. ist weniger im Verhältniss der X (Dies bitte ausrechen). 
 Ist die Spalte ausgefahren. So sollte pro Eintrag ein Zeichen (Häckhächen oder X) erscheinen. Jedoch kein Datum. erst mit einem Hover soll das Datum angezeicht werden.
 
+In der Matrix soll die Gruppenzuordnung exakt die gleiche schmale Breite haben wie die Beurteilungsspalten mit manueller Vergabe (Note oder Zeichen).
+

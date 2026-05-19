@@ -75,6 +75,12 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     await firebaseService.updateCourseColumns(course.id, updatedColumns);
   };
 
+  const isNarrowColumn = (col: CourseEntry) => {
+    if (col.type === 'groupAssignment') return true;
+    if (col.type === 'manual' && (col.calcType === 'grade' || col.calcType === 'sign')) return true;
+    return false;
+  };
+
   const handleMoveColumn = async (columnId: string, direction: 'left' | 'right') => {
     const index = course.columns.findIndex(col => col.id === columnId);
     if (index === -1) return;
@@ -197,37 +203,72 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
               {course.columns.map(col => (
                 <th 
                   key={col.id} 
-                  className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''}`}
+                  className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${isNarrowColumn(col) ? 'narrow-col' : ''}`}
                   onMouseEnter={() => setHoveredColId(col.id)}
                   onMouseLeave={() => setHoveredColId(null)}
                 >
-                  <div className="header-content">
-                    <ColumnHeaderMenu 
-                      onEdit={() => openEditModal(col)}
-                      onDelete={() => handleDeleteColumn(col.id)}
-                      onMoveLeft={() => handleMoveColumn(col.id, 'left')}
-                      onMoveRight={() => handleMoveColumn(col.id, 'right')}
-                    />
-                    <span>{col.title}</span>
-                    {col.type === 'presenceSum' && (
-                      <div className="header-actions" style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-                        <button 
-                          className="btn-icon btn-xs" 
-                          onClick={() => handleOpenAttendanceModal(col.id)}
-                          title="Anwesenheit erfassen"
-                        >
-                          <Plus size={14} />
-                        </button>
-                        <button 
-                          className="btn-icon btn-xs" 
-                          onClick={() => togglePresenceDetails(col.id)}
-                          title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
-                        >
-                          {showPresenceDetails[col.id] ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                        </button>
+                  <div className={`header-content ${col.type === 'groupAssignment' ? 'align-left' : ''}`}>
+                    <div className="vertical-title">
+                      <span>{col.title}</span>
+                    </div>
+                    
+                    {col.showDateInHeader !== false && col.type !== 'presenceSum' && (
+                      <div className="horizontal-date">
+                        {formatDate(col.date)}
                       </div>
                     )}
-                    {col.showDateInHeader !== false && col.type !== 'presenceSum' && <span className="date-label">{formatDate(col.date)}</span>}
+
+                    <div className="header-inline-actions">
+                      {col.type === 'presenceSum' && (
+                        <div className="action-row">
+                          <button 
+                            className="btn-header-action" 
+                            onClick={() => handleOpenAttendanceModal(col.id)}
+                            title="Anwesenheit erfassen"
+                          >
+                            <Plus size={14} />
+                          </button>
+                          <button 
+                            className="btn-header-action" 
+                            onClick={() => togglePresenceDetails(col.id)}
+                            title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
+                          >
+                            {showPresenceDetails[col.id] ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="action-row">
+                        <button 
+                          className="btn-header-action" 
+                          onClick={() => openEditModal(col)}
+                          title="Bearbeiten"
+                        >
+                          <Info size={14} />
+                        </button>
+                        <button 
+                          className="btn-header-action" 
+                          onClick={() => handleMoveColumn(col.id, 'left')}
+                          title="Nach links"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        <button 
+                          className="btn-header-action" 
+                          onClick={() => handleMoveColumn(col.id, 'right')}
+                          title="Nach rechts"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                        <button 
+                          className="btn-header-action danger" 
+                          onClick={() => handleDeleteColumn(col.id)}
+                          title="Löschen"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </th>
               ))}
@@ -246,7 +287,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                   return (
                     <td 
                       key={col.id} 
-                      className={`matrix-cell ${col.type === 'presenceSum' && !showPresenceDetails[col.id] ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''}`}
+                      className={`matrix-cell ${col.type === 'presenceSum' && !showPresenceDetails[col.id] ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${isNarrowColumn(col) ? 'narrow-col' : ''}`}
                       onMouseEnter={() => setHoveredColId(col.id)}
                       onMouseLeave={() => setHoveredColId(null)}
                       style={heatmapStyle}
@@ -449,47 +490,6 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
     <div className="grade-cell-inner">
       {renderContent()}
     </div>
-  );
-};
-
-const ColumnHeaderMenu = ({ onEdit, onDelete, onMoveLeft, onMoveRight }: { onEdit: () => void, onDelete: () => void, onMoveLeft: () => void, onMoveRight: () => void }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-
-  const handleOpen = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setPos({ top: rect.bottom, left: rect.left });
-    setIsOpen(true);
-  };
-
-  return (
-    <>
-      <button className="btn-icon btn-xs header-menu-trigger" onClick={handleOpen}>
-        <MoreVertical size={14} />
-      </button>
-      {isOpen && createPortal(
-        <div className="modal-overlay menu-overlay" onClick={() => setIsOpen(false)} style={{ background: 'transparent' }}>
-          <div className="context-menu" style={{ top: pos.top, left: pos.left, transform: 'none' }} onClick={(e) => e.stopPropagation()}>
-            <button className="menu-item" onClick={() => { onEdit(); setIsOpen(false); }}>
-              <Info size={14} /> Bearbeiten
-            </button>
-            <div className="menu-divider"></div>
-            <button className="menu-item" onClick={() => { onMoveLeft(); setIsOpen(false); }}>
-              <ChevronLeft size={14} /> Nach links
-            </button>
-            <button className="menu-item" onClick={() => { onMoveRight(); setIsOpen(false); }}>
-              <ChevronRight size={14} /> Nach rechts
-            </button>
-            <div className="menu-divider"></div>
-            <button className="menu-item text-danger" onClick={() => { onDelete(); setIsOpen(false); }}>
-              <Trash2 size={14} /> Löschen
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
-    </>
   );
 };
 
