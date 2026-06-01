@@ -67,6 +67,18 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
 * **Felder:** Keine weiteren Dialog-Schritte notwendig.
 * **Aktion:** `Speichern` beendet den Dialog sofort.
 * **Tabellen-Update:** Neue Spalte "Mitarbeit".
+* **Spalten-Kopfzeile Interaktionen:**
+    * Unter der Beschriftung befindet sich ein **"+" Button** (Ebene 2): Öffnet ein Modal zur Mitarbeit-Schnellerfassung für die gesamte Gruppe.
+    * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
+
+#### Modal zur Mitarbeit-Schnellerfassung ("+" Button)
+* **Inhalt:** Liste aller Schüler des Kurses.
+* **Interaktion:**
+    * Pro Schüler: Auswahl zwischen `+`, `~`, `-` oder `Kein Eintrag` (unset).
+    * Globales Pflichtfeld: `Notiz` (wird als Standard für alle gewählten Einträge übernommen).
+    * Datumsauswahl: Standard: Aktuelles Datum.
+* **Aktionen:** `Speichern` oder `Abbrechen`.
+
 * **Spalten-Breite (Dynamisch):**
     * Im **Kompaktmodus** (Details aus): Die Spalte ist **identisch schmal** wie die manuellen Beurteilungsspalten (ca. 100px).
     * Im **Detailmodus** (Details ein): Die Spalte vergrößert sich automatisch, um alle Icons nebeneinander anzuzeigen (ca. 180px).
@@ -105,26 +117,30 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
 * **Tabellen-Update:** Neue Spalte "Anwesenheit".
 * **Spalten-Kopfzeile Interaktionen:**
     * Im Tabellenkopf für die Anwesenheit wird **kein Datum** angezeigt.
-    * Unter der Beschriftung befindet sich ein **"+" Button**: Öffnet ein Modal zur schnellen Erfassung der Anwesenheit für die gesamte Gruppe.
-    * Unter der Beschriftung befindet sich ein **Pfeil-Button (Rechts/Links)**: Dient zum Umschalten zwischen Kompakt- und Detailansicht.
+    * Unter der Beschriftung befindet sich ein **"+" Button** (Ebene 2): Öffnet ein Modal zur schnellen Erfassung der Anwesenheit für die gesamte Gruppe.
+    * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 
 #### Modal zur Anwesenheitserfassung ("+" Button)
-* **Inhalt:** Liste aller Schüler des Kurses mit:
-    * Laufende Nummer
-    * Nachname, Vorname
-    * Spalte zur Auswahl: Klick in die Zelle ermöglicht die Wahl zwischen `Häkchen` (Anwesend) oder `X` (Abwesend).
-* **Vorgabe:** Es gibt **keine Vorauswahl** (Default-Wert). Die Entscheidung muss für jeden Schüler aktiv getroffen werden.
-* **Datumsauswahl:** Im Modal kann das Datum gewählt werden (Standard: Aktuelles Datum).
-* **Aktionen:** `Speichern` oder `Abbrechen`.
+* **Inhalt:** Liste aller Schüler des Kurses.
+* **Datum:** Datum wählbar (Standard: Aktuelles Datum).
+* **Stundenanzahl (Neu):**
+    * Dient zur Festlegung, wie viele Stunden die aktuelle Erfassung umfasst.
+    * **Schnellauswahl:** Buttons für `1 Std`, `2 Std` und `4 Std`.
+    * **Manuelle Eingabe:** Input-Feld für abweichende Werte (z.B. 3 oder 6).
+* **Entscheidung pro Schüler:** Klick toggelt zwischen `Anwesend`, `Abwesend` und `Nicht gesetzt`.
+* **Speichern:** Erstellt für jeden gesetzten Schüler einen Eintrag mit dem gewählten Datum und der **Stundenanzahl**.
 
 #### Zellen-Darstellung & Toggle-Funktion
-* **Zustand "Details ausgeblendet" (Kompaktansicht - Pfeil nach rechts):**
-    * Die Zelle zeigt die aktuelle Anwesenheit in **Prozent** (z.B. `75%`).
-    * Berechnung: 100% entsprechen der Summe aller Einträge. Der Wert reduziert sich im Verhältnis zur Anzahl der `X`.
-* **Zustand "Details eingeblendet" (Detailansicht - Pfeil nach links):**
-    * Alle Häkchen und `X` werden chronologisch in der Zelle angezeigt.
-    * **Wichtig:** Initial wird in der Zelle **kein Datum** bei den Zeichen angezeigt.
-    * **Hover:** Erst beim Hover über ein Zeichen wird das hinterlegte Datum eingeblendet.
+* **Zustand "Details ausgeblendet" (Kompaktansicht):**
+    * Die Zelle zeigt die aktuelle Anwesenheit in **Prozent**.
+    * **Berechnungs-Logik (Stundenbasiert):**
+        * `Summe der Stunden (Anwesend) / Summe der Stunden (Gesamt erfasst) * 100`.
+        * Beispiel: 1x anwesend (2 Std) und 1x abwesend (1 Std) = `2 / 3 ≈ 67%`.
+* **Zustand "Details eingeblendet" (Detailansicht):**
+    * Alle Einträge werden chronologisch als Icons (`Check` oder `X`) angezeigt.
+    * **Zusatzinfo:** Wenn ein Eintrag mehr als 1 Stunde umfasst, wird die Zahl klein am Icon oder via Badge angezeigt.
+    * **Klick auf Icon:** Öffnet einen Dialog zum **Bearbeiten** des Eintrags (Status, Datum, Stundenanzahl ändern).
+    * **Hover:** Zeigt das Datum und die Stundenanzahl an.
 
 ### 4.1 Spalten-Management (Header-Aktionen & Layout)
 Jede Beurteilungsspalte bietet im Kopfbereich eine strukturierte 3-Ebenen-Hierarchie:
@@ -132,11 +148,11 @@ Jede Beurteilungsspalte bietet im Kopfbereich eine strukturierte 3-Ebenen-Hierar
 *   **Ebene 1: Identifikation** 
     *   **Titel:** Senkrecht dargestellt (`writing-mode: vertical-rl`). Alle Titel liegen auf einer einheitlichen horizontalen Fluchtlinie (unten bündig).
     *   **Datum:** Wird **horizontal** unmittelbar unter der senkrechten Beschriftung angezeigt. Format: `DD.MM.` (ohne Jahr).
-*   **Ebene 2: Verwaltung**
+* **Ebene 2: Verwaltung**
     *   Horizontale Zeile mit Funktions-Icons:
         *   `Info/Edit-Icon`: Öffnet das Bearbeitungs-Modal.
         *   `Papierkorb-Icon`: Löschen der Spalte (nach Bestätigung).
-        *   *Spezial (Anwesenheit):* `Plus-Icon` zur Schnellerfassung.
+        *   *Spezial (Anwesenheit/Mitarbeit):* `Plus-Icon` zur Schnellerfassung.
 *   **Ebene 3: Navigation & Ansicht**
     *   Horizontale Zeile mit Buttons:
         *   `Pfeil-Links`: Verschiebt die Spalte nach links.

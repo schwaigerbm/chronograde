@@ -358,6 +358,10 @@ body {
 .items-center { align-items: center; }
 .gap-2 { gap: 8px; }
 
+.bg-success { background-color: #15803d !important; }
+.bg-warning { background-color: #d97706 !important; }
+.bg-danger { background-color: #b91c1c !important; }
+
 /* --- BUTTONS --- */
 .btn-sm {
   padding: 8px 16px;

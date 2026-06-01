@@ -21,6 +21,7 @@ import { firebaseService } from '../services/firebaseService';
 import { AddColumnModal } from './AddColumnModal';
 import { EditColumnModal } from './EditColumnModal';
 import { AttendanceModal } from './AttendanceModal';
+import { CollaborationBulkModal } from './CollaborationBulkModal';
 import { formatDate } from '../lib/utils';
 import type { Course, Student, CourseEntry, Grade, GradeEntry } from '../schema';
 
@@ -55,6 +56,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [editingColumn, setEditingColumn] = useState<CourseEntry | null>(null);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
+  const [isCollaborationModalOpen, setIsCollaborationModalOpen] = useState(false);
+  const [activeCollaborationColumnId, setActiveCollaborationColumnId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
   const [hoveredColId, setHoveredColId] = useState<string | null>(null);
 
@@ -113,6 +116,11 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     setIsAttendanceModalOpen(true);
   };
 
+  const handleOpenCollaborationBulkModal = (columnId: string) => {
+    setActiveCollaborationColumnId(columnId);
+    setIsCollaborationModalOpen(true);
+  };
+
   const handleSaveAttendance = async (date: string, attendanceData: Record<string, 'check' | 'x'>) => {
     if (!activeAttendanceColumnId) return;
 
@@ -133,6 +141,34 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       setActiveAttendanceColumnId(null);
     } catch (err) {
       console.error("Fehler beim Speichern der Anwesenheit:", err);
+    }
+  };
+
+  const handleSaveCollaborationBulk = async (date: string, note: string, collabData: Record<string, '+' | '-' | '~' | 'unset'>) => {
+    if (!activeCollaborationColumnId) return;
+
+    const updates = Object.entries(collabData)
+      .filter(([_, value]) => value !== 'unset')
+      .map(([studentId, value]) => ({
+        studentId,
+        entry: {
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID) 
+              ? crypto.randomUUID() 
+              : Date.now().toString(36) + Math.random().toString(36).substring(2),
+          value: value as string,
+          note,
+          date
+        }
+      }));
+
+    if (updates.length === 0) return;
+
+    try {
+      await bulkAddEntries(activeCollaborationColumnId, updates);
+      setIsCollaborationModalOpen(false);
+      setActiveCollaborationColumnId(null);
+    } catch (err) {
+      console.error("Fehler beim Speichern der Mitarbeit:", err);
     }
   };
 
@@ -251,11 +287,11 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           <Info size={14} />
                         </button>
                         
-                        {col.type === 'presenceSum' && (
+                        {(col.type === 'presenceSum' || col.type === 'collaborationSum') && (
                           <button 
                             className="btn-header-action" 
-                            onClick={() => handleOpenAttendanceModal(col.id)}
-                            title="Anwesenheit erfassen"
+                            onClick={() => col.type === 'presenceSum' ? handleOpenAttendanceModal(col.id) : handleOpenCollaborationBulkModal(col.id)}
+                            title={col.type === 'presenceSum' ? "Anwesenheit erfassen" : "Mitarbeit erfassen"}
                           >
                             <Plus size={14} />
                           </button>
@@ -361,6 +397,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsAttendanceModalOpen(false)}
         students={students}
         onSave={handleSaveAttendance}
+      />
+
+      <CollaborationBulkModal 
+        isOpen={isCollaborationModalOpen}
+        onClose={() => setIsCollaborationModalOpen(false)}
+        students={students}
+        onSave={handleSaveCollaborationBulk}
       />
     </div>
   );
