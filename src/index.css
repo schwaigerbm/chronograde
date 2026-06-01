@@ -613,9 +613,8 @@ input:checked + .slider:before {
 
 .matrix-header-cell {
   background-color: #f8fafc;
-  min-width: 40px; 
-  height: 220px; /* Erhöht für Titel + Datum + Icons */
-  text-align: left;
+  height: 280px; /* Erhöht für 3 Ebenen */
+  text-align: center;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -623,15 +622,44 @@ input:checked + .slider:before {
   padding: 0 !important;
 }
 
+.matrix-header-cell.standard-col, .matrix-cell.standard-col {
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
+}
+
+.matrix-header-cell.collaboration-col, .matrix-cell.collaboration-col {
+  width: 180px;
+  min-width: 180px;
+}
+
 .header-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end; /* Bündig unten */
   height: 100%;
   width: 100%;
-  padding: 15px 4px;
-  gap: 8px;
+  padding: 10px 4px;
+  gap: 12px;
+}
+
+.header-level-1 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.header-level-2, .header-level-3 {
+  width: 100%;
+  padding-top: 4px;
+  border-top: 1px solid rgba(226, 232, 240, 0.5);
+  display: flex;
+  justify-content: center;
+  gap: 4px;
 }
 
 .vertical-title {
@@ -640,27 +668,18 @@ input:checked + .slider:before {
   white-space: nowrap;
   font-weight: 700;
   font-size: 14px;
-  margin-bottom: 10px;
-  flex: 1; /* Nimmt den restlichen Platz ein und schiebt den Rest nach unten */
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding-bottom: 8px;
 }
 
 .horizontal-date {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
   text-align: center;
   margin-bottom: 8px;
-  /* Nicht gedreht! */
-}
-
-.header-inline-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
 }
 
 .action-row {
@@ -668,6 +687,7 @@ input:checked + .slider:before {
   justify-content: center;
   gap: 4px;
   width: 100%;
+  padding: 4px 0;
 }
 
 .btn-header-action {
@@ -950,7 +970,8 @@ input:checked + .slider:before {
 .icon-absent { color: #dc2626; }
 
 .presence-summary {
-  font-size: 10px;
+  font-size: 14px; /* Deutlich größer laut Spec */
+  font-weight: 700;
   font-family: monospace;
   color: var(--text-muted);
   margin-left: 4px;

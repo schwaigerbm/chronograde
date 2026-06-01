@@ -1,4 +1,4 @@
-export const formatDate = (dateString: string | undefined): string => {
+export const formatDate = (dateString: string | undefined, includeYear: boolean = true): string => {
   if (!dateString) return '';
   
   // Try to parse YYYY-MM-DD
@@ -7,7 +7,7 @@ export const formatDate = (dateString: string | undefined): string => {
     const year = parts[0].substring(2);
     const month = parts[1];
     const day = parts[2];
-    return `${day}.${month}.${year}`;
+    return includeYear ? `${day}.${month}.${year}` : `${day}.${month}.`;
   }
 
   // Fallback for other formats or if already formatted
@@ -18,7 +18,7 @@ export const formatDate = (dateString: string | undefined): string => {
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = String(d.getFullYear()).substring(2);
-    return `${day}.${month}.${year}`;
+    return includeYear ? `${day}.${month}.${year}` : `${day}.${month}.`;
   } catch (e) {
     return dateString;
   }

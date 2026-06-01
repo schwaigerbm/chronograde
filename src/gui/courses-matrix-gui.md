@@ -110,21 +110,26 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
     * **Hover:** Erst beim Hover über ein Zeichen wird das hinterlegte Datum eingeblendet.
 
 ### 4.1 Spalten-Management (Header-Aktionen & Layout)
-Jede Beurteilungsspalte bietet im Kopfbereich direkte Interaktionsmöglichkeiten:
+Jede Beurteilungsspalte bietet im Kopfbereich eine strukturierte 3-Ebenen-Hierarchie:
 
-*   **Layout-Struktur:** 
+*   **Ebene 1: Identifikation** 
     *   **Titel:** Senkrecht dargestellt (`writing-mode: vertical-rl`). Alle Titel liegen auf einer einheitlichen horizontalen Fluchtlinie (unten bündig).
-    *   **Datum:** Wird **horizontal** (nicht gedreht) in einer eigenen Zeile unmittelbar unter der senkrechten Beschriftung angezeigt (sofern aktiviert). Format: `DD.MM.YY`.
-    *   **Direkt-Aktionen (Icons):** Anstatt eines versteckten Drei-Punkt-Menüs werden Icons für häufige Aktionen direkt unter dem Datum/Titel platziert:
+    *   **Datum:** Wird **horizontal** unmittelbar unter der senkrechten Beschriftung angezeigt. Format: `DD.MM.` (ohne Jahr).
+*   **Ebene 2: Verwaltung**
+    *   Horizontale Zeile mit Funktions-Icons:
         *   `Info/Edit-Icon`: Öffnet das Bearbeitungs-Modal.
-        *   `Pfeil-Links/Rechts`: Verschiebt die Spalte sofort in die entsprechende Richtung.
         *   `Papierkorb-Icon`: Löschen der Spalte (nach Bestätigung).
-*   **Bearbeiten-Modal:** Ermöglicht die Anpassung von:
-    *   `Name` (Titel)
-    *   `Datum`
-    *   `Datum im Header anzeigen` (Toggle)
-    *   `Berechnungseinfluss` (Gewichtung)
-    *   `Farbmodus` (Heatmap-Toggle)
+        *   *Spezial (Anwesenheit):* `Plus-Icon` zur Schnellerfassung.
+*   **Ebene 3: Navigation & Ansicht**
+    *   Horizontale Zeile mit Buttons:
+        *   `Pfeil-Links`: Verschiebt die Spalte nach links.
+        *   `Pfeil-Rechts`: Verschiebt die Spalte nach rechts.
+        *   *Spezial (Anwesenheit):* `Chevron-Icon` zum Umschalten zwischen Kompakt- und Detailansicht.
+
+*   **Layout-Vorgaben:**
+    *   **Spaltenbreite:** Einheitlich schmal für alle Beurteilungstypen (ca. 100px), außer bei ausgefahrener Mitarbeit/Anwesenheit.
+    *   **Zentrierung:** Alle Elemente innerhalb des Headers sind horizontal zentriert.
+    *   **Abstände:** Klare vertikale Trennung zwischen den drei Ebenen.
 
 
 #### Farbmodus (Heatmap)

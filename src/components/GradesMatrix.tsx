@@ -75,12 +75,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     await firebaseService.updateCourseColumns(course.id, updatedColumns);
   };
 
-  const isNarrowColumn = (col: CourseEntry) => {
-    if (col.type === 'groupAssignment') return true;
-    if (col.type === 'manual' && (col.calcType === 'grade' || col.calcType === 'sign')) return true;
-    return false;
-  };
-
   const handleMoveColumn = async (columnId: string, direction: 'left' | 'right') => {
     const index = course.columns.findIndex(col => col.id === columnId);
     if (index === -1) return;
@@ -200,45 +194,30 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           <thead>
             <tr>
               <th className="sticky-col">SCHÜLER</th>
-              {course.columns.map(col => (
-                <th 
-                  key={col.id} 
-                  className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${isNarrowColumn(col) ? 'narrow-col' : ''}`}
-                  onMouseEnter={() => setHoveredColId(col.id)}
-                  onMouseLeave={() => setHoveredColId(null)}
-                >
-                  <div className={`header-content ${col.type === 'groupAssignment' ? 'align-left' : ''}`}>
-                    <div className="vertical-title">
-                      <span>{col.title}</span>
-                    </div>
-                    
-                    {col.showDateInHeader !== false && col.type !== 'presenceSum' && (
-                      <div className="horizontal-date">
-                        {formatDate(col.date)}
-                      </div>
-                    )}
-
-                    <div className="header-inline-actions">
-                      {col.type === 'presenceSum' && (
-                        <div className="action-row">
-                          <button 
-                            className="btn-header-action" 
-                            onClick={() => handleOpenAttendanceModal(col.id)}
-                            title="Anwesenheit erfassen"
-                          >
-                            <Plus size={14} />
-                          </button>
-                          <button 
-                            className="btn-header-action" 
-                            onClick={() => togglePresenceDetails(col.id)}
-                            title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
-                          >
-                            {showPresenceDetails[col.id] ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                          </button>
+              {course.columns.map(col => {
+                return (
+                  <th 
+                    key={col.id} 
+                    className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' ? 'collaboration-col' : 'standard-col'}`}
+                    onMouseEnter={() => setHoveredColId(col.id)}
+                    onMouseLeave={() => setHoveredColId(null)}
+                  >
+                    <div className={`header-content ${col.type === 'groupAssignment' ? 'align-left' : ''}`}>
+                      {/* EBENE 1: IDENTIFIKATION */}
+                      <div className="header-level-1">
+                        <div className="vertical-title">
+                          <span>{col.title}</span>
                         </div>
-                      )}
+                        
+                        {col.showDateInHeader !== false && col.type !== 'presenceSum' && (
+                          <div className="horizontal-date">
+                            {formatDate(col.date, false)}
+                          </div>
+                        )}
+                      </div>
 
-                      <div className="action-row">
+                      {/* EBENE 2: VERWALTUNG */}
+                      <div className="header-level-2 action-row">
                         <button 
                           className="btn-header-action" 
                           onClick={() => openEditModal(col)}
@@ -246,20 +225,17 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                         >
                           <Info size={14} />
                         </button>
-                        <button 
-                          className="btn-header-action" 
-                          onClick={() => handleMoveColumn(col.id, 'left')}
-                          title="Nach links"
-                        >
-                          <ChevronLeft size={14} />
-                        </button>
-                        <button 
-                          className="btn-header-action" 
-                          onClick={() => handleMoveColumn(col.id, 'right')}
-                          title="Nach rechts"
-                        >
-                          <ChevronRight size={14} />
-                        </button>
+                        
+                        {col.type === 'presenceSum' && (
+                          <button 
+                            className="btn-header-action" 
+                            onClick={() => handleOpenAttendanceModal(col.id)}
+                            title="Anwesenheit erfassen"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        )}
+
                         <button 
                           className="btn-header-action danger" 
                           onClick={() => handleDeleteColumn(col.id)}
@@ -268,10 +244,39 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           <Trash2 size={14} />
                         </button>
                       </div>
+
+                      {/* EBENE 3: NAVIGATION & ANSICHT */}
+                      <div className="header-level-3 action-row">
+                        <button 
+                          className="btn-header-action" 
+                          onClick={() => handleMoveColumn(col.id, 'left')}
+                          title="Nach links"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        
+                        {col.type === 'presenceSum' && (
+                          <button 
+                            className="btn-header-action" 
+                            onClick={() => togglePresenceDetails(col.id)}
+                            title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
+                          >
+                            {showPresenceDetails[col.id] ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                          </button>
+                        )}
+
+                        <button 
+                          className="btn-header-action" 
+                          onClick={() => handleMoveColumn(col.id, 'right')}
+                          title="Nach rechts"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
                 </th>
-              ))}
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -287,7 +292,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                   return (
                     <td 
                       key={col.id} 
-                      className={`matrix-cell ${col.type === 'presenceSum' && !showPresenceDetails[col.id] ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${isNarrowColumn(col) ? 'narrow-col' : ''}`}
+                      className={`matrix-cell ${col.type === 'presenceSum' && !showPresenceDetails[col.id] ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' ? 'collaboration-col' : 'standard-col'}`}
                       onMouseEnter={() => setHoveredColId(col.id)}
                       onMouseLeave={() => setHoveredColId(null)}
                       style={heatmapStyle}
@@ -476,7 +481,6 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
                   </div>
                 </div>
               ))}
-              {total > 0 && <span className="presence-summary" style={{ marginLeft: '4px', opacity: 0.6, color: heatmapStyle?.color }}>{present}/{total}</span>}
             </div>
           </div>
         );
