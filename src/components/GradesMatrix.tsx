@@ -12,7 +12,9 @@ import {
   PlusCircle,
   MinusCircle,
   Minus,
-  Info
+  Info,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
@@ -261,7 +263,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                             onClick={() => togglePresenceDetails(col.id)}
                             title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
                           >
-                            {showPresenceDetails[col.id] ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                            {showPresenceDetails[col.id] ? <EyeOff size={14} /> : <Eye size={14} />}
                           </button>
                         )}
 

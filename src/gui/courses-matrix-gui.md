@@ -124,7 +124,7 @@ Jede Beurteilungsspalte bietet im Kopfbereich eine strukturierte 3-Ebenen-Hierar
     *   Horizontale Zeile mit Buttons:
         *   `Pfeil-Links`: Verschiebt die Spalte nach links.
         *   `Pfeil-Rechts`: Verschiebt die Spalte nach rechts.
-        *   *Spezial (Anwesenheit):* `Chevron-Icon` zum Umschalten zwischen Kompakt- und Detailansicht.
+        *   `Spezial (Anwesenheit):* `Auge-Icon` (Eye/EyeOff) zum Umschalten zwischen Kompakt- und Detailansicht.
 
 *   **Layout-Vorgaben:**
     *   **Spaltenbreite:** Einheitlich schmal für alle Beurteilungstypen (ca. 100px), außer bei ausgefahrener Mitarbeit/Anwesenheit.
