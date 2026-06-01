@@ -28,6 +28,16 @@ interface GradesMatrixProps {
   course: Course;
 }
 
+const getCollaborationPercentage = (entries?: GradeEntry[]): number | null => {
+  if (!entries || entries.length === 0) return null;
+  const totalPoints = entries.reduce((sum, entry) => {
+    if (entry.value === '+') return sum + 1;
+    if (entry.value === '~') return sum + 0.5;
+    return sum;
+  }, 0);
+  return Math.round((totalPoints / entries.length) * 100);
+};
+
 export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const { 
     students, 
@@ -45,7 +55,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [editingColumn, setEditingColumn] = useState<CourseEntry | null>(null);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
-  const [showPresenceDetails, setShowPresenceDetails] = useState<Record<string, boolean>>({});
+  const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
   const [hoveredColId, setHoveredColId] = useState<string | null>(null);
 
   const handleAddColumn = async (columnData: Omit<CourseEntry, 'id'>) => {
@@ -94,8 +104,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     await firebaseService.updateCourseColumns(course.id, newColumns);
   };
 
-  const togglePresenceDetails = (columnId: string) => {
-    setShowPresenceDetails(prev => ({ ...prev, [columnId]: !prev[columnId] }));
+  const toggleDetails = (columnId: string) => {
+    setShowDetails(prev => ({ ...prev, [columnId]: !prev[columnId] }));
   };
 
   const handleOpenAttendanceModal = (columnId: string) => {
@@ -126,8 +136,31 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     }
   };
 
+  const getPercentHeatmap = (p: number): React.CSSProperties => {
+    const constrainedP = Math.max(50, Math.min(100, p));
+    const factor = (constrainedP - 50) / 50; // 0 bei 50%, 1 bei 100%
+    
+    const r = Math.round(185 + factor * (21 - 185));
+    const g = Math.round(28 + factor * (128 - 28));
+    const b = Math.round(28 + factor * (61 - 28));
+    
+    return { 
+      backgroundColor: `rgb(${r}, ${g}, ${b})`, 
+      color: factor > 0.7 || factor < 0.3 ? 'white' : 'inherit' 
+    };
+  };
+
   const getHeatmapStyle = (column: CourseEntry, grade?: Grade): React.CSSProperties => {
-    if (!column.isColorEnabled || !grade || grade.value === undefined || grade.value === '') return {};
+    if (!column.isColorEnabled || !grade) return {};
+
+    // 1. Spezielle Logik für Mitarbeit in Kompaktansicht
+    if (column.type === 'collaborationSum' && !showDetails[column.id]) {
+      const p = getCollaborationPercentage(grade.entries);
+      if (p === null) return {};
+      return getPercentHeatmap(p);
+    }
+
+    if (grade.value === undefined || grade.value === '') return {};
 
     if (column.calcType === 'grade') {
       const g = Number(grade.value);
@@ -147,18 +180,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     if (column.calcType === 'percent' && column.type !== 'presenceSum') {
       const p = Number(grade.value);
       if (isNaN(p)) return {};
-      
-      const constrainedP = Math.max(50, Math.min(100, p));
-      const factor = (constrainedP - 50) / 50; // 0 bei 50%, 1 bei 100%
-      
-      const r = Math.round(185 + factor * (21 - 185));
-      const g = Math.round(28 + factor * (128 - 28));
-      const b = Math.round(28 + factor * (61 - 28));
-      
-      return { 
-        backgroundColor: `rgb(${r}, ${g}, ${b})`, 
-        color: factor > 0.7 || factor < 0.3 ? 'white' : 'inherit' 
-      };
+      return getPercentHeatmap(p);
     }
 
     if (column.calcType === 'sign') {
@@ -201,7 +223,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                 return (
                   <th 
                     key={col.id} 
-                    className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' ? 'collaboration-col' : 'standard-col'}`}
+                    className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'}`}
                     onMouseEnter={() => setHoveredColId(col.id)}
                     onMouseLeave={() => setHoveredColId(null)}
                   >
@@ -258,13 +280,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           <ChevronLeft size={14} />
                         </button>
                         
-                        {col.type === 'presenceSum' && (
+                        {(col.type === 'presenceSum' || col.type === 'collaborationSum') && (
                           <button 
                             className="btn-header-action" 
-                            onClick={() => togglePresenceDetails(col.id)}
-                            title={showPresenceDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
+                            onClick={() => toggleDetails(col.id)}
+                            title={showDetails[col.id] ? "Details ausblenden" : "Details einblenden"}
                           >
-                            {showPresenceDetails[col.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                            {showDetails[col.id] ? <EyeOff size={14} /> : <Eye size={14} />}
                           </button>
                         )}
 
@@ -291,11 +313,12 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                 {course.columns.map(col => {
                   const grade = grades[student.id]?.[col.id];
                   const heatmapStyle = getHeatmapStyle(col, grade);
+                  const isHidden = (col.type === 'presenceSum' || col.type === 'collaborationSum') && !showDetails[col.id];
                   
                   return (
                     <td 
                       key={col.id} 
-                      className={`matrix-cell ${col.type === 'presenceSum' && !showPresenceDetails[col.id] ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' ? 'collaboration-col' : 'standard-col'}`}
+                      className={`matrix-cell ${isHidden ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'}`}
                       onMouseEnter={() => setHoveredColId(col.id)}
                       onMouseLeave={() => setHoveredColId(null)}
                       style={heatmapStyle}
@@ -308,7 +331,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                         onAddEntry={(e) => addGradeEntry(student.id, col.id, e)}
                         onEditEntry={(e) => editGradeEntry(student.id, col.id, e)}
                         onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
-                        isHidden={col.type === 'presenceSum' && !showPresenceDetails[col.id]}
+                        isHidden={isHidden}
                         heatmapStyle={heatmapStyle}
                       />
                     </td>
@@ -418,6 +441,14 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
         );
 
       case 'collaborationSum':
+        if (isHidden) {
+          const p = getCollaborationPercentage(grade?.entries);
+          return (
+            <div className="presence-percentage" style={{ fontWeight: 'bold', color: heatmapStyle?.color || 'var(--text-main)' }}>
+              {p !== null ? `${p}%` : <span className="empty-placeholder">-</span>}
+            </div>
+          );
+        }
         return (
           <div className="collaboration-cell">
             <div className="entries-list">

@@ -67,14 +67,30 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
 * **Felder:** Keine weiteren Dialog-Schritte notwendig.
 * **Aktion:** `Speichern` beendet den Dialog sofort.
 * **Tabellen-Update:** Neue Spalte "Mitarbeit".
+* **Spalten-Breite (Dynamisch):**
+    * Im **Kompaktmodus** (Details aus): Die Spalte ist **identisch schmal** wie die manuellen Beurteilungsspalten (ca. 100px).
+    * Im **Detailmodus** (Details ein): Die Spalte vergrößert sich automatisch, um alle Icons nebeneinander anzuzeigen (ca. 180px).
+* **Spalten-Kopfzeile Interaktionen:**
+    * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
+* **Zustand "Details ausgeblendet" (Kompaktansicht):**
+    * Die Zelle zeigt eine zusammenfassende **Prozentanzeige** (z.B. `75%`).
+    * **Berechnungs-Logik:**
+        * `+` (Positiv) = **1,0 Punkte**
+        * `~` (Neutral) = **0,5 Punkte**
+        * `-` (Negativ) = **0,0 Punkte**
+        * **Formel:** `(Summe der Punkte / Anzahl der Einträge) * 100`.
+    * **Farbmodus (Heatmap):**
+        * Wenn aktiv, wird der Hintergrund basierend auf dem Prozentwert eingefärbt (analog zum Typ "percent": Verlauf von Dunkelrot bis Dunkelgrün).
+* **Zustand "Details eingeblendet" (Detailansicht):**
+    * Alle vergebenen Einträge werden in der Zelle chronologisch als **Icons** nebeneinander angezeigt.
+    * In dieser Ansicht ist die Heatmap (Hintergrundfarbe) deaktiviert, um die Sichtbarkeit der farbigen Icons zu gewährleisten.
 * **Zellen-Interaktion (Hover/Klick):**
     * Hover über Zelle: Kontextmenü mit Auswahl `+`, `-`, `~` erscheint (für Neuanlage).
     * **Klick auf ein bestehendes Zeichen:** Öffnet den Dialog zum **Bearbeiten** (Ändern von Zeichen, Notiz oder Datum).
     * Nach Auswahl eines Zeichens / Öffnen zum Bearbeiten:
         * Pflichtfeld: `Notiz` (z.B. "Lautes Schwätzen") muss eingegeben werden.
         * Optional: `Datum` kann angepasst werden (Standard: aktuelles Datum).
-    * Darstellung in der Zelle:
-        * Alle vergebenen Einträge werden in der Zelle chronologisch als **Icons** nebeneinander angezeigt.
+    * Darstellung in der Zelle (Detail):
         * Farbcodierung & Icons (Zentriert):
             * `+` = **Grün** mit Plus-Icon.
             * `~` = **Gelb/Orange** mit Tilde-Icon/Symbol.
