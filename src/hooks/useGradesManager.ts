@@ -120,6 +120,27 @@ export const useGradesManager = (course: Course | null) => {
     [course?.id, grades]
   );
 
+  const editGradeEntry = useCallback(
+    async (studentId: string, columnId: string, entry: GradeEntry) => {
+      if (!course?.id) return;
+      const currentGrade = grades[studentId]?.[columnId];
+      if (!currentGrade || !currentGrade.entries) return;
+
+      const updatedEntries = currentGrade.entries.map(e => e.id === entry.id ? entry : e);
+      
+      try {
+        await firebaseService.updateGradeEntry(studentId, course.id, columnId, {
+          ...currentGrade,
+          entries: updatedEntries
+        });
+      } catch (err) {
+        console.error('Error editing grade entry:', err);
+        throw err;
+      }
+    },
+    [course?.id, grades]
+  );
+
   const deleteGradeEntry = useCallback(
     async (studentId: string, columnId: string, entryId: string) => {
       if (!course?.id) return;
@@ -148,6 +169,7 @@ export const useGradesManager = (course: Course | null) => {
     error,
     updateGrade,
     addGradeEntry,
+    editGradeEntry,
     bulkAddEntries,
     deleteGradeEntry
   };

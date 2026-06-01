@@ -68,16 +68,17 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
 * **Aktion:** `Speichern` beendet den Dialog sofort.
 * **Tabellen-Update:** Neue Spalte "Mitarbeit".
 * **Zellen-Interaktion (Hover/Klick):**
-    * Hover über Zelle: Kontextmenü mit Auswahl `+`, `-`, `~` erscheint.
-    * Nach Auswahl eines Zeichens:
+    * Hover über Zelle: Kontextmenü mit Auswahl `+`, `-`, `~` erscheint (für Neuanlage).
+    * **Klick auf ein bestehendes Zeichen:** Öffnet den Dialog zum **Bearbeiten** (Ändern von Zeichen, Notiz oder Datum).
+    * Nach Auswahl eines Zeichens / Öffnen zum Bearbeiten:
         * Pflichtfeld: `Notiz` (z.B. "Lautes Schwätzen") muss eingegeben werden.
         * Optional: `Datum` kann angepasst werden (Standard: aktuelles Datum).
     * Darstellung in der Zelle:
-        * Alle vergebenen Zeichen werden in der Zelle chronologisch nebeneinander angezeigt.
-        * Farbcodierung & Symbole:
-            * `+` = **Grün** mit Zeichen `+` in der Mitte.
-            * `~` = **Gelb/Orange** mit Zeichen `~` in der Mitte.
-            * `-` = **Rot** mit Zeichen `-` in der Mitte.
+        * Alle vergebenen Einträge werden in der Zelle chronologisch als **Icons** nebeneinander angezeigt.
+        * Farbcodierung & Icons (Zentriert):
+            * `+` = **Grün** mit Plus-Icon.
+            * `~` = **Gelb/Orange** mit Tilde-Icon/Symbol.
+            * `-` = **Rot** mit Minus-Icon.
     * Hover über bestehendes Zeichen:
         * Zeigt die zugehörige `Notiz` an.
         * Zeigt einen Löschen-Button an. (UX-Hinweis: Die Anzeige muss stabil bleiben, damit der Button sicher angeklickt werden kann).

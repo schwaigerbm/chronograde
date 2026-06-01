@@ -35,6 +35,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     loading, 
     updateGrade, 
     addGradeEntry, 
+    editGradeEntry,
     bulkAddEntries,
     deleteGradeEntry 
   } = useGradesManager(course);
@@ -305,6 +306,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                         grade={grade}
                         onUpdateGrade={(g) => updateGrade(student.id, col.id, g)}
                         onAddEntry={(e) => addGradeEntry(student.id, col.id, e)}
+                        onEditEntry={(e) => editGradeEntry(student.id, col.id, e)}
                         onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
                         isHidden={col.type === 'presenceSum' && !showPresenceDetails[col.id]}
                         heatmapStyle={heatmapStyle}
@@ -347,19 +349,26 @@ interface GradeCellProps {
   grade?: Grade;
   onUpdateGrade: (grade: Grade) => void;
   onAddEntry: (entry: GradeEntry) => void;
+  onEditEntry: (entry: GradeEntry) => void;
   onDeleteEntry: (entryId: string) => void;
   isHidden?: boolean;
   heatmapStyle?: React.CSSProperties;
 }
 
-const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, isHidden, heatmapStyle }: GradeCellProps) => {
+const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDeleteEntry, isHidden, heatmapStyle }: GradeCellProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [editingEntry, setEditingEntry] = useState<GradeEntry | null>(null);
 
   const handleOpenMenu = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setMenuPos({ top: rect.bottom, left: rect.left + rect.width / 2 });
     setShowMenu(true);
+  };
+
+  const handleCloseMenu = () => {
+    setShowMenu(false);
+    setEditingEntry(null);
   };
 
   const handleGroupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -400,9 +409,9 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
                 position={menuPos}
                 onSelect={(val) => {
                   onUpdateGrade({ value: val, date: new Date().toISOString() });
-                  setShowMenu(false);
+                  handleCloseMenu();
                 }}
-                onClose={() => setShowMenu(false)}
+                onClose={handleCloseMenu}
               />
             )}
           </div>
@@ -416,8 +425,16 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
                 <div 
                   key={entry.id} 
                   className={`entry-dot ${entry.value === '+' ? 'plus' : entry.value === '-' ? 'minus' : 'neutral'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingEntry(entry);
+                    handleOpenMenu(e);
+                  }}
                 >
-                  {entry.value}
+                  {entry.value === '+' && <Plus size={12} />}
+                  {entry.value === '-' && <Minus size={12} />}
+                  {entry.value === '~' && <span className="tilde-icon">~</span>}
+                  
                   <div className="tooltip">
                     <div className="tooltip-content">
                       <p className="tooltip-note">{entry.note || 'Keine Notiz'}</p>
@@ -446,14 +463,19 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onDeleteEntry, is
             {showMenu && (
               <CollaborationEntryModal 
                 position={menuPos}
+                entry={editingEntry || undefined}
                 onSave={(val, note, date) => {
-                  const id = (typeof crypto !== 'undefined' && crypto.randomUUID) 
-                    ? crypto.randomUUID() 
-                    : Date.now().toString(36) + Math.random().toString(36).substring(2);
-                  onAddEntry({ id, value: val, note, date });
-                  setShowMenu(false);
+                  if (editingEntry) {
+                    onEditEntry({ ...editingEntry, value: val, note, date });
+                  } else {
+                    const id = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+                      ? crypto.randomUUID() 
+                      : Date.now().toString(36) + Math.random().toString(36).substring(2);
+                    onAddEntry({ id, value: val, note, date });
+                  }
+                  handleCloseMenu();
                 }}
-                onClose={() => setShowMenu(false)}
+                onClose={handleCloseMenu}
               />
             )}
           </div>
@@ -535,15 +557,18 @@ const ManualSelector = ({ type, currentValue, position, onSelect, onClose }: { t
   );
 };
 
-const CollaborationEntryModal = ({ position, onSave, onClose }: { position: { top: number, left: number }, onSave: (val: string, note: string, date: string) => void, onClose: () => void }) => {
-  const [val, setVal] = useState('+');
-  const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+const CollaborationEntryModal = ({ position, onSave, onClose, entry }: { position: { top: number, left: number }, onSave: (val: string, note: string, date: string) => void, onClose: () => void, entry?: GradeEntry }) => {
+  const [val, setVal] = useState(entry?.value as string || '+');
+  const [note, setNote] = useState(entry?.note || '');
+  const [date, setDate] = useState(entry?.date || new Date().toISOString().split('T')[0]);
 
   return createPortal(
     <div className="modal-overlay menu-overlay" onClick={onClose} style={{ background: 'transparent' }}>
       <div className="context-modal collaboration-modal context-menu" style={{ top: position.top, left: position.left }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-inner">
+          <div className="modal-title" style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-muted)' }}>
+            {entry ? 'Eintrag bearbeiten' : 'Neuer Eintrag'}
+          </div>
           <div className="sign-selector">
             {['+', '~', '-'].map(s => (
               <button 
@@ -551,7 +576,7 @@ const CollaborationEntryModal = ({ position, onSave, onClose }: { position: { to
                 className={`sign-btn ${s === '+' ? 'plus' : s === '-' ? 'minus' : 'neutral'} ${val === s ? 'active' : ''}`}
                 onClick={() => setVal(s)}
               >
-                {s}
+                {s === '+' ? <Plus size={20} /> : s === '-' ? <Minus size={20} /> : <span style={{ fontSize: '24px', lineHeight: 1 }}>~</span>}
               </button>
             ))}
           </div>
