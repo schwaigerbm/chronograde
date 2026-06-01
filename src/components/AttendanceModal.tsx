@@ -6,11 +6,12 @@ interface AttendanceModalProps {
   isOpen: boolean;
   onClose: () => void;
   students: Student[];
-  onSave: (date: string, attendance: Record<string, 'check' | 'x'>) => void;
+  onSave: (date: string, hours: number, attendance: Record<string, 'check' | 'x'>) => void;
 }
 
 export const AttendanceModal = ({ isOpen, onClose, students, onSave }: AttendanceModalProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [hours, setHours] = useState<number>(1);
   // Use 'unset' as initial state to avoid pre-selection
   const [attendance, setAttendance] = useState<Record<string, 'check' | 'x' | 'unset'>>(
     Object.fromEntries(students.map(s => [s.id, 'unset']))
@@ -37,7 +38,7 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
       }
     });
     
-    onSave(date, filteredAttendance);
+    onSave(date, hours, filteredAttendance);
     onClose();
   };
 
@@ -50,14 +51,40 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
         </div>
         
         <div className="modal-body">
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label className="form-label">Datum</label>
-            <input 
-              type="date" 
-              className="form-input" 
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            <div className="form-group">
+              <label className="form-label">Datum</label>
+              <input 
+                type="date" 
+                className="form-input" 
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Stunden</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[1, 2, 4].map(h => (
+                  <button 
+                    key={h} 
+                    type="button"
+                    className={`btn-secondary btn-xs ${hours === h ? 'active-btn' : ''}`}
+                    style={hours === h ? { backgroundColor: 'var(--primary-color)', color: 'white', borderColor: 'var(--primary-color)' } : { padding: '4px 12px' }}
+                    onClick={() => setHours(h)}
+                  >
+                    {h} Std.
+                  </button>
+                ))}
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  style={{ width: '60px', padding: '4px 8px' }}
+                  value={hours}
+                  onChange={(e) => setHours(Number(e.target.value))}
+                  min="1"
+                />
+              </div>
+            </div>
           </div>
 
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px' }}>

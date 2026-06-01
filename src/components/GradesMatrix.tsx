@@ -39,6 +39,15 @@ const getCollaborationPercentage = (entries?: GradeEntry[]): number | null => {
   return Math.round((totalPoints / entries.length) * 100);
 };
 
+const getPresencePercentage = (entries?: GradeEntry[]): number | null => {
+  if (!entries || entries.length === 0) return null;
+  const totalHours = entries.reduce((sum, entry) => sum + (entry.hours || 1), 0);
+  const presentHours = entries.reduce((sum, entry) => {
+    return sum + (entry.value === 'check' ? (entry.hours || 1) : 0);
+  }, 0);
+  return Math.round((presentHours / totalHours) * 100);
+};
+
 export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const { 
     students, 
@@ -121,7 +130,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     setIsCollaborationModalOpen(true);
   };
 
-  const handleSaveAttendance = async (date: string, attendanceData: Record<string, 'check' | 'x'>) => {
+  const handleSaveAttendance = async (date: string, hours: number, attendanceData: Record<string, 'check' | 'x'>) => {
     if (!activeAttendanceColumnId) return;
 
     const updates = Object.entries(attendanceData).map(([studentId, value]) => ({
@@ -131,7 +140,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
             ? crypto.randomUUID() 
             : Date.now().toString(36) + Math.random().toString(36).substring(2),
         value,
-        date
+        date,
+        hours
       }
     }));
 
@@ -192,6 +202,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     // 1. Spezielle Logik für Mitarbeit in Kompaktansicht
     if (column.type === 'collaborationSum' && !showDetails[column.id]) {
       const p = getCollaborationPercentage(grade.entries);
+      if (p === null) return {};
+      return getPercentHeatmap(p);
+    }
+
+    // 2. Spezielle Logik für Anwesenheit in Kompaktansicht
+    if (column.type === 'presenceSum' && !showDetails[column.id]) {
+      const p = getPresencePercentage(grade.entries);
       if (p === null) return {};
       return getPercentHeatmap(p);
     }
@@ -556,11 +573,8 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
         );
 
       case 'presenceSum':
-        const total = grade?.entries?.length || 0;
-        const present = grade?.entries?.filter(e => e.value === 'check').length || 0;
-        const percent = total > 0 ? Math.round((present / total) * 100) : null;
-
         if (isHidden) {
+          const percent = getPresencePercentage(grade?.entries);
           return (
             <div className="presence-percentage" style={{ fontWeight: 'bold', color: heatmapStyle?.color || 'var(--text-main)' }}>
               {percent !== null ? `${percent}%` : <span className="empty-placeholder">-</span>}
@@ -572,14 +586,59 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
           <div className="presence-cell">
             <div className="entries-list">
               {grade?.entries?.map(entry => (
-                <div key={entry.id} className="presence-entry">
-                  {entry.value === 'check' ? <Check size={12} className="icon-present" /> : <XIcon size={12} className="icon-absent" />}
+                <div 
+                  key={entry.id} 
+                  className="presence-entry"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingEntry(entry);
+                    handleOpenMenu(e);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div style={{ position: 'relative' }}>
+                    {entry.value === 'check' ? <Check size={12} className="icon-present" /> : <XIcon size={12} className="icon-absent" />}
+                    {(entry.hours || 1) > 1 && (
+                      <span style={{ 
+                        position: 'absolute', 
+                        top: '-6px', 
+                        right: '-6px', 
+                        fontSize: '8px', 
+                        background: 'var(--primary-color)', 
+                        color: 'white', 
+                        borderRadius: '50%', 
+                        width: '10px', 
+                        height: '10px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        fontWeight: 'bold'
+                      }}>
+                        {entry.hours}
+                      </span>
+                    )}
+                  </div>
                   <div className="tooltip-mini">
-                    {formatDate(entry.date)}
+                    {formatDate(entry.date)} ({entry.hours || 1} Std.)
                   </div>
                 </div>
               ))}
             </div>
+            {showMenu && editingEntry && (
+              <PresenceEntryModal 
+                position={menuPos}
+                entry={editingEntry}
+                onSave={(val, hours, date) => {
+                  onEditEntry({ ...editingEntry, value: val, hours, date });
+                  handleCloseMenu();
+                }}
+                onDelete={() => {
+                  onDeleteEntry(editingEntry.id);
+                  handleCloseMenu();
+                }}
+                onClose={handleCloseMenu}
+              />
+            )}
           </div>
         );
 
@@ -681,6 +740,91 @@ const CollaborationEntryModal = ({ position, onSave, onClose, entry }: { positio
               onClick={() => onSave(val, note, date)}
             >
               OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+const PresenceEntryModal = ({ position, onSave, onDelete, onClose, entry }: { position: { top: number, left: number }, onSave: (val: string, hours: number, date: string) => void, onDelete: () => void, onClose: () => void, entry: GradeEntry }) => {
+  const [val, setVal] = useState(entry.value as string);
+  const [hours, setHours] = useState(entry.hours || 1);
+  const [date, setDate] = useState(entry.date || new Date().toISOString().split('T')[0]);
+
+  return createPortal(
+    <div className="modal-overlay menu-overlay" onClick={onClose} style={{ background: 'transparent' }}>
+      <div className="context-modal collaboration-modal context-menu" style={{ top: position.top, left: position.left }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-inner">
+          <div className="modal-title" style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-muted)' }}>
+            Eintrag bearbeiten
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', justifyContent: 'center' }}>
+            <button 
+              className={`presence-toggle check ${val === 'check' ? 'active' : ''}`}
+              onClick={() => setVal('check')}
+              style={{ width: '44px', height: '44px', borderRadius: '50%', border: val === 'check' ? '2px solid #16a34a' : '1px solid #e2e8f0' }}
+            >
+              <Check size={20} className="icon-present" />
+            </button>
+            <button 
+              className={`presence-toggle x ${val === 'x' ? 'active' : ''}`}
+              onClick={() => setVal('x')}
+              style={{ width: '44px', height: '44px', borderRadius: '50%', border: val === 'x' ? '2px solid #dc2626' : '1px solid #e2e8f0' }}
+            >
+              <XIcon size={20} className="icon-absent" />
+            </button>
+          </div>
+
+          <div className="input-field">
+            <label>Stunden</label>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[1, 2, 4].map(h => (
+                <button 
+                  key={h} 
+                  type="button"
+                  className={`btn-secondary btn-xs`}
+                  style={hours === h ? { backgroundColor: 'var(--primary-color)', color: 'white' } : {}}
+                  onClick={() => setHours(h)}
+                >
+                  {h}
+                </button>
+              ))}
+              <input 
+                type="number" 
+                className="form-input" 
+                style={{ width: '50px', padding: '2px 4px', fontSize: '12px' }}
+                value={hours}
+                onChange={e => setHours(Number(e.target.value))}
+                min="1"
+              />
+            </div>
+          </div>
+
+          <div className="input-field">
+            <label>Datum</label>
+            <input 
+              type="date"
+              className="form-input" 
+              value={date}
+              onChange={e => setDate(e.target.value)}
+            />
+          </div>
+
+          <div className="modal-actions" style={{ flexDirection: 'column' }}>
+            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+              <button className="btn-secondary btn-xs" style={{ flex: 1 }} onClick={onClose}>Abbrechen</button>
+              <button className="btn-primary btn-xs" style={{ flex: 1 }} onClick={() => onSave(val, hours, date)}>Speichern</button>
+            </div>
+            <button 
+              className="delete-link" 
+              style={{ marginTop: '8px', color: 'var(--danger-color)', background: 'transparent' }}
+              onClick={onDelete}
+            >
+              <Trash2 size={12} /> Eintrag löschen
             </button>
           </div>
         </div>

@@ -42,6 +42,7 @@ export interface GradeEntry {
   value: string | number;
   date: string;
   note?: string;
+  hours?: number; // Dauer in Stunden (Standard: 1)
 }
 
 export interface Grade {
