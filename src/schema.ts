@@ -12,10 +12,12 @@ export interface Student {
 export interface CourseEntry {
   id: string;
   title: string;       // z.B. "1. Schularbeit"
-  type: 'manual' | 'collaborationSum' | 'collaborationEntry' | 'groupAssignment' | 'presenceSum' | 'presenceEntry' ; // Art der Leistung
+  type: 'manual' | 'collaborationSum' | 'collaborationEntry' | 'groupAssignment' | 'presenceSum' | 'presenceEntry' | 'calculated'; // Art der Leistung
   date: string;        // Geplantes Datum
+  cutoffDate?: string;  // Nur für type 'calculated': Stichtag für die Berechnung
+  roundingRule?: 'commercial' | 'studentFriendly'; // Rundungsregel für Ergebnisse
   calc: boolean;        // Automatische Berechnung
-  calcFactor: number;   // Berechnungseinfluss
+  calcFactor: number;   // Berechnungseinfluss (Gewichtung)
   calcType: 'percent' | 'grade' | 'sign'
   isColorEnabled?: boolean; // Farbmodus aktiv
   showDateInHeader?: boolean; // Datum im Header anzeigen
@@ -32,6 +34,8 @@ export interface Course {
   classId: string;     // Zugehörige Klasse (z.B. "10A")
   priority: number;    // int: Zum Ordnen in der Seitenleiste/Übersicht
   archived: boolean;   // true = wird im Dashboard nicht mehr angezeigt
+  showTrend?: boolean; // Sichtbarkeit der Sticky TREND Spalte
+  roundingRule?: 'commercial' | 'studentFriendly'; // Globale Rundungsregel für den Trend
   columns: CourseEntry[]; 
   enrolledStudents: string[]; // Liste der Schüler-IDs (Enrollment)
 }
@@ -50,6 +54,7 @@ export interface Grade {
   value?: string | number; // Die eigentliche Note (z.B. 2, "1+", oder "Fehlt")
   date?: string;           // Datum der Leistung
   note?: string;          // Optionales Hover-Kommentar (Text)
+  isOverridden?: boolean; // Nur für calculated: Manuell überschrieben
   entries?: GradeEntry[]; // Für collaborationSum/presenceSum
   updatedAt?: string;
 }

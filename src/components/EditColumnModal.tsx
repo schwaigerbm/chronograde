@@ -12,6 +12,9 @@ interface EditColumnModalProps {
 export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnModalProps) => {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
+  const [cutoffDate, setCutoffDate] = useState('');
+  const [roundingRule, setRoundingRule] = useState<CourseEntry['roundingRule']>('commercial');
+  const [calc, setCalc] = useState(true);
   const [calcFactor, setCalcFactor] = useState(100);
   const [isColorEnabled, setIsColorEnabled] = useState(false);
   const [showDateInHeader, setShowDateInHeader] = useState(true);
@@ -20,6 +23,9 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
     if (column) {
       setTitle(column.title);
       setDate(column.date);
+      setCutoffDate(column.cutoffDate || '');
+      setRoundingRule(column.roundingRule || 'commercial');
+      setCalc(column.calc !== false);
       setCalcFactor(column.calcFactor);
       setIsColorEnabled(!!column.isColorEnabled);
       setShowDateInHeader(column.showDateInHeader !== false);
@@ -29,14 +35,25 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
   if (!isOpen || !column) return null;
 
   const handleSave = () => {
-    onSave({
+    const updatedColumn: CourseEntry = {
       ...column,
       title,
       date,
+      calc,
       calcFactor,
       isColorEnabled,
       showDateInHeader: column.type === 'groupAssignment' ? false : showDateInHeader,
-    });
+    };
+
+    if (column.type === 'calculated') {
+      updatedColumn.cutoffDate = cutoffDate;
+      updatedColumn.roundingRule = roundingRule;
+    } else {
+      delete updatedColumn.cutoffDate;
+      delete updatedColumn.roundingRule;
+    }
+
+    onSave(updatedColumn);
     onClose();
   };
 
@@ -61,7 +78,30 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
             />
           </div>
 
-          {column.type !== 'groupAssignment' && (
+          {column.type === 'calculated' ? (
+            <>
+              <div className="form-group">
+                <label className="form-label">Stichtag (Cutoff-Date)</label>
+                <input 
+                  type="date" 
+                  className="form-input" 
+                  value={cutoffDate}
+                  onChange={e => setCutoffDate(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Rundungsregel</label>
+                <select 
+                  className="form-input" 
+                  value={roundingRule}
+                  onChange={e => setRoundingRule(e.target.value as any)}
+                >
+                  <option value="commercial">Kaufmännisch (Standard)</option>
+                  <option value="studentFriendly">Schülerfreundlich (Aufrunden)</option>
+                </select>
+              </div>
+            </>
+          ) : column.type !== 'groupAssignment' && (
             <div className="form-group">
               <label className="form-label">Datum</label>
               <input 
@@ -73,20 +113,41 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
             </div>
           )}
 
-          <div className="form-group">
-            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-              Berechnungseinfluss <span>{calcFactor}%</span>
-            </label>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              step="5"
-              style={{ width: '100%' }}
-              value={calcFactor}
-              onChange={e => setCalcFactor(parseInt(e.target.value))}
-            />
-          </div>
+          {column.type !== 'groupAssignment' && column.type !== 'presenceSum' && (
+            <>
+              <div className="toggle-box">
+                <div>
+                  <div className="option-label">In Berechnung aufnehmen</div>
+                  <div className="option-desc">Beeinflusst die Gesamtnote</div>
+                </div>
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={calc} 
+                    onChange={() => setCalc(!calc)} 
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+
+              {calc && (
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    Berechnungseinfluss <span>{calcFactor}%</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    step="5"
+                    style={{ width: '100%' }}
+                    value={calcFactor}
+                    onChange={e => setCalcFactor(parseInt(e.target.value))}
+                  />
+                </div>
+              )}
+            </>
+          )}
 
           <div className="toggle-box">
             <div>
@@ -103,7 +164,7 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
             </label>
           </div>
 
-          {column.type === 'manual' && (
+          {(column.type === 'manual' || column.type === 'calculated') && (
             <div className="toggle-box">
               <div>
                 <div className="option-label">Datum im Header anzeigen</div>
@@ -126,7 +187,7 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
           <button 
             className="btn-primary" 
             onClick={handleSave}
-            style={{ width: 'auto', marginTop: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', marginTop: 0 }}
             disabled={!title}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Speichern <Save size={18} /></span>

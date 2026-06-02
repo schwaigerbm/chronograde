@@ -78,9 +78,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Bei Typ `sign`: Auswahl der Symbole `+`, `-` und `~`.
 
 ### Verzweigung C: Mitarbeit (`collaborationSum`)
-* **Felder:** Keine weiteren Dialog-Schritte notwendig.
-* **Aktion:** `Speichern` beendet den Dialog sofort.
-* **Tabellen-Update:** Neue Spalte "Mitarbeit".
+* **Konzept:** Systematische Erfassung von Stundenleistungen. In der Kompaktansicht wird der Prozentwert angezeigt.
 * **Spalten-Kopfzeile Interaktionen:**
     * Unter der Beschriftung befindet sich ein **"+" Button** (Ebene 2): Öffnet ein Modal zur Mitarbeit-Schnellerfassung für die gesamte Gruppe.
     * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
@@ -96,8 +94,6 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 * **Spalten-Breite (Dynamisch):**
     * Im **Kompaktmodus** (Details aus): Die Spalte ist **identisch schmal** wie die manuellen Beurteilungsspalten (ca. 100px).
     * Im **Detailmodus** (Details ein): Die Spalte vergrößert sich automatisch, um alle Icons nebeneinander anzuzeigen (ca. 180px).
-* **Spalten-Kopfzeile Interaktionen:**
-    * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 * **Zustand "Details ausgeblendet" (Kompaktansicht):**
     * Die Zelle zeigt eine zusammenfassende **Prozentanzeige** (z.B. `75%`).
     * **Berechnungs-Logik:**
@@ -111,7 +107,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Alle vergebenen Einträge werden in der Zelle chronologisch als **Icons** nebeneinander angezeigt.
     * In dieser Ansicht ist die Heatmap (Hintergrundfarbe) deaktiviert, um die Sichtbarkeit der farbigen Icons zu gewährleisten.
 * **Zellen-Interaktion (Hover/Klick):**
-    * Hover über Zelle: Kontextmenü mit Auswahl `+`, `-`, `~` erscheint (für Neuanlage).
+    * Hover über Zelle: Plus-Button erscheint (für Neuanlage).
     * **Klick auf ein bestehendes Zeichen:** Öffnet den Dialog zum **Bearbeiten** (Ändern von Zeichen, Notiz oder Datum).
     * Nach Auswahl eines Zeichens / Öffnen zum Bearbeiten:
         * Pflichtfeld: `Notiz` (z.B. "Lautes Schwätzen") muss eingegeben werden.
@@ -156,47 +152,73 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * **Klick auf Icon:** Öffnet einen Dialog zum **Bearbeiten** des Eintrags (Status, Datum, Stundenanzahl ändern).
     * **Hover:** Zeigt das Datum und die Stundenanzahl an.
 
-### 4.1 Spalten-Management (Header-Aktionen & Layout)
-Jede Beurteilungsspalte bietet im Kopfbereich eine strukturierte 3-Ebenen-Hierarchie:
+### Verzweigung E: Meilenstein / Berechnete Note (`calculated`)
+* **Konzept:** Diese Spalte dient als "Snapshot" (z.B. Semesternote, Note zum Elternsprechtag). Sie berechnet automatisch einen Vorschlag basierend auf den vorhandenen Noten bis zu einem Stichtag, erlaubt aber ein manuelles Überschreiben durch den Lehrer.
+* **Felder (Schritt 2):**
+    * Input: `Titel` (z.B. "1. Semester")
+    * Datepicker: `Stichtag (Cutoff-Date)` (Alle Noten bis zu diesem Datum fließen ein)
+    * Schalter (Toggle): `In Gesamtkalkulation aufnehmen` (Falls dieser Meilenstein selbst wieder in eine Endnote einfließen soll)
+    * Schieberegler (Slider): `Einfluss` (0 - 100%)
+* **Berechnungs-Logik:**
+    * Bildet den gewichteten Mittelwert aller Spalten (wo `calc: true` und `Datum <= Stichtag`).
+    * Nutzt den hinterlegten Notenschlüssel des Kurses.
+* **Tabellen-Update:** Die Spalte wird farblich hervorgehoben (z.B. `bg-slate-50` und fettere Border), um sie als "Ergebnis-Spalte" zu kennzeichnen.
+* **Zellen-Interaktion (Overriding):**
+    * Die Zelle zeigt initial den berechneten Wert (z.B. "3").
+    * **Klick auf Zelle:** Öffnet ein Menü, in dem der Lehrer die Note manuell anpassen kann ("Pädagogisches Ermessen").
+    * **Visualisierung:** Eine manuell geänderte Note wird mit einem kleinen "Pencil-Icon" markiert, um sie vom reinen Rechenwert zu unterscheiden.
 
-*   **Ebene 1: Identifikation** 
-    *   **Titel:** Senkrecht dargestellt (`writing-mode: vertical-rl`). Alle Titel liegen auf einer einheitlichen horizontalen Fluchtlinie (unten bündig).
-    *   **Datum:** Wird **horizontal** unmittelbar unter der senkrechten Beschriftung angezeigt. Format: `DD.MM.` (ohne Jahr).
-* **Ebene 2: Verwaltung**
-    *   Horizontale Zeile mit Funktions-Icons:
-        *   `Info/Edit-Icon`: Öffnet das Bearbeitungs-Modal.
-        *   `Papierkorb-Icon`: Löschen der Spalte (nach Bestätigung).
-        *   *Spezial (Anwesenheit/Mitarbeit):* `Plus-Icon` zur Schnellerfassung.
-*   **Ebene 3: Navigation & Ansicht**
-    *   Horizontale Zeile mit Buttons:
-        *   `Pfeil-Links`: Verschiebt die Spalte nach links.
-        *   `Pfeil-Rechts`: Verschiebt die Spalte nach rechts.
-        *   `Spezial (Anwesenheit):* `Auge-Icon` (Eye/EyeOff) zum Umschalten zwischen Kompakt- und Detailansicht.
+## 5. Sticky Summary Column (Live-Trend)
+Zusätzlich zu den Meilenstein-Spalten gibt es am rechten Rand der Matrix eine optional einblendbare (sticky) Auswertungsspalte.
 
-*   **Layout-Vorgaben:**
-    *   **Spaltenbreite:** Einheitlich schmal für alle Beurteilungstypen (ca. 100px), außer bei ausgefahrener Mitarbeit/Anwesenheit.
-    *   **Zentrierung:** Alle Elemente innerhalb des Headers sind horizontal zentriert.
-    *   **Abstände:** Klare vertikale Trennung zwischen den drei Ebenen.
+### 5.1 Berechnungs-Philosophie: Relative Gewichtung
+Die Berechnung des Durchschnitts folgt dem Prinzip der **relativen Gewichtung**. Der Einfluss (`calcFactor`) einer Spalte wird immer im Verhältnis zur Gesamtsumme aller Gewichtungen berechnet.
 
+* **Beispiel:**
+    * Leistung A: Gewichtung 100%
+    * Leistung B: Gewichtung 100%
+    * **Ergebnis:** Beide Leistungen fließen zu jeweils **50%** in die Gesamtnote ein.
+* **Vorteil:** Lehrer können Prioritäten (z.B. Schularbeit = 100, Hausübung = 20) direkt zueinander setzen, ohne dass die Summe aller Faktoren manuell auf 100% angepasst werden muss.
 
-#### Farbmodus (Heatmap)
-Wenn der Farbmodus für eine Spalte aktiv ist, werden die Zellenhintergründe basierend auf dem Wert eingefärbt:
-* **Typ "Note" (grade):**
-    * Note 1: **Dunkelgrün**
-    * Note 2: **Hellgrün**
-    * Note 3: **Neutral Weiß**
-    * Note 4: **Leicht Rot**
-    * Note 5: **Dunkelrot**
-* **Typ "Prozent" (percent):** (Gilt nicht für Anwesenheit)
-    * Linearer Farbverlauf zwischen Dunkelgrün (100%) und Dunkelrot (<= 50%).
-    * Werte ab 100% sind Dunkelgrün, Werte unter 50% sind Dunkelrot.
-* **Typ "Zeichen" (sign):**
-    * Das Zeichen wird **deutlich größer und extra fett** dargestellt.
-    * Zeichen `+`: **Grün**
-    * Zeichen `~`: **Orange**
-    * Zeichen `-`: **Rot**
+* **Funktion:** Zeigt den aktuellen Leistungsstand ("Live-Trend") basierend auf *allen* aktuell gewichteten Noten an.
+* **Konfiguration:** Die Sichtbarkeit dieser Spalte kann im Dialog `Ansicht konfigurieren` global für den Kurs ein- oder ausgeschaltet werden.
+* **Berechnungs-Logik (Österreichisches Notensystem):**
+    * Basis: Gewichteter Mittelwert in Prozent.
+    * **Leistungsausschluss:** Spalten vom Typ `Anwesenheit` (`presenceSum`) und `Gruppenzuordnung` (`groupAssignment`) fließen **niemals** in die Berechnung ein.
+    * **Notenmapping (Österreichischer Notenschlüssel):**
 
-* **UX-Vorgabe:** Diese Aktionen müssen leicht zugänglich sein (z.B. über ein Drei-Punkt-Menü), ohne das Layout der senkrechten Beschriftung zu stören.
+| Prozent (%) | Österreichische Note | Beschreibung |
+| :--- | :--- | :--- |
+| **100 – 90 %** | **1 (Sehr gut)** | Die Anforderungen werden in weit über das Wesentliche hinausgehendem Ausmaß erfüllt. |
+| **89 – 80 %** | **2 (Gut)** | Die Anforderungen werden in vollem Umfang erfüllt, die Leistung ist überdurchschnittlich. |
+| **79 – 65 %** | **3 (Befriedigend)** | Die Leistungen entsprechen im Wesentlichen den Anforderungen. |
+| **64 – 50 %** | **4 (Genügend)** | Die Leistungen entsprechen noch den Mindestanforderungen. |
+| **Unter 50 %** | **5 (Nicht genügend)** | Die Mindestanforderungen werden nicht erfüllt. |
 
-## 5. Implementierungshinweise & Testing (gemini.md)
+* **Visualisierung:**
+    * Bleibt beim horizontalen Scrollen immer am rechten Rand fixiert (Sticky).
+* **Visuelles Feedback:** Ein Klick auf die Zelle in der Summary-Spalte öffnet ein Popover mit einem **Calculation-Breakdown**.
+
+### 5.2 Rundungsregeln
+Für alle automatischen Berechnungen (Trend & Meilensteine) kann zwischen zwei Rundungsmodi gewählt werden:
+
+*   **Kaufmännisch (Standard):** Standardmäßige Rundung nach mathematischen Regeln (ab ,5 wird aufgerundet).
+*   **Schülerfreundlich:** Der Prozentwert wird **immer auf die nächste ganze Zahl aufgerundet** (`Math.ceil`), um im Zweifelsfall die bessere Note zu ermöglichen (In dubio pro reo).
+
+**Konfiguration:**
+*   **Global (Trend):** Über das Info-Icon im Header der ersten Spalte (Schüler) einstellbar.
+*   **Individuell (Meilenstein):** Im Bearbeitungs-Dialog der jeweiligen berechneten Spalte festlegbar.
+
+## 6. Spalten-Management & Konfiguration
+Im Dialog `Ansicht konfigurieren` oder beim Bearbeiten einer Spalte (`Edit-Icon` in Ebene 2) können folgende Parameter jederzeit angepasst werden:
+
+* **Globaler Trend:** Toggle-Schalter zum Ein-/Ausblenden der Sticky TREND-Spalte.
+* **Reihenfolge:** Über `Priority` oder Drag-and-Drop/Pfeil-Buttons verschiebbar.
+* **Kalkulations-Status (`calc`):** Ein-/Ausschalten (nur für `manual`, `collaborationSum` und `calculated`).
+* **Gewichtung (`calcFactor`):** Definition des Einflusses in Prozent.
+* **Sichtbarkeit:** Ausblenden von Spalten, ohne die Daten zu löschen.
+
+---
+
+## 7. Implementierungshinweise & Testing (gemini.md)
 * **Testing der Service-Layer:** Um die oben genannte `serviceFirebase` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollten in Jest zwingend `beforeAll` und `afterAll` Hooks implementiert werden. Dies gewährleistet, dass Testdaten (wie Mock-Schüler oder generierte Noten) vor den Testläufen sauber angelegt und im Nachgang wieder restlos aus der Firestore-Testumgebung gelöscht (Clean-up) werden.

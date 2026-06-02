@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-import { X, Save, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
+import { X, Save, ArrowUp, ArrowDown, Eye, EyeOff, TrendingUp } from 'lucide-react';
 import type { CourseEntry } from '../schema';
 
 interface ConfigureViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   columns: CourseEntry[];
-  onSave: (updatedColumns: CourseEntry[]) => void;
+  showTrend?: boolean;
+  onSave: (updatedColumns: CourseEntry[], showTrend: boolean) => void;
 }
 
-export const ConfigureViewModal = ({ isOpen, onClose, columns, onSave }: ConfigureViewModalProps) => {
-  const [localColumns, setLocalColumns] = useState<CourseEntry[]>([...columns]);
+export const ConfigureViewModal = ({ isOpen, onClose, columns, showTrend: initialShowTrend, onSave }: ConfigureViewModalProps) => {
+  const [localColumns, setLocalColumns] = useState<CourseEntry[]>([]);
+  const [localShowTrend, setLocalShowTrend] = useState(true);
+
+  // Sync state when modal opens or props change
+  React.useEffect(() => {
+    if (isOpen) {
+      setLocalColumns([...columns]);
+      setLocalShowTrend(initialShowTrend !== false);
+    }
+  }, [isOpen, columns, initialShowTrend]);
 
   if (!isOpen) return null;
 
@@ -31,7 +41,7 @@ export const ConfigureViewModal = ({ isOpen, onClose, columns, onSave }: Configu
   };
 
   const handleSave = () => {
-    onSave(localColumns);
+    onSave(localColumns, localShowTrend);
     onClose();
   };
 
@@ -44,6 +54,24 @@ export const ConfigureViewModal = ({ isOpen, onClose, columns, onSave }: Configu
         </div>
         
         <div className="modal-body p-8">
+          <div className="toggle-box" style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <TrendingUp size={20} style={{ color: 'var(--primary-color)' }} />
+              <div>
+                <div className="option-label">Trend-Spalte anzeigen</div>
+                <div className="option-desc">Sticky Auswertung am rechten Rand einblenden</div>
+              </div>
+            </div>
+            <label className="switch">
+              <input 
+                type="checkbox" 
+                checked={localShowTrend} 
+                onChange={() => setLocalShowTrend(!localShowTrend)} 
+              />
+              <span className="slider"></span>
+            </label>
+          </div>
+
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
             Ändern Sie hier die Reihenfolge der Spalten oder blenden Sie diese in der Matrix ein/aus.
           </p>

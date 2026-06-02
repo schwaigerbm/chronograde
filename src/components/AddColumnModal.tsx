@@ -17,6 +17,8 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
   // Step 2 fields
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [cutoffDate, setCutoffDate] = useState(new Date().toISOString().split('T')[0]);
+  const [roundingRule, setRoundingRule] = useState<CourseEntry['roundingRule']>('commercial');
   const [calcType, setCalcType] = useState<CourseEntry['calcType']>('grade');
   const [calc, setCalc] = useState(true);
   const [calcFactor, setCalcFactor] = useState(100);
@@ -25,7 +27,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
   if (!isOpen) return null;
 
   const handleNext = () => {
-    if (type === 'manual' && step === 1) {
+    if ((type === 'manual' || type === 'calculated') && step === 1) {
       setStep(2);
     } else {
       handleSave();
@@ -33,19 +35,26 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
   };
 
   const handleSave = () => {
+    const isCalcAllowed = type !== 'groupAssignment' && type !== 'presenceSum';
     const newColumn: Omit<CourseEntry, 'id'> = {
-      title: type === 'manual' ? title : 
+      title: (type === 'manual' || type === 'calculated') ? title :
              type === 'groupAssignment' ? 'Gruppe' :
              type === 'collaborationSum' ? 'Mitarbeit' :
              type === 'presenceSum' ? 'Anwesenheit' : title,
       type,
       date,
-      calc,
-      calcFactor,
-      calcType,
+      calc: isCalcAllowed ? calc : false,
+      calcFactor: isCalcAllowed ? calcFactor : 0,
+      calcType: type === 'collaborationSum' ? 'percent' : calcType,
+      roundingRule: type === 'calculated' ? roundingRule : undefined,
       showDateInHeader: type === 'groupAssignment' ? false : showDateInHeader,
       priority: Date.now(),
     };
+
+    if (type === 'calculated' && cutoffDate) {
+      newColumn.cutoffDate = cutoffDate;
+    }
+
     onSave(newColumn);
     reset();
   };
@@ -55,6 +64,8 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
     setType('manual');
     setTitle('');
     setDate(new Date().toISOString().split('T')[0]);
+    setCutoffDate(new Date().toISOString().split('T')[0]);
+    setRoundingRule('commercial');
     setCalcType('grade');
     setCalc(true);
     setCalcFactor(100);
@@ -80,6 +91,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                   { id: 'manual', label: 'Manueller Name', desc: 'Test, Schularbeit, etc.' },
                   { id: 'collaborationSum', label: 'Mitarbeit', desc: 'Systematische Mitarbeit (+, ~, -)' },
                   { id: 'presenceSum', label: 'Anwesenheit', desc: 'Anwesenheitsliste' },
+                  { id: 'calculated', label: 'Meilenstein', desc: 'Berechnete Note (z.B. Semester)' },
                 ].map((item) => (
                   <label 
                     key={item.id}
@@ -112,19 +124,47 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                   className="form-input" 
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  placeholder="z.B. 1. Test"
+                  placeholder={type === 'calculated' ? "z.B. Semesternote" : "z.B. 1. Test"}
                   autoFocus
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Datum</label>
-                <input 
-                  type="date" 
-                  className="form-input" 
-                  value={date}
-                  onChange={e => setDate(e.target.value)}
-                />
-              </div>
+              
+              {type === 'calculated' ? (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Stichtag (Cutoff-Date)</label>
+                    <input 
+                      type="date" 
+                      className="form-input" 
+                      value={cutoffDate}
+                      onChange={e => setCutoffDate(e.target.value)}
+                    />
+                    <p className="field-hint">Nur Noten bis zu diesem Datum werden berücksichtigt.</p>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Rundungsregel</label>
+                    <select 
+                      className="form-input" 
+                      value={roundingRule}
+                      onChange={e => setRoundingRule(e.target.value as any)}
+                    >
+                      <option value="commercial">Kaufmännisch (Standard)</option>
+                      <option value="studentFriendly">Schülerfreundlich (Aufrunden)</option>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <div className="form-group">
+                  <label className="form-label">Datum</label>
+                  <input 
+                    type="date" 
+                    className="form-input" 
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                  />
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">Bewertungsart</label>
                 <div className="radio-group">
@@ -140,48 +180,57 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                   ))}
                 </div>
               </div>
-              <div className="toggle-box">
-                <div>
-                  <div className="option-label">Datum im Header anzeigen</div>
-                  <div className="option-desc">Sichtbarkeit des Datums in der Matrix</div>
-                </div>
-                <label className="switch">
-                  <input 
-                    type="checkbox" 
-                    checked={showDateInHeader} 
-                    onChange={() => setShowDateInHeader(!showDateInHeader)} 
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-              <div className="toggle-box">
-                <div>
-                  <div className="option-label">In Berechnung aufnehmen</div>
-                  <div className="option-desc">Beeinflusst die Gesamtnote</div>
-                </div>
-                <label className="switch">
-                  <input 
-                    type="checkbox" 
-                    checked={calc} 
-                    onChange={() => setCalc(!calc)} 
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-              {calc && (
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    Einfluss <span>{calcFactor}%</span>
+
+              {type !== 'groupAssignment' && type !== 'presenceSum' && (
+                <>
+                  <div className="toggle-box">
+                    <div>
+                      <div className="option-label">In Berechnung aufnehmen</div>
+                      <div className="option-desc">Beeinflusst die Gesamtnote</div>
+                    </div>
+                    <label className="switch">
+                      <input 
+                        type="checkbox" 
+                        checked={calc} 
+                        onChange={() => setCalc(!calc)} 
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+
+                  {calc && (
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        Berechnungseinfluss <span>{calcFactor}%</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        step="5"
+                        style={{ width: '100%' }}
+                        value={calcFactor}
+                        onChange={e => setCalcFactor(parseInt(e.target.value))}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {(type === 'manual' || type === 'calculated') && (
+                <div className="toggle-box">
+                  <div>
+                    <div className="option-label">Datum im Header anzeigen</div>
+                    <div className="option-desc">Sichtbarkeit des Datums in der Matrix</div>
+                  </div>
+                  <label className="switch">
+                    <input 
+                      type="checkbox" 
+                      checked={showDateInHeader} 
+                      onChange={() => setShowDateInHeader(!showDateInHeader)} 
+                    />
+                    <span className="slider"></span>
                   </label>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    step="5"
-                    style={{ width: '100%' }}
-                    value={calcFactor}
-                    onChange={e => setCalcFactor(parseInt(e.target.value))}
-                  />
                 </div>
               )}
             </div>
@@ -200,7 +249,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
             style={{ width: 'auto', marginTop: 0 }}
             disabled={step === 2 && !title}
           >
-            {type === 'manual' && step === 1 ? (
+            {(type === 'manual' || type === 'calculated') && step === 1 ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Weiter <ChevronRight size={18} /></span>
             ) : (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Speichern <Save size={18} /></span>

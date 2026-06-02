@@ -4,18 +4,17 @@ import {
   Plus, 
   ChevronRight, 
   ChevronLeft, 
-  MoreVertical, 
   Trash2, 
-  MessageSquare,
   Check,
   X as XIcon,
   PlusCircle,
-  MinusCircle,
   Minus,
   Info,
   Eye,
   EyeOff,
-  Settings
+  Settings,
+  Pencil,
+  TrendingUp
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
@@ -50,6 +49,97 @@ const getPresencePercentage = (entries?: GradeEntry[]): number | null => {
   return Math.round((presentHours / totalHours) * 100);
 };
 
+const calculateAverage = (studentId: string, columns: CourseEntry[], allGrades: Record<string, Record<string, Grade>>, cutoffDate?: string, roundingRule: 'commercial' | 'studentFriendly' = 'commercial') => {
+  let totalWeightValue = 0;
+  let weightedSum = 0;
+  const breakdown: { title: string, value: number, weight: number, impact?: number }[] = [];
+
+  const relevantColumns = columns.filter(col => {
+    if (col.calc === false) return false;
+    if (col.type === 'calculated') return false; 
+    if (col.type === 'presenceSum' || col.type === 'groupAssignment') return false;
+    if (cutoffDate && col.date > cutoffDate) return false;
+    return true;
+  });
+
+  relevantColumns.forEach(col => {
+    const grade = allGrades[studentId]?.[col.id];
+    if (!grade) return;
+
+    let percent: number | null = null;
+    
+    if (col.type === 'collaborationSum') {
+      percent = getCollaborationPercentage(grade.entries);
+    } else if (grade.value !== undefined && grade.value !== '') {
+      if (col.calcType === 'sign') {
+        if (grade.value === '+') percent = 100;
+        else if (grade.value === '~') percent = 50;
+        else if (grade.value === '-') percent = 0;
+      } else {
+        const numericValue = Number(grade.value);
+        if (!isNaN(numericValue)) {
+          if (col.calcType === 'grade') {
+            // Mapping von Note -> Prozent für die Berechnung
+            switch (numericValue) {
+              case 1: percent = 100; break;
+              case 2: percent = 89; break;
+              case 3: percent = 79; break;
+              case 4: percent = 64; break;
+              case 5: percent = 49; break;
+              default: percent = 0;
+            }
+          } else {
+            percent = numericValue;
+          }
+        }
+      }
+    }
+
+    if (percent !== null) {
+      const weight = (col.calcFactor !== undefined ? col.calcFactor : 100);
+      weightedSum += percent * (weight / 100);
+      totalWeightValue += (weight / 100);
+      breakdown.push({ title: col.title, value: percent, weight });
+    }
+  });
+
+  if (totalWeightValue === 0) return { percent: null, grade: null, breakdown: [] };
+  
+  let averagePercent = weightedSum / totalWeightValue;
+  
+  // RUNDUNGSREGEL ANWENDEN
+  if (roundingRule === 'studentFriendly') {
+    averagePercent = Math.ceil(averagePercent);
+  } else {
+    averagePercent = Math.round(averagePercent);
+  }
+
+  // Add actual impact to breakdown
+  breakdown.forEach(item => {
+    item.impact = Math.round(((item.weight / 100) / totalWeightValue) * 100);
+  });
+  
+  // Österreichisches Notensystem (Laut Tabelle)
+  let finalGrade: number;
+  if (averagePercent >= 90) {
+    finalGrade = 1;
+  } else if (averagePercent >= 80) {
+    finalGrade = 2;
+  } else if (averagePercent >= 65) {
+    finalGrade = 3;
+  } else if (averagePercent >= 50) {
+    finalGrade = 4;
+  } else {
+    finalGrade = 5;
+  }
+  
+  return { 
+    percent: Math.round(averagePercent), 
+    grade: finalGrade,
+    breakdown 
+  };
+};
+
 export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const { 
     students, 
@@ -65,6 +155,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
   const [isConfigureModalOpen, setIsConfigureModalOpen] = useState(false);
+  const [isCourseSettingsModalOpen, setIsCourseSettingsModalOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<CourseEntry | null>(null);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
@@ -72,6 +163,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [activeCollaborationColumnId, setActiveCollaborationColumnId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
   const [hoveredColId, setHoveredColId] = useState<string | null>(null);
+  const [breakdownData, setBreakdownData] = useState<{ studentName: string, data: any } | null>(null);
 
   const handleAddColumn = async (columnData: Omit<CourseEntry, 'id'>) => {
     const newColumn: CourseEntry = {
@@ -92,9 +184,14 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     setEditingColumn(null);
   };
 
-  const handleConfigureColumns = async (updatedColumns: CourseEntry[]) => {
-    await firebaseService.updateCourseColumns(course.id, updatedColumns);
+  const handleConfigureColumns = async (updatedColumns: CourseEntry[], showTrend: boolean) => {
+    await firebaseService.updateCourse(course.id, { columns: updatedColumns, showTrend });
     setIsConfigureModalOpen(false);
+  };
+
+  const handleUpdateCourseSettings = async (data: Partial<Course>) => {
+    await firebaseService.updateCourse(course.id, data);
+    setIsCourseSettingsModalOpen(false);
   };
 
   const openEditModal = (column: CourseEntry) => {
@@ -286,12 +383,25 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         <table className="data-table matrix-table">
           <thead>
             <tr>
-              <th className="sticky-col">SCHÜLER</th>
+              <th className="sticky-col student-header">
+                <div className="header-content">
+                  <div className="header-level-1">SCHÜLER</div>
+                  <div className="header-level-2 action-row">
+                    <button 
+                      className="btn-header-action" 
+                      onClick={() => setIsCourseSettingsModalOpen(true)}
+                      title="Kurs-Einstellungen"
+                    >
+                      <Info size={14} />
+                    </button>
+                  </div>
+                </div>
+              </th>
               {visibleColumns.map(col => {
                 return (
                   <th 
                     key={col.id} 
-                    className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'}`}
+                    className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'} ${col.type === 'calculated' ? 'milestone-header' : ''}`}
                     onMouseEnter={() => setHoveredColId(col.id)}
                     onMouseLeave={() => setHoveredColId(null)}
                   >
@@ -304,7 +414,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                         
                         {col.showDateInHeader !== false && col.type !== 'presenceSum' && (
                           <div className="horizontal-date">
-                            {formatDate(col.date, false)}
+                            {col.type === 'calculated' ? (col.cutoffDate ? formatDate(col.cutoffDate) : '') : formatDate(col.date, false)}
                           </div>
                         )}
                       </div>
@@ -370,43 +480,79 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                 </th>
                 );
               })}
+              {course.showTrend !== false && (
+                <th className="sticky-col-right summary-header">
+                  <div className="header-content">
+                    <div className="header-level-1">
+                      <div className="vertical-title">TREND</div>
+                    </div>
+                    <div className="header-level-2">
+                      <TrendingUp size={16} />
+                    </div>
+                  </div>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
-            {students.map(student => (
-              <tr key={student.id}>
-                <td className="sticky-col font-medium">
-                  {student.lastName}, {student.firstName}
-                </td>
-                {visibleColumns.map(col => {
-                  const grade = grades[student.id]?.[col.id];
-                  const heatmapStyle = getHeatmapStyle(col, grade);
-                  const isHidden = (col.type === 'presenceSum' || col.type === 'collaborationSum') && !showDetails[col.id];
-                  
-                  return (
+            {students.map(student => {
+              const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial');
+              
+              return (
+                <tr key={student.id}>
+                  <td className="sticky-col font-medium">
+                    {student.lastName}, {student.firstName}
+                  </td>
+                  {visibleColumns.map(col => {
+                    let grade = grades[student.id]?.[col.id];
+                    
+                    if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
+                      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, col.roundingRule || 'commercial');
+                      grade = { 
+                        value: calculated.grade || undefined,
+                        date: new Date().toISOString()
+                      };
+                    }
+
+                    const heatmapStyle = getHeatmapStyle(col, grade);
+                    const isHidden = (col.type === 'presenceSum' || col.type === 'collaborationSum') && !showDetails[col.id];
+                    
+                    return (
+                      <td 
+                        key={col.id} 
+                        className={`matrix-cell ${isHidden ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'} ${col.type === 'calculated' ? 'milestone-cell' : ''}`}
+                        onMouseEnter={() => setHoveredColId(col.id)}
+                        onMouseLeave={() => setHoveredColId(null)}
+                        style={heatmapStyle}
+                      >
+                        <GradeCell 
+                          studentId={student.id}
+                          column={col}
+                          grade={grade}
+                          onUpdateGrade={(g) => updateGrade(student.id, col.id, g)}
+                          onAddEntry={(e) => addGradeEntry(student.id, col.id, e)}
+                          onEditEntry={(e) => editGradeEntry(student.id, col.id, e)}
+                          onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
+                          isHidden={isHidden}
+                          heatmapStyle={heatmapStyle}
+                        />
+                      </td>
+                    );
+                  })}
+                  {course.showTrend !== false && (
                     <td 
-                      key={col.id} 
-                      className={`matrix-cell ${isHidden ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'}`}
-                      onMouseEnter={() => setHoveredColId(col.id)}
-                      onMouseLeave={() => setHoveredColId(null)}
-                      style={heatmapStyle}
+                      className="sticky-col-right summary-cell"
+                      onClick={() => setBreakdownData({ studentName: `${student.firstName} ${student.lastName}`, data: liveSummary })}
                     >
-                      <GradeCell 
-                        studentId={student.id}
-                        column={col}
-                        grade={grade}
-                        onUpdateGrade={(g) => updateGrade(student.id, col.id, g)}
-                        onAddEntry={(e) => addGradeEntry(student.id, col.id, e)}
-                        onEditEntry={(e) => editGradeEntry(student.id, col.id, e)}
-                        onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
-                        isHidden={isHidden}
-                        heatmapStyle={heatmapStyle}
-                      />
+                      <div className="summary-content">
+                        <span className="summary-grade">{liveSummary.grade || '-'}</span>
+                        {liveSummary.percent !== null && <span className="summary-percent">{liveSummary.percent}%</span>}
+                      </div>
                     </td>
-                  );
-                })}
-              </tr>
-            ))}
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -442,9 +588,115 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         isOpen={isConfigureModalOpen}
         onClose={() => setIsConfigureModalOpen(false)}
         columns={course.columns}
+        showTrend={course.showTrend}
         onSave={handleConfigureColumns}
       />
+
+      <CourseSettingsModal 
+        isOpen={isCourseSettingsModalOpen}
+        onClose={() => setIsCourseSettingsModalOpen(false)}
+        course={course}
+        onSave={handleUpdateCourseSettings}
+      />
+
+      {breakdownData && (
+        <CalculationBreakdown 
+          studentName={breakdownData.studentName}
+          breakdown={breakdownData.data}
+          onClose={() => setBreakdownData(null)}
+        />
+      )}
     </div>
+  );
+};
+
+const CalculationBreakdown = ({ studentName, breakdown, onClose }: { studentName: string, breakdown: any, onClose: () => void }) => {
+  return createPortal(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Noten-Berechnung: {studentName}</h3>
+          <button className="btn-icon" onClick={onClose}><XIcon size={20} /></button>
+        </div>
+        <div className="modal-body">
+          <div className="summary-status">
+            <div className="summary-main">
+              <span className="summary-label">Aktueller Trend:</span>
+              <span className="summary-value grade-large">{breakdown.grade || '-'}</span>
+              <span className="summary-percent-large">{breakdown.percent !== null ? `(${breakdown.percent}%)` : ''}</span>
+            </div>
+          </div>
+          
+          <div className="breakdown-list">
+            <h4 className="breakdown-title">Einfließende Leistungen:</h4>
+            {breakdown.breakdown.length === 0 ? (
+              <p className="empty-msg">Noch keine bewerteten Leistungen vorhanden.</p>
+            ) : (
+              <table className="breakdown-table">
+                <thead>
+                  <tr>
+                    <th>Leistung</th>
+                    <th style={{ textAlign: 'center' }}>Wert</th>
+                    <th style={{ textAlign: 'center' }}>Gewichtung</th>
+                    <th style={{ textAlign: 'center' }}>Effekt. Anteil</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {breakdown.breakdown.map((item: any, i: number) => (
+                    <tr key={i}>
+                      <td>{item.title}</td>
+                      <td style={{ textAlign: 'center' }}>{item.value}%</td>
+                      <td style={{ textAlign: 'center' }}>{item.weight}%</td>
+                      <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--primary-color)' }}>{item.impact}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-primary" onClick={onClose}>Schließen</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+const CourseSettingsModal = ({ isOpen, onClose, course, onSave }: { isOpen: boolean, onClose: () => void, course: Course, onSave: (data: Partial<Course>) => void }) => {
+  const [roundingRule, setRoundingRule] = useState<Course['roundingRule']>(course.roundingRule || 'commercial');
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="modal-overlay">
+      <div className="modal-card" style={{ maxWidth: '400px' }}>
+        <div className="modal-header">
+          <h3>Kurs-Einstellungen: {course.name}</h3>
+          <button className="btn-icon" onClick={onClose}><XIcon size={20} /></button>
+        </div>
+        <div className="modal-body p-8">
+          <div className="form-group">
+            <label className="form-label">Globale Rundungsregel (Trend)</label>
+            <select 
+              className="form-input" 
+              value={roundingRule}
+              onChange={e => setRoundingRule(e.target.value as any)}
+            >
+              <option value="commercial">Kaufmännisch (Standard)</option>
+              <option value="studentFriendly">Schülerfreundlich (Aufrunden)</option>
+            </select>
+            <p className="field-hint">Beeinflusst, wie der Live-Trend berechnet wird.</p>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary" onClick={() => onSave({ roundingRule })}>Speichern</button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 };
 
@@ -664,6 +916,46 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
           </div>
         );
 
+      case 'calculated': {
+        return (
+          <div 
+            className="manual-cell-content calculated-cell"
+            onClick={handleOpenMenu}
+            style={{ color: heatmapStyle?.color, position: 'relative' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+              {grade?.value || <span className="empty-placeholder">-</span>}
+              {grade?.isOverridden && <Pencil size={10} className="override-icon" />}
+            </div>
+            {showMenu && (
+              <ManualSelector 
+                type={column.calcType} 
+                currentValue={grade?.value}
+                position={menuPos}
+                isCalculated={true}
+                onSelect={(val) => {
+                  if (val === null) {
+                    onUpdateGrade({ 
+                      value: '', 
+                      date: new Date().toISOString(),
+                      isOverridden: false 
+                    });
+                  } else {
+                    onUpdateGrade({ 
+                      value: val, 
+                      date: new Date().toISOString(),
+                      isOverridden: true 
+                    });
+                  }
+                  handleCloseMenu();
+                }}
+                onClose={handleCloseMenu}
+              />
+            )}
+          </div>
+        );
+      }
+
       default:
         return <span className="empty-placeholder">-</span>;
     }
@@ -676,11 +968,26 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
   );
 };
 
-const ManualSelector = ({ type, currentValue, position, onSelect, onClose }: { type: CourseEntry['calcType'], currentValue?: string | number, position: { top: number, left: number }, onSelect: (val: string | number) => void, onClose: () => void }) => {
+const ManualSelector = ({ type, currentValue, position, onSelect, onClose, isCalculated }: { type: CourseEntry['calcType'], currentValue?: string | number, position: { top: number, left: number }, onSelect: (val: string | number | null) => void, onClose: () => void, isCalculated?: boolean }) => {
   return createPortal(
     <div className="modal-overlay menu-overlay" onClick={onClose} style={{ background: 'transparent' }}>
       <div className="context-menu selector-menu" style={{ top: position.top, left: position.left }} onClick={(e) => e.stopPropagation()}>
         <div className="menu-options">
+          {isCalculated && (
+            <>
+              <button 
+                className="menu-item" 
+                onClick={() => {
+                  onSelect(null);
+                  onClose();
+                }}
+                style={{ color: 'var(--primary-color)', fontWeight: '600' }}
+              >
+                <span>Autom. Berechnung</span>
+              </button>
+              <div className="menu-divider"></div>
+            </>
+          )}
           {type === 'grade' && [1, 2, 3, 4, 5].map(g => (
             <button key={g} className="menu-item" onClick={() => onSelect(g)}>
               <span>{g}</span> {currentValue == g && <Check size={14} />}

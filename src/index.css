@@ -1256,3 +1256,138 @@ input:checked + .slider:before {
 }
 
 .p-8 { padding: 32px; }
+
+/* --- EVALUATION FEATURES --- */
+.sticky-col-right {
+  position: sticky;
+  right: 0;
+  z-index: 20;
+  background-color: white;
+  min-width: 80px;
+  max-width: 80px;
+  border-left: 2px solid var(--border-color) !important;
+  text-align: center !important;
+}
+
+.matrix-table thead .sticky-col-right {
+  z-index: 30;
+  background-color: #f8fafc;
+}
+
+.summary-header {
+  background-color: #eff6ff !important; /* Light blue */
+}
+
+.summary-cell {
+  background-color: #f8fafc;
+  cursor: pointer;
+}
+
+.summary-cell:hover {
+  background-color: #eff6ff !important;
+}
+
+.summary-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-grade {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+.summary-percent {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Milestone / Calculated Styles */
+.milestone-header {
+  background-color: #f1f5f9 !important;
+  border-left: 2px solid #cbd5e1 !important;
+  border-right: 2px solid #cbd5e1 !important;
+}
+
+.milestone-cell {
+  background-color: #f8fafc;
+  border-left: 2px solid #cbd5e1 !important;
+  border-right: 2px solid #cbd5e1 !important;
+  font-weight: 600;
+}
+
+.override-icon {
+  color: var(--primary-color);
+  opacity: 0.6;
+}
+
+/* Calculation Breakdown Modal */
+.summary-status {
+  background-color: #eff6ff;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.summary-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summary-label {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.grade-large {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+.summary-percent-large {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.breakdown-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.breakdown-table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.breakdown-table td {
+  padding: 10px 8px;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 20px;
+  font-style: italic;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
