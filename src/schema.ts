@@ -19,6 +19,7 @@ export interface CourseEntry {
   calcType: 'percent' | 'grade' | 'sign'
   isColorEnabled?: boolean; // Farbmodus aktiv
   showDateInHeader?: boolean; // Datum im Header anzeigen
+  isVisible?: boolean;    // Spalte in der Matrix sichtbar (Standard: true)
   subEntries?: CourseEntry[]; // Untergeordnete Einträge
   priority: number;       // int: Zum chronologischen oder manuellen Ordnen der Einträge
 }

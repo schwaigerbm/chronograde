@@ -14,7 +14,8 @@ import {
   Minus,
   Info,
   Eye,
-  EyeOff
+  EyeOff,
+  Settings
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
@@ -22,6 +23,7 @@ import { AddColumnModal } from './AddColumnModal';
 import { EditColumnModal } from './EditColumnModal';
 import { AttendanceModal } from './AttendanceModal';
 import { CollaborationBulkModal } from './CollaborationBulkModal';
+import { ConfigureViewModal } from './ConfigureViewModal';
 import { formatDate } from '../lib/utils';
 import type { Course, Student, CourseEntry, Grade, GradeEntry } from '../schema';
 
@@ -62,6 +64,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
+  const [isConfigureModalOpen, setIsConfigureModalOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<CourseEntry | null>(null);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
@@ -87,6 +90,11 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     await firebaseService.updateCourseColumns(course.id, updatedColumns);
     setIsEditColumnModalOpen(false);
     setEditingColumn(null);
+  };
+
+  const handleConfigureColumns = async (updatedColumns: CourseEntry[]) => {
+    await firebaseService.updateCourseColumns(course.id, updatedColumns);
+    setIsConfigureModalOpen(false);
   };
 
   const openEditModal = (column: CourseEntry) => {
@@ -253,6 +261,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
   if (loading) return <div className="loading-state">Lade Leistungsmatrix...</div>;
 
+  const visibleColumns = course.columns.filter(col => col.isVisible !== false);
+
   return (
     <div className="view-container">
       <div className="view-header">
@@ -260,9 +270,14 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           <h1 className="main-title">Leistungsbeurteilung</h1>
           <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%' }}>
             <h2 className="sub-title">{course.name}</h2>
-            <button className="btn-primary btn-sm" onClick={() => setIsAddColumnModalOpen(true)} style={{ width: 'auto', marginTop: 0 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Plus size={16} /> Beurteilungsspalte hinzufügen</span>
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn-secondary btn-sm" onClick={() => setIsConfigureModalOpen(true)} style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Settings size={16} /> Ansicht konfigurieren
+              </button>
+              <button className="btn-primary btn-sm" onClick={() => setIsAddColumnModalOpen(true)} style={{ width: 'auto', marginTop: 0 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Plus size={16} /> Beurteilungsspalte hinzufügen</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -272,7 +287,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           <thead>
             <tr>
               <th className="sticky-col">SCHÜLER</th>
-              {course.columns.map(col => {
+              {visibleColumns.map(col => {
                 return (
                   <th 
                     key={col.id} 
@@ -363,7 +378,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                 <td className="sticky-col font-medium">
                   {student.lastName}, {student.firstName}
                 </td>
-                {course.columns.map(col => {
+                {visibleColumns.map(col => {
                   const grade = grades[student.id]?.[col.id];
                   const heatmapStyle = getHeatmapStyle(col, grade);
                   const isHidden = (col.type === 'presenceSum' || col.type === 'collaborationSum') && !showDetails[col.id];
@@ -421,6 +436,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsCollaborationModalOpen(false)}
         students={students}
         onSave={handleSaveCollaborationBulk}
+      />
+
+      <ConfigureViewModal 
+        isOpen={isConfigureModalOpen}
+        onClose={() => setIsConfigureModalOpen(false)}
+        columns={course.columns}
+        onSave={handleConfigureColumns}
       />
     </div>
   );

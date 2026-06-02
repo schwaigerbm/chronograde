@@ -5,9 +5,9 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 
 * **Hauptüberschrift (H1):** `Leistungsbeurteilung`
 * **Unterüberschrift (H2):** `[Name der Gruppe / Course]`
-* **Aktions-Button:** Direkt rechts neben der Unterüberschrift platziert.
-    * **Label:** `Beurteilungsspalte hinzufügen` (oder `+`)
-    * **Stil:** Primär-Button (hervorgehoben).
+* **Aktions-Buttons:** Direkt rechts neben der Unterüberschrift platziert.
+    * **Button 1:** `Ansicht konfigurieren` (Stil: Sekundär, Icon: `Settings`).
+    * **Button 2:** `Beurteilungsspalte hinzufügen` (Stil: Primär, Icon: `Plus`).
 
 ## 2. Datenanbindung & Architektur
 * **Backend:** Firebase Firestore (Collections: `courses`, `students`, `course_entries`, `grades`).
@@ -36,6 +36,20 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
     * `Mitarbeit` (type: `collaborationSum`)
     * `Anwesenheit` (type: `presenceSum`)
 * **Navigation:** Nach der Auswahl verzweigt der Dialog je nach Typ.
+
+### 4.2 Modal: Ansicht konfigurieren
+Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihenfolge.
+
+* **Inhalt:** Eine Tabelle oder Liste aller existierenden Spalten des Kurses.
+* **Spalten der Liste:**
+    * `Reihenfolge`: Buttons (`Pfeil-Oben / Pfeil-Unten`) zum Verschieben der Spalten.
+    * `Sichtbarkeit`: Checkbox oder Toggle-Switch zum Ein-/Ausblenden der Spalte in der Matrix.
+    * `Titel`: Name der Spalte.
+    * `Typ`: Anzeige des Beurteilungstyps.
+* **Logik:**
+    * Ausgeblendete Spalten (`isVisible: false`) werden in der Haupt-Matrix nicht gerendert.
+    * Die Reihenfolge in der Liste entspricht der horizontalen Reihenfolge (links nach rechts) in der Matrix.
+* **Aktionen:** `Speichern` übernimmt die Änderungen global für den Kurs.
 
 ---
 
