@@ -21,7 +21,11 @@ Anzeige der Leistungsmatrix für die gewählte Gruppe.
 * **Design-Vorgabe (Spaltenbreite):** Die Spalte für die Gruppenzuordnung muss exakt die gleiche schmale Breite aufweisen wie die Beurteilungsspalten für manuelle Vergabe von Noten oder Zeichen.
 * **UX-Vorgabe (Scrollbalken-Verbot):** Es darf **unter keinen Umständen** vorkommen, dass beim Öffnen von Kontextmenüs oder Modals innerhalb der Matrix rechtsseitige Scrollbalken am Matrix-Fenster erscheinen. Die Menüs müssen so aufgebaut sein, dass sie außerhalb des Tabellenflusses (z.B. via Portals oder intelligenter Positionierung) schweben.
 * **UX-Vorgabe (Crosshair-Highlighting):** Um die Navigation in großen Tabellen zu erleichtern, muss ein "Crosshair"-Effekt implementiert werden: Beim Hover über eine Zelle sollen sowohl die gesamte Zeile als auch die dazugehörige Spalte dezent visuell hervorgehoben werden.
-* **Zeilen:** Entsprechen den Schülern, die dem jeweiligen `course` zugeordnet sind. Die Beschriftung der "Schüler"-Spalte muss zentriert/prominent im Tabellenkopf platziert sein. Reduziertes Padding in den Zeilen sorgt für eine kompaktere Darstellung.
+* **Zeilen (Schüler-Zelle & Layout):** Entsprechen den Schülern des Kurses. Die Schüler-Spalte ist wie folgt aufgebaut:
+    * **Laufende Nummer:** Ganz links steht eine 1-basierte laufende Nummer (1, 2, 3, etc.).
+    * **Name & Ausrichtung:** Es folgt der Nachname (in **Fettschrift**) und anschließend der Vorname. Nachname und Vorname stehen sauber in Spalten untereinander, ausgerichtet an derselben vertikalen Kante (Fluchtlinie des ersten Buchstabens).
+    * **Profilbild-Vorschau (Hover):** Wenn ein Schüler ein Profilbild hinterlegt hat, öffnet sich beim Fahren über den Namen ein eleganter Tooltip mit der Bildvorschau rechts neben der Zelle (mit sanfter Skalierungs- und Einblendanimation). Um ein Abschneiden des Tooltips am unteren Rand der Tabelle (insbesondere beim letzten Schüler) zu verhindern, wird die Unterkante des Tooltips bündig zur Unterkante der Zelle ausgerichtet (nach oben hin ausdehnend).
+    * Die Spalte bleibt beim horizontalen Scrollen fixiert (Sticky).
 * **Spalten:** Entsprechen den definierten Beurteilungen (`course entries`). Das Datum der Beurteilung muss in der Kopfzeile im Format `DD.MM.YY` angezeigt werden (sofern die Anzeige aktiviert ist).
 * **Zellen (Schnittpunkt):** Hier wird die jeweilige Note/Bewertung (`grade`) eingetragen und angezeigt. Leere Zellen ("Empty State") sollen mit einem sehr dezenten/hellen Grau (z.B. ein helles Minus-Zeichen) dargestellt werden, um visuelle Unruhe zu vermeiden. Auch bei Hover-Effekten (Tooltips) für Einzeleinträge (z.B. Mitarbeit oder Anwesenheit) soll das Datum einheitlich im Format `DD.MM.YY` erscheinen.
 
@@ -115,8 +119,9 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * In dieser Ansicht ist die Heatmap (Hintergrundfarbe) deaktiviert, um die Sichtbarkeit der farbigen Icons zu gewährleisten.
 * **Zellen-Interaktion (Hover/Klick):**
     * Hover über Zelle: Plus-Button erscheint (für Neuanlage).
-    * **Klick auf ein bestehendes Zeichen:** Öffnet den Dialog zum **Bearbeiten** (Ändern von Zeichen, Notiz oder Datum).
-    * Nach Auswahl eines Zeichens / Öffnen zum Bearbeiten:
+    * **Mitarbeits-Popup (CollaborationEntryModal):** Klick auf ein bestehendes Zeichen oder den Plus-Button öffnet das Formular.
+        * **Zentrierte Ausrichtung:** Das Fenster öffnet sich immer im Zentrum des Bildschirms (als modales Overlay mit abgedunkeltem Hintergrund), um ein Abschneiden am Bildschirmrand (insbesondere bei Schülern am Tabellenende) zu verhindern.
+        * **Schnellauswahl für Kommentare (Zweispaltiges Layout):** Das Modal ist vergrößert. Links befinden sich die Standard-Eingabefelder (Zeichen-Auswahl, manuelle Notiz, Datum). Rechts wird eine Liste der in den Einstellungen hinterlegten vorgefertigten Kommentare für das selektierte Zeichen (+, ~, oder -) angezeigt. Ein Klick auf einen vorgefertigten Kommentar übernimmt den Text direkt in das Notizfeld.
         * Pflichtfeld: `Notiz` (z.B. "Lautes Schwätzen") muss eingegeben werden.
         * Optional: `Datum` kann angepasst werden (Standard: aktuelles Datum).
     * Darstellung in der Zelle (Detail):

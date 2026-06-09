@@ -534,13 +534,22 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
             </tr>
           </thead>
           <tbody>
-            {students.map(student => {
+            {students.map((student, index) => {
               const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial');
               
               return (
                 <tr key={student.id}>
-                  <td className="sticky-col font-medium">
-                    {student.lastName}, {student.firstName}
+                  <td className="sticky-col">
+                    <div className="student-cell-content has-avatar-tooltip">
+                      <span className="student-number">{index + 1}</span>
+                      <span className="student-lastname">{student.lastName}</span>
+                      <span className="student-firstname">{student.firstName}</span>
+                      {student.photoBase64 && (
+                        <div className="student-avatar-tooltip">
+                          <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                        </div>
+                      )}
+                    </div>
                   </td>
                   {visibleColumns.map(col => {
                     let grade = grades[student.id]?.[col.id];

@@ -39,11 +39,16 @@ Anzeige der Schülerdatensätze aus der `students` Collection via `serviceFireba
 
 ### 5.1 Schüler bearbeiten
 * **Auslöser:** Klick auf das Schraubenschlüssel-Icon.
+* **Profilbild-Sektion (Neu):**
+    * Zeigt eine runde Bild-Vorschau (Avatar) des Schülers.
+    * Bei vorhandenem Bild gibt es ein kleines Kreuz-Icon, um das Bild zu löschen.
+    * Button `Foto auswählen` (mit Kamera-Icon) zum Auswählen eines neuen Bildes.
+    * Das ausgewählte Bild wird direkt im Browser auf maximal **120x120 Pixel** herunterskaliert, mit einer JPEG-Qualität von **70 %** komprimiert und als Base64-Daten-URL im Feld `photoBase64` gespeichert. Dies spart Speicherplatz in Firestore und vermeidet zusätzliche Speichergebühren.
 * **Felder:**
     * Input: `Vorname`
     * Input: `Nachname`
 * **Buttons:**
-    * `Speichern`: Ruft die entsprechende Update-Funktion in `serviceFirebase` auf.
+    * `Speichern`: Ruft die entsprechende Update-Funktion in `serviceFirebase` auf und speichert die Daten (inkl. `photoBase64`) in Firestore.
     * `Abbrechen`: Schließt das Fenster ohne Speichern.
 
 ### 5.2 Löschen bestätigen

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Wrench, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Wrench, Trash2, X, AlertTriangle, User, Camera } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import type { Student } from '../schema';
+import { compressImageToBase64 } from '../lib/utils';
 
 export const StudentsView = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -54,13 +55,15 @@ export const StudentsView = () => {
       if (currentStudent.id) {
         await firebaseService.updateStudent(currentStudent.id, {
           firstName: currentStudent.firstName,
-          lastName: currentStudent.lastName
+          lastName: currentStudent.lastName,
+          photoBase64: currentStudent.photoBase64 || ""
         });
       } else {
         await firebaseService.addStudent({
           firstName: currentStudent.firstName,
           lastName: currentStudent.lastName,
-          classId: currentStudent.classId || 'General'
+          classId: currentStudent.classId || 'General',
+          photoBase64: currentStudent.photoBase64 || ""
         });
       }
       setIsEditModalOpen(false);
@@ -150,6 +153,50 @@ export const StudentsView = () => {
             </div>
             <form onSubmit={handleSave}>
               <div className="modal-body">
+                {/* Profilbild Upload Sektion */}
+                <div className="student-photo-section" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
+                  <div className="avatar-preview-container" style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {currentStudent?.photoBase64 ? (
+                      <>
+                        <img src={currentStudent.photoBase64} alt="Vorschau" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button 
+                          type="button" 
+                          onClick={() => setCurrentStudent(prev => ({ ...prev!, photoBase64: "" }))}
+                          style={{ position: 'absolute', top: '2px', right: '2px', backgroundColor: 'rgba(15, 23, 42, 0.6)', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', padding: 0 }}
+                          title="Foto löschen"
+                        >
+                          <X size={10} />
+                        </button>
+                      </>
+                    ) : (
+                      <User size={28} className="text-muted" style={{ color: 'var(--text-muted)' }} />
+                    )}
+                  </div>
+                  
+                  <div className="photo-upload-controls" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label className="btn-secondary btn-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', width: 'fit-content', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '12px', fontWeight: '500' }}>
+                      <Camera size={14} /> Foto auswählen
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const base64 = await compressImageToBase64(file);
+                              setCurrentStudent(prev => ({ ...prev!, photoBase64: base64 }));
+                            } catch (err) {
+                              console.error("Error compressing image:", err);
+                            }
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>JPEG/PNG, wird auto-komprimiert</span>
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label className="form-label">Vorname</label>
                   <input 
