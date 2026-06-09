@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Save, ChevronRight, ChevronLeft } from 'lucide-react';
 import type { CourseEntry } from '../schema';
 

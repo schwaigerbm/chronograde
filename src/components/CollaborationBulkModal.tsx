@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Check, Save, Plus, Minus } from 'lucide-react';
+import { useState } from 'react';
+import { X, Save, Plus, Minus } from 'lucide-react';
 import type { Student } from '../schema';
 
 interface CollaborationBulkModalProps {

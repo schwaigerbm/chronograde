@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Check, Save } from 'lucide-react';
 import type { Student } from '../schema';
 

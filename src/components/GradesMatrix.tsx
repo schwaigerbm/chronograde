@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Plus, 
@@ -944,7 +944,7 @@ const TrendSettingsModal = ({
     setLocalColumns(normalize(nextCols, id));
   };
 
-  const milestones = columns.filter(c => c.type === 'calculated');
+
 
   return createPortal(
     <div className="modal-overlay">
@@ -1086,7 +1086,7 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
                 currentValue={grade?.value}
                 position={menuPos}
                 onSelect={(val) => {
-                  onUpdateGrade({ value: val, date: new Date().toISOString() });
+                  onUpdateGrade({ value: val ?? undefined, date: new Date().toISOString() });
                   handleCloseMenu();
                 }}
                 onClose={handleCloseMenu}
@@ -1099,8 +1099,35 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
         if (isHidden) {
           const p = getCollaborationPercentage(grade?.entries);
           return (
-            <div className="presence-percentage" style={{ fontWeight: 'bold', color: heatmapStyle?.color || 'var(--text-main)' }}>
-              {p !== null ? `${p}%` : <span className="empty-placeholder">-</span>}
+            <div className="presence-percentage-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', width: '100%' }}>
+              <span className="presence-percentage" style={{ fontWeight: 'bold', color: heatmapStyle?.color || 'var(--text-main)' }}>
+                {p !== null ? `${p}%` : <span className="empty-placeholder">-</span>}
+              </span>
+              <button 
+                className="add-entry-btn"
+                onClick={handleOpenMenu}
+                style={{ color: heatmapStyle?.color || 'var(--primary-color)' }}
+              >
+                <PlusCircle size={14} />
+              </button>
+              {showMenu && (
+                <CollaborationEntryModal 
+                  position={menuPos}
+                  entry={editingEntry || undefined}
+                  onSave={(val, note, date) => {
+                    if (editingEntry) {
+                      onEditEntry({ ...editingEntry, value: val, note, date });
+                    } else {
+                      const id = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+                        ? crypto.randomUUID() 
+                        : Date.now().toString(36) + Math.random().toString(36).substring(2);
+                      onAddEntry({ id, value: val, note, date });
+                    }
+                    handleCloseMenu();
+                  }}
+                  onClose={handleCloseMenu}
+                />
+              )}
             </div>
           );
         }

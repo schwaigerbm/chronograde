@@ -102,7 +102,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 * **Spalten-Kopfzeile Interaktionen:**
     * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 * **Zustand "Details ausgeblendet" (Kompaktansicht):**
-    * Die Zelle zeigt eine zusammenfassende **Prozentanzeige** (z.B. `75%`).
+    * Die Zelle zeigt eine zusammenfassende **Prozentanzeige** (z.B. `75%`) und direkt daneben einen **"+" Button** (PlusCircle-Icon), um auch in der Kompaktansicht schnell eine neue Mitarbeitsaufzeichnung hinzuzufügen.
     * **Berechnungs-Logik:**
         * `+` (Positiv) = **1,0 Punkte**
         * `~` (Neutral) = **0,5 Punkte**

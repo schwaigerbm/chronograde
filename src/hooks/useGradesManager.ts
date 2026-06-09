@@ -10,7 +10,7 @@ export const useGradesManager = (course: Course | null) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [grades, setGrades] = useState<GradesState>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error] = useState<Error | null>(null);
 
   // 1. Load students for the course
   useEffect(() => {
