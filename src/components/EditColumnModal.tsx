@@ -13,7 +13,6 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [cutoffDate, setCutoffDate] = useState('');
-  const [roundingRule, setRoundingRule] = useState<CourseEntry['roundingRule']>('commercial');
   const [calc, setCalc] = useState(true);
   const [calcFactor, setCalcFactor] = useState(100);
   const [isColorEnabled, setIsColorEnabled] = useState(false);
@@ -24,7 +23,6 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
       setTitle(column.title);
       setDate(column.date);
       setCutoffDate(column.cutoffDate || '');
-      setRoundingRule(column.roundingRule || 'commercial');
       setCalc(column.calc !== false);
       setCalcFactor(column.calcFactor);
       setIsColorEnabled(!!column.isColorEnabled);
@@ -35,23 +33,25 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
   if (!isOpen || !column) return null;
 
   const handleSave = () => {
+    const isCalcAllowed = column.type !== 'groupAssignment' && column.type !== 'presenceSum' && column.type !== 'calculated';
     const updatedColumn: CourseEntry = {
       ...column,
       title,
       date,
-      calc,
-      calcFactor,
+      calc: isCalcAllowed ? calc : false,
+      calcFactor: isCalcAllowed ? calcFactor : 0,
       isColorEnabled,
       showDateInHeader: column.type === 'groupAssignment' ? false : showDateInHeader,
     };
 
     if (column.type === 'calculated') {
       updatedColumn.cutoffDate = cutoffDate;
-      updatedColumn.roundingRule = roundingRule;
     } else {
       delete updatedColumn.cutoffDate;
-      delete updatedColumn.roundingRule;
     }
+
+    // Clean up roundingRule if it exists from previous versions
+    delete updatedColumn.roundingRule;
 
     onSave(updatedColumn);
     onClose();
@@ -89,17 +89,6 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
                   onChange={e => setCutoffDate(e.target.value)}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Rundungsregel</label>
-                <select 
-                  className="form-input" 
-                  value={roundingRule}
-                  onChange={e => setRoundingRule(e.target.value as any)}
-                >
-                  <option value="commercial">Kaufmännisch (Standard)</option>
-                  <option value="studentFriendly">Schülerfreundlich (Aufrunden)</option>
-                </select>
-              </div>
             </>
           ) : column.type !== 'groupAssignment' && (
             <div className="form-group">
@@ -113,7 +102,7 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
             </div>
           )}
 
-          {column.type !== 'groupAssignment' && column.type !== 'presenceSum' && (
+          {column.type !== 'groupAssignment' && column.type !== 'presenceSum' && column.type !== 'calculated' && (
             <>
               <div className="toggle-box">
                 <div>

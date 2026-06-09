@@ -28,6 +28,8 @@ Anzeige der Leistungsmatrix für die gewählte Gruppe.
 ## 4. Dialog-Fenster (Modals): Spalte hinzufügen
 Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Modal), um einen neuen `Course Entry` anzulegen.
 
+**WICHTIGER UI-HINWEIS:** Es dürfen keine Browser-nativen Funktionen wie `alert()` oder `confirm()` verwendet werden. Alle Bestätigungen (z.B. beim Löschen) oder Fehlermeldungen müssen über App-interne, elegante Dialog-Fenster (Modals) realisiert werden.
+
 ### Schritt 1: Typ-Auswahl
 * **Auslöser:** Klick auf den Button `Beurteilungsspalte hinzufügen`.
 * **Feld:** Radio-Button-Gruppe zur Auswahl des Beurteilungstyps:
@@ -35,6 +37,7 @@ Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Moda
     * `Manueller Name` (type: `manual`)
     * `Mitarbeit` (type: `collaborationSum`)
     * `Anwesenheit` (type: `presenceSum`)
+    * `Meilenstein` (type: `calculated`)
 * **Navigation:** Nach der Auswahl verzweigt der Dialog je nach Typ.
 
 ### 4.2 Modal: Ansicht konfigurieren
@@ -91,9 +94,13 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Datumsauswahl: Standard: Aktuelles Datum.
 * **Aktionen:** `Speichern` oder `Abbrechen`.
 
+* **Massen-Erfassung:** Über das `Plus-Icon` im Header kann weiterhin für die gesamte Klasse gleichzeitig eine Note (z.B. für eine bestimmte Stunde) vergeben werden.
+
 * **Spalten-Breite (Dynamisch):**
     * Im **Kompaktmodus** (Details aus): Die Spalte ist **identisch schmal** wie die manuellen Beurteilungsspalten (ca. 100px).
     * Im **Detailmodus** (Details ein): Die Spalte vergrößert sich automatisch, um alle Icons nebeneinander anzuzeigen (ca. 180px).
+* **Spalten-Kopfzeile Interaktionen:**
+    * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 * **Zustand "Details ausgeblendet" (Kompaktansicht):**
     * Die Zelle zeigt eine zusammenfassende **Prozentanzeige** (z.B. `75%`).
     * **Berechnungs-Logik:**
@@ -154,11 +161,10 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 
 ### Verzweigung E: Meilenstein / Berechnete Note (`calculated`)
 * **Konzept:** Diese Spalte dient als "Snapshot" (z.B. Semesternote, Note zum Elternsprechtag). Sie berechnet automatisch einen Vorschlag basierend auf den vorhandenen Noten bis zu einem Stichtag, erlaubt aber ein manuelles Überschreiben durch den Lehrer.
+* **Besonderheit:** Meilensteine fließen **niemals** in die Berechnung des globalen Trends oder anderer Meilensteine ein. Sie dienen rein der Dokumentation eines Zwischenstandes.
 * **Felder (Schritt 2):**
     * Input: `Titel` (z.B. "1. Semester")
     * Datepicker: `Stichtag (Cutoff-Date)` (Alle Noten bis zu diesem Datum fließen ein)
-    * Schalter (Toggle): `In Gesamtkalkulation aufnehmen` (Falls dieser Meilenstein selbst wieder in eine Endnote einfließen soll)
-    * Schieberegler (Slider): `Einfluss` (0 - 100%)
 * **Berechnungs-Logik:**
     * Bildet den gewichteten Mittelwert aller Spalten (wo `calc: true` und `Datum <= Stichtag`).
     * Nutzt den hinterlegten Notenschlüssel des Kurses.
@@ -184,7 +190,7 @@ Die Berechnung des Durchschnitts folgt dem Prinzip der **relativen Gewichtung**.
 * **Konfiguration:** Die Sichtbarkeit dieser Spalte kann im Dialog `Ansicht konfigurieren` global für den Kurs ein- oder ausgeschaltet werden.
 * **Berechnungs-Logik (Österreichisches Notensystem):**
     * Basis: Gewichteter Mittelwert in Prozent.
-    * **Leistungsausschluss:** Spalten vom Typ `Anwesenheit` (`presenceSum`) und `Gruppenzuordnung` (`groupAssignment`) fließen **niemals** in die Berechnung ein.
+    * **Leistungsausschluss:** Spalten vom Typ `Anwesenheit` (`presenceSum`), `Gruppenzuordnung` (`groupAssignment`) und `Meilenstein` (`calculated`) fließen **niemals** in die Berechnung ein.
     * **Notenmapping (Österreichischer Notenschlüssel):**
 
 | Prozent (%) | Österreichische Note | Beschreibung |
@@ -200,21 +206,33 @@ Die Berechnung des Durchschnitts folgt dem Prinzip der **relativen Gewichtung**.
 * **Visuelles Feedback:** Ein Klick auf die Zelle in der Summary-Spalte öffnet ein Popover mit einem **Calculation-Breakdown**.
 
 ### 5.2 Rundungsregeln
-Für alle automatischen Berechnungen (Trend & Meilensteine) kann zwischen zwei Rundungsmodi gewählt werden:
+Für alle automatischen Berechnungen (Trend & Meilensteine) gilt eine **zentrale Rundungsregel**, die global für den Kurs festgelegt wird.
 
 *   **Kaufmännisch (Standard):** Standardmäßige Rundung nach mathematischen Regeln (ab ,5 wird aufgerundet).
 *   **Schülerfreundlich:** Der Prozentwert wird **immer auf die nächste ganze Zahl aufgerundet** (`Math.ceil`), um im Zweifelsfall die bessere Note zu ermöglichen (In dubio pro reo).
 
 **Konfiguration:**
-*   **Global (Trend):** Über das Info-Icon im Header der ersten Spalte (Schüler) einstellbar.
-*   **Individuell (Meilenstein):** Im Bearbeitungs-Dialog der jeweiligen berechneten Spalte festlegbar.
+Die Rundungsregel wird ausschließlich über den Info-Button im Header der Schüler-Spalte (Kurs-Einstellungen) definiert und gilt konsistent für den Live-Trend sowie alle Meilenstein-Vorschläge.
+
+### 5.3 TREND-Konfiguration (Zentrales Gewichtungs-Menü)
+Die TREND-Spalte verfügt über ein eigenes Konfigurations-Menü (erreichbar über das Bearbeitungs-Icon im Header).
+
+* **Funktion:** Ermöglicht die zentrale Steuerung aller Gewichtungen (`calcFactor`) und des Berechnungs-Status (`calc`) aller relevanten Spalten an einem Ort.
+* **Gekoppelte Schieberegler (100%-Logik):**
+    * Das Menü stellt sicher, dass die Summe aller aktiven Gewichtungen (`calc: true`) **immer exakt 100%** ergibt.
+    * Wird ein Schieberegler verändert, passen sich alle anderen aktiven Regler automatisch und proportional an, um die 100%-Marke zu halten.
+* **Snapshot-Funktion (Trend fixieren):**
+    * Es ist möglich, den aktuell berechneten TREND-Wert als feste Note in einen **neuen Meilenstein** (z.B. "Note Elternsprechtag") zu überführen.
+    * Dieser Vorgang erstellt automatisch eine neue Spalte vom Typ `calculated`, setzt bei allen Schülern den Meilenstein auf den aktuellen Rechenwert und markiert diesen als "manuell überschrieben" (`isOverridden: true`).
+* **Synchronisation (Zwei-Wege-Edit):**
+    * Änderungen in diesem zentralen Menü aktualisieren sofort die Einstellungen der einzelnen Beurteilungsspalten.
 
 ## 6. Spalten-Management & Konfiguration
 Im Dialog `Ansicht konfigurieren` oder beim Bearbeiten einer Spalte (`Edit-Icon` in Ebene 2) können folgende Parameter jederzeit angepasst werden:
 
 * **Globaler Trend:** Toggle-Schalter zum Ein-/Ausblenden der Sticky TREND-Spalte.
 * **Reihenfolge:** Über `Priority` oder Drag-and-Drop/Pfeil-Buttons verschiebbar.
-* **Kalkulations-Status (`calc`):** Ein-/Ausschalten (nur für `manual`, `collaborationSum` und `calculated`).
+* **Kalkulations-Status (`calc`):** Ein-/Ausschalten (nur für `manual` und `collaborationSum`).
 * **Gewichtung (`calcFactor`):** Definition des Einflusses in Prozent.
 * **Sichtbarkeit:** Ausblenden von Spalten, ohne die Daten zu löschen.
 

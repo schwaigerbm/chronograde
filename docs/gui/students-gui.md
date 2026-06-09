@@ -35,6 +35,8 @@ Anzeige der Schülerdatensätze aus der `students` Collection via `serviceFireba
 
 ## 5. Dialog-Fenster (Modals)
 
+**WICHTIGER UI-HINWEIS:** Es dürfen keine Browser-nativen Funktionen wie `alert()` oder `confirm()` verwendet werden. Alle Bestätigungen (z.B. beim Löschen) oder Fehlermeldungen müssen über App-interne, elegante Dialog-Fenster (Modals) realisiert werden.
+
 ### 5.1 Schüler bearbeiten
 * **Auslöser:** Klick auf das Schraubenschlüssel-Icon.
 * **Felder:**

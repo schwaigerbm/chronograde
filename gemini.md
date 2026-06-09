@@ -35,6 +35,12 @@ Der Datenbankzugriff erfolgt ausschließlich über `src/services/firebaseService
 *   Verwendung von **Tailwind CSS**.
 *   Dynamische Klassen-Verarbeitung via `cn()`-Helper (`clsx` + `tailwind-merge`).
 *   Icons werden ausschließlich über `lucide-react` eingebunden.
+*   **WICHTIG:** Keine Verwendung von Browser-nativen Funktionen wie `alert()`, `confirm()` oder `prompt()`. Alle Interaktionen müssen über elegante, App-interne Modals/Dialoge gelöst werden.
+
+### 4. Workflow für KI-Generierung & Code-Änderungen
+*   **Erst das Pflichtenheft, dann der Code:** Bevor Code geändert oder neu generiert wird, müssen funktionale Änderungen zuerst im entsprechenden Pflichtenheft unter `docs/gui/` beschrieben oder aktualisiert werden. Erst nach Freigabe/Festlegung im Pflichtenheft darf die Code-Implementierung durchgeführt werden.
+*   **Datenstruktur-Prüfung:** Bei jeder Code-Änderung muss die Datenstruktur (in `src/types/schema.ts` sowie die Firestore-Pfade) geprüft werden.
+*   **Ganzheitlicher Blick (Keine Seiteneffekte):** Bei Änderungen an Datenstrukturen, Services oder Schnittstellen muss immer das gesamte Projekt im Blick behalten werden. Es ist zwingend sicherzustellen, dass andere Module, bestehende GUI-Komponenten oder Services dadurch nicht beeinträchtigt oder außer Kraft gesetzt werden.
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Plus, 
@@ -23,6 +23,7 @@ import { EditColumnModal } from './EditColumnModal';
 import { AttendanceModal } from './AttendanceModal';
 import { CollaborationBulkModal } from './CollaborationBulkModal';
 import { ConfigureViewModal } from './ConfigureViewModal';
+import { DialogModal } from './DialogModal';
 import { formatDate } from '../lib/utils';
 import type { Course, Student, CourseEntry, Grade, GradeEntry } from '../schema';
 
@@ -156,6 +157,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
   const [isConfigureModalOpen, setIsConfigureModalOpen] = useState(false);
   const [isCourseSettingsModalOpen, setIsCourseSettingsModalOpen] = useState(false);
+  const [isTrendSettingsModalOpen, setIsTrendSettingsModalOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<CourseEntry | null>(null);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
@@ -164,6 +166,25 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
   const [hoveredColId, setHoveredColId] = useState<string | null>(null);
   const [breakdownData, setBreakdownData] = useState<{ studentName: string, data: any } | null>(null);
+
+  // Custom Dialog State
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: 'info' | 'warning' | 'danger' | 'success';
+    onConfirm?: () => void;
+    isAlert?: boolean;
+    confirmLabel?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+  });
+
+  const showDialog = (config: Omit<typeof dialogConfig, 'isOpen'>) => {
+    setDialogConfig({ ...config, isOpen: true });
+  };
 
   const handleAddColumn = async (columnData: Omit<CourseEntry, 'id'>) => {
     const newColumn: CourseEntry = {
@@ -192,6 +213,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const handleUpdateCourseSettings = async (data: Partial<Course>) => {
     await firebaseService.updateCourse(course.id, data);
     setIsCourseSettingsModalOpen(false);
+    setIsTrendSettingsModalOpen(false);
   };
 
   const openEditModal = (column: CourseEntry) => {
@@ -200,9 +222,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   };
 
   const handleDeleteColumn = async (columnId: string) => {
-    if (!window.confirm('Möchten Sie diese Spalte wirklich löschen? Alle zugehörigen Noten gehen verloren.')) return;
-    const updatedColumns = course.columns.filter(col => col.id !== columnId);
-    await firebaseService.updateCourseColumns(course.id, updatedColumns);
+    showDialog({
+      title: 'Spalte löschen?',
+      message: 'Möchten Sie diese Spalte wirklich löschen? Alle zugehörigen Noten gehen verloren.',
+      type: 'danger',
+      confirmLabel: 'Löschen',
+      onConfirm: async () => {
+        const updatedColumns = course.columns.filter(col => col.id !== columnId);
+        await firebaseService.updateCourseColumns(course.id, updatedColumns);
+      }
+    });
   };
 
   const handleMoveColumn = async (columnId: string, direction: 'left' | 'right') => {
@@ -486,8 +515,18 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     <div className="header-level-1">
                       <div className="vertical-title">TREND</div>
                     </div>
-                    <div className="header-level-2">
-                      <TrendingUp size={16} />
+                    <div className="header-level-2 action-row">
+                      <button 
+                        className="btn-header-action" 
+                        onClick={() => setIsTrendSettingsModalOpen(true)}
+                        title="Trend-Gewichtung konfigurieren"
+                        style={{ color: 'var(--primary-color)' }}
+                      >
+                        <Settings size={14} />
+                      </button>
+                    </div>
+                    <div className="header-level-3">
+                      <TrendingUp size={16} style={{ opacity: 0.5 }} />
                     </div>
                   </div>
                 </th>
@@ -507,7 +546,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     let grade = grades[student.id]?.[col.id];
                     
                     if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, col.roundingRule || 'commercial');
+                      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial');
                       grade = { 
                         value: calculated.grade || undefined,
                         date: new Date().toISOString()
@@ -599,6 +638,18 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onSave={handleUpdateCourseSettings}
       />
 
+      <TrendSettingsModal 
+        isOpen={isTrendSettingsModalOpen}
+        onClose={() => setIsTrendSettingsModalOpen(false)}
+        columns={course.columns}
+        students={students}
+        grades={grades}
+        courseId={course.id}
+        roundingRule={course.roundingRule || 'commercial'}
+        onSave={(updatedCols) => handleUpdateCourseSettings({ columns: updatedCols })}
+        showDialog={showDialog}
+      />
+
       {breakdownData && (
         <CalculationBreakdown 
           studentName={breakdownData.studentName}
@@ -606,6 +657,17 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           onClose={() => setBreakdownData(null)}
         />
       )}
+
+      <DialogModal 
+        isOpen={dialogConfig.isOpen}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        confirmLabel={dialogConfig.confirmLabel}
+        isAlert={dialogConfig.isAlert}
+        onConfirm={dialogConfig.onConfirm}
+        onClose={() => setDialogConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };
@@ -693,6 +755,265 @@ const CourseSettingsModal = ({ isOpen, onClose, course, onSave }: { isOpen: bool
         <div className="modal-footer">
           <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
           <button className="btn-primary" onClick={() => onSave({ roundingRule })}>Speichern</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+const TrendSettingsModal = ({ 
+  isOpen, 
+  onClose, 
+  columns, 
+  students, 
+  grades, 
+  courseId,
+  roundingRule,
+  onSave,
+  showDialog
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  columns: CourseEntry[], 
+  students: Student[], 
+  grades: Record<string, Record<string, Grade>>,
+  courseId: string,
+  roundingRule: 'commercial' | 'studentFriendly',
+  onSave: (updatedCols: CourseEntry[]) => void,
+  showDialog: (config: any) => void
+}) => {
+  const [localColumns, setLocalColumns] = useState<CourseEntry[]>([]);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const active = columns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment');
+      const total = active.reduce((sum, c) => sum + (c.calcFactor || 0), 0);
+      
+      let initialCols = [...columns];
+      if (total > 0 && total !== 100) {
+        initialCols = columns.map(c => {
+          if (c.calc && active.find(a => a.id === c.id)) {
+            return { ...c, calcFactor: Math.round((c.calcFactor / total) * 100) };
+          }
+          return c;
+        });
+      } else if (total === 0 && active.length > 0) {
+        const share = Math.floor(100 / active.length);
+        initialCols = columns.map(c => {
+          if (c.calc && active.find(a => a.id === c.id)) {
+            return { ...c, calcFactor: share };
+          }
+          return c;
+        });
+      }
+      setLocalColumns(initialCols);
+      setNewMilestoneTitle('');
+    }
+  }, [isOpen, columns]);
+
+  if (!isOpen) return null;
+
+  const handleCreateSnapshot = async () => {
+    if (!newMilestoneTitle.trim()) {
+      showDialog({
+        title: 'Titel fehlt',
+        message: 'Bitte geben Sie einen Titel für den neuen Meilenstein ein.',
+        type: 'warning',
+        isAlert: true
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const newColumnId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+        ? crypto.randomUUID() 
+        : Date.now().toString(36) + Math.random().toString(36).substring(2);
+
+      const newMilestone: CourseEntry = {
+        id: newColumnId,
+        title: newMilestoneTitle,
+        type: 'calculated',
+        date: new Date().toISOString().split('T')[0],
+        cutoffDate: new Date().toISOString().split('T')[0],
+        calc: false,
+        calcFactor: 0,
+        calcType: 'grade',
+        priority: Date.now(),
+        isVisible: true
+      };
+
+      // 1. Spalten-Array aktualisieren
+      const updatedColumns = [...localColumns, newMilestone];
+      await firebaseService.updateCourseColumns(courseId, updatedColumns);
+
+      // 2. Noten für alle Schüler generieren (Snapshot)
+      const updates = students.map(student => {
+        const trend = calculateAverage(student.id, localColumns, grades, undefined, roundingRule);
+        return {
+          studentId: student.id,
+          columnId: newColumnId,
+          grade: {
+            value: trend.grade || '',
+            date: new Date().toISOString(),
+            isOverridden: true
+          }
+        };
+      });
+
+      await firebaseService.bulkUpdateGrades(courseId, updates);
+      
+      showDialog({
+        title: 'Erfolgreich',
+        message: 'Neuer Meilenstein erfolgreich erstellt!',
+        type: 'success',
+        isAlert: true
+      });
+      onSave(updatedColumns); // Triggert Update in der Matrix
+      onClose();
+    } catch (err) {
+      console.error("Fehler beim Erstellen des Snapshots:", err);
+      showDialog({
+        title: 'Fehler',
+        message: 'Fehler beim Speichern der Daten.',
+        type: 'danger',
+        isAlert: true
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const normalize = (cols: CourseEntry[], changedId: string) => {
+    const active = cols.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment');
+    if (active.length === 0) return cols;
+    if (active.length === 1 && active[0].id === changedId) {
+      return cols.map(c => c.id === changedId ? { ...c, calcFactor: 100 } : c);
+    }
+
+    const changedCol = active.find(c => c.id === changedId);
+    if (!changedCol) return cols;
+
+    const remaining = 100 - changedCol.calcFactor;
+    const others = active.filter(c => c.id !== changedId);
+    const othersSum = others.reduce((sum, c) => sum + c.calcFactor, 0);
+
+    let result = cols.map(c => {
+      if (c.id === changedId) return c;
+      if (c.calc && others.find(o => o.id === c.id)) {
+        if (othersSum > 0) {
+          return { ...c, calcFactor: Math.round((c.calcFactor / othersSum) * remaining) };
+        } else {
+          return { ...c, calcFactor: Math.round(remaining / others.length) };
+        }
+      }
+      return c;
+    });
+
+    // Ensure sum is exactly 100
+    const finalActive = result.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment');
+    const finalTotal = finalActive.reduce((sum, c) => sum + c.calcFactor, 0);
+    const diff = 100 - finalTotal;
+    
+    if (diff !== 0 && finalActive.length > 1) {
+      const lastOther = [...finalActive].reverse().find(c => c.id !== changedId);
+      if (lastOther) {
+        result = result.map(c => c.id === lastOther.id ? { ...c, calcFactor: Math.max(0, c.calcFactor + diff) } : c);
+      }
+    }
+
+    return result;
+  };
+
+  const handleToggle = (id: string) => {
+    const nextCols = localColumns.map(c => {
+      if (c.id === id) {
+        const isTurningOn = !c.calc;
+        return { ...c, calc: isTurningOn, calcFactor: isTurningOn ? 0 : 0 };
+      }
+      return c;
+    });
+    setLocalColumns(normalize(nextCols, id));
+  };
+
+  const handleWeightChange = (id: string, val: number) => {
+    const nextCols = localColumns.map(c => c.id === id ? { ...c, calcFactor: val } : c);
+    setLocalColumns(normalize(nextCols, id));
+  };
+
+  const milestones = columns.filter(c => c.type === 'calculated');
+
+  return createPortal(
+    <div className="modal-overlay">
+      <div className="modal-card" style={{ maxWidth: '500px' }}>
+        <div className="modal-header">
+          <h3>Trend-Konfiguration</h3>
+          <button className="btn-icon" onClick={onClose}><XIcon size={20} /></button>
+        </div>
+        <div className="modal-body p-8">
+          <div className="trend-section">
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px' }}>Gewichtung (Summe = 100%)</h4>
+            <div className="weight-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {localColumns.filter(c => c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment').map(col => (
+                <div key={col.id} className="weight-item" style={{ opacity: col.calc ? 1 : 0.6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <label className="switch sm">
+                        <input type="checkbox" checked={col.calc} onChange={() => handleToggle(col.id)} />
+                        <span className="slider"></span>
+                      </label>
+                      <span className="font-bold">{col.title}</span>
+                    </div>
+                    <span className="font-mono text-primary">{col.calc ? `${col.calcFactor}%` : 'Inaktiv'}</span>
+                  </div>
+                  {col.calc && (
+                    <input 
+                      type="range" 
+                      min="0" max="100" 
+                      value={col.calcFactor} 
+                      onChange={e => handleWeightChange(col.id, parseInt(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="snapshot-section" style={{ marginTop: '32px', paddingTop: '24px', borderTop: '2px dashed var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <TrendingUp size={18} className="text-primary" />
+              <h4 style={{ margin: 0, fontSize: '14px' }}>Snapshot erstellen</h4>
+            </div>
+            <p className="field-hint" style={{ marginBottom: '16px' }}>
+              Erstellt eine neue Spalte (Meilenstein) mit den aktuell berechneten Trend-Werten.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input 
+                className="form-input" 
+                style={{ flex: 1 }}
+                placeholder="Titel, z.B. Semester-Note"
+                value={newMilestoneTitle}
+                onChange={e => setNewMilestoneTitle(e.target.value)}
+              />
+              <button 
+                className="btn-secondary" 
+                style={{ whiteSpace: 'nowrap', fontSize: '12px' }}
+                onClick={handleCreateSnapshot}
+                disabled={isProcessing || !newMilestoneTitle.trim()}
+              >
+                {isProcessing ? 'Verarbeite...' : 'Snapshot erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
+          <button className="btn-primary" onClick={() => onSave(localColumns)} disabled={isProcessing}>Gewichtung speichern</button>
         </div>
       </div>
     </div>,

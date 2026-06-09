@@ -1391,3 +1391,36 @@ input:checked + .slider:before {
   color: var(--text-muted);
   margin-top: 4px;
 }
+
+/* --- TREND SETTINGS MODAL --- */
+.switch.sm {
+  width: 32px;
+  height: 18px;
+}
+
+.switch.sm .slider:before {
+  height: 12px;
+  width: 12px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.switch.sm input:checked + .slider:before {
+  transform: translateX(14px);
+}
+
+.weight-item {
+  background-color: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.weight-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.font-mono { font-family: monospace; }
+.text-primary { color: var(--primary-color); }

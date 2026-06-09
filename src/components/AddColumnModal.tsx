@@ -18,7 +18,6 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [cutoffDate, setCutoffDate] = useState(new Date().toISOString().split('T')[0]);
-  const [roundingRule, setRoundingRule] = useState<CourseEntry['roundingRule']>('commercial');
   const [calcType, setCalcType] = useState<CourseEntry['calcType']>('grade');
   const [calc, setCalc] = useState(true);
   const [calcFactor, setCalcFactor] = useState(100);
@@ -35,7 +34,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
   };
 
   const handleSave = () => {
-    const isCalcAllowed = type !== 'groupAssignment' && type !== 'presenceSum';
+    const isCalcAllowed = type !== 'groupAssignment' && type !== 'presenceSum' && type !== 'calculated';
     const newColumn: Omit<CourseEntry, 'id'> = {
       title: (type === 'manual' || type === 'calculated') ? title :
              type === 'groupAssignment' ? 'Gruppe' :
@@ -46,7 +45,6 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
       calc: isCalcAllowed ? calc : false,
       calcFactor: isCalcAllowed ? calcFactor : 0,
       calcType: type === 'collaborationSum' ? 'percent' : calcType,
-      roundingRule: type === 'calculated' ? roundingRule : undefined,
       showDateInHeader: type === 'groupAssignment' ? false : showDateInHeader,
       priority: Date.now(),
     };
@@ -65,7 +63,6 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
     setTitle('');
     setDate(new Date().toISOString().split('T')[0]);
     setCutoffDate(new Date().toISOString().split('T')[0]);
-    setRoundingRule('commercial');
     setCalcType('grade');
     setCalc(true);
     setCalcFactor(100);
@@ -141,17 +138,6 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                     />
                     <p className="field-hint">Nur Noten bis zu diesem Datum werden berücksichtigt.</p>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Rundungsregel</label>
-                    <select 
-                      className="form-input" 
-                      value={roundingRule}
-                      onChange={e => setRoundingRule(e.target.value as any)}
-                    >
-                      <option value="commercial">Kaufmännisch (Standard)</option>
-                      <option value="studentFriendly">Schülerfreundlich (Aufrunden)</option>
-                    </select>
-                  </div>
                 </>
               ) : (
                 <div className="form-group">
@@ -181,7 +167,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                 </div>
               </div>
 
-              {type !== 'groupAssignment' && type !== 'presenceSum' && (
+              {type !== 'groupAssignment' && type !== 'presenceSum' && type !== 'calculated' && (
                 <>
                   <div className="toggle-box">
                     <div>
