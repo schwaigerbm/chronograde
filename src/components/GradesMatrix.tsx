@@ -25,7 +25,7 @@ import { CollaborationBulkModal } from './CollaborationBulkModal';
 import { ConfigureViewModal } from './ConfigureViewModal';
 import { DialogModal } from './DialogModal';
 import { formatDate } from '../lib/utils';
-import type { Course, Student, CourseEntry, Grade, GradeEntry } from '../schema';
+import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment } from '../schema';
 
 interface GradesMatrixProps {
   course: Course;
@@ -1112,7 +1112,6 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
               </button>
               {showMenu && (
                 <CollaborationEntryModal 
-                  position={menuPos}
                   entry={editingEntry || undefined}
                   onSave={(val, note, date) => {
                     if (editingEntry) {
@@ -1175,7 +1174,6 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
             </button>
             {showMenu && (
               <CollaborationEntryModal 
-                position={menuPos}
                 entry={editingEntry || undefined}
                 onSave={(val, note, date) => {
                   if (editingEntry) {
@@ -1358,7 +1356,6 @@ const ManualSelector = ({ type, currentValue, position, onSelect, onClose, isCal
               <div className="range-label">0 - 100%</div>
             </div>
           )}
-          <div className="menu-divider"></div>
           <button className="menu-close-btn" onClick={onClose}>Schließen</button>
         </div>
       </div>
@@ -1367,57 +1364,97 @@ const ManualSelector = ({ type, currentValue, position, onSelect, onClose, isCal
   );
 };
 
-const CollaborationEntryModal = ({ position, onSave, onClose, entry }: { position: { top: number, left: number }, onSave: (val: string, note: string, date: string) => void, onClose: () => void, entry?: GradeEntry }) => {
+const CollaborationEntryModal = ({ onSave, onClose, entry }: { onSave: (val: string, note: string, date: string) => void, onClose: () => void, entry?: GradeEntry }) => {
   const [val, setVal] = useState(entry?.value as string || '+');
   const [note, setNote] = useState(entry?.note || '');
   const [date, setDate] = useState(entry?.date || new Date().toISOString().split('T')[0]);
+  const [predefinedComments, setPredefinedComments] = useState<PredefinedComment[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = firebaseService.subscribeToPredefinedComments((comments) => {
+      setPredefinedComments(comments);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const filteredComments = predefinedComments.filter(c => c.type === val);
 
   return createPortal(
-    <div className="modal-overlay menu-overlay" onClick={onClose} style={{ background: 'transparent' }}>
-      <div className="context-modal collaboration-modal context-menu" style={{ top: position.top, left: position.left }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-inner">
-          <div className="modal-title" style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-muted)' }}>
-            {entry ? 'Eintrag bearbeiten' : 'Neuer Eintrag'}
-          </div>
-          <div className="sign-selector">
-            {['+', '~', '-'].map(s => (
-              <button 
-                key={s} 
-                className={`sign-btn ${s === '+' ? 'plus' : s === '-' ? 'minus' : 'neutral'} ${val === s ? 'active' : ''}`}
-                onClick={() => setVal(s)}
-              >
-                {s === '+' ? <Plus size={20} /> : s === '-' ? <Minus size={20} /> : <span style={{ fontSize: '24px', lineHeight: 1 }}>~</span>}
-              </button>
-            ))}
-          </div>
-          <div className="input-field">
-            <label>Notiz (Pflicht)</label>
-            <input 
-              className="form-input" 
-              placeholder="z.B. Gut mitgearbeitet"
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <div className="input-field">
-            <label>Datum</label>
-            <input 
-              type="date"
-              className="form-input" 
-              value={date}
-              onChange={e => setDate(e.target.value)}
-            />
-          </div>
-          <div className="modal-actions">
-            <button className="btn-secondary btn-xs" onClick={onClose}>Abbrechen</button>
-            <button 
-              className="btn-primary btn-xs" 
-              disabled={!note}
-              onClick={() => onSave(val, note, date)}
-            >
-              OK
-            </button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card collaboration-modal expanded" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 style={{ margin: 0 }}>{entry ? 'Eintrag bearbeiten' : 'Neuer Eintrag'}</h3>
+          <button className="btn-icon" onClick={onClose}><XIcon size={20} /></button>
+        </div>
+        
+        <div className="modal-body p-8">
+          <div className="modal-layout-split">
+            {/* Linke Spalte: Eingabefelder */}
+            <div className="modal-col-left">
+              <div className="sign-selector">
+                {['+', '~', '-'].map(s => (
+                  <button 
+                    key={s} 
+                    className={`sign-btn ${s === '+' ? 'plus' : s === '-' ? 'minus' : 'neutral'} ${val === s ? 'active' : ''}`}
+                    onClick={() => setVal(s)}
+                  >
+                    {s === '+' ? <Plus size={20} /> : s === '-' ? <Minus size={20} /> : <span style={{ fontSize: '24px', lineHeight: 1 }}>~</span>}
+                  </button>
+                ))}
+              </div>
+              <div className="input-field">
+                <label>Notiz (Pflicht)</label>
+                <input 
+                  className="form-input" 
+                  placeholder="z.B. Gut mitgearbeitet"
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="input-field">
+                <label>Datum</label>
+                <input 
+                  type="date"
+                  className="form-input" 
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="btn-secondary btn-xs" onClick={onClose}>Abbrechen</button>
+                <button 
+                  className="btn-primary btn-xs" 
+                  disabled={!note}
+                  onClick={() => onSave(val, note, date)}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+
+            {/* Rechte Spalte: Vorgefertigte Kommentare */}
+            <div className="modal-col-right">
+              <div className="predefined-header">Kommentare ({val})</div>
+              {filteredComments.length === 0 ? (
+                <div className="no-predefined-msg">
+                  Keine Kommentare für '{val}' angelegt.
+                </div>
+              ) : (
+                <div className="predefined-comments-list">
+                  {filteredComments.map(c => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`predefined-comment-item-btn ${note === c.text ? 'active' : ''}`}
+                      onClick={() => setNote(c.text)}
+                    >
+                      {c.text}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

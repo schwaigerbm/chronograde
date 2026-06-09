@@ -73,3 +73,14 @@ export interface AppUser {
   role?: string;
   name?: string;
 }
+
+// 7. VORGEFERTIGTE MITARBEITSKOMMENTARE (Settings)
+export interface PredefinedComment {
+  id: string;
+  text: string;
+  type: '+' | '-' | '~';
+}
+
+export interface PredefinedCommentsSettings {
+  comments: PredefinedComment[];
+}

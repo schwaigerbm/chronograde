@@ -15,6 +15,7 @@ import { useAuth } from './hooks/useAuth';
 import { StudentsView } from './components/StudentsView';
 import { CourseManager } from './components/CourseManager';
 import { GradesMatrix } from './components/GradesMatrix';
+import { SettingsView } from './components/SettingsView';
 import { firebaseService } from './services/firebaseService';
 import type { Course } from './schema';
 
@@ -199,6 +200,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
             </div>
           </div>
         );
+      case 'einstellungen':
+        return <SettingsView />;
       default:
         return (
           <div className="view-container">

@@ -1,0 +1,57 @@
+# Spezifikation: Einstellungen (Settings)
+
+## 1. Übersicht & Struktur
+Die Einstellungsansicht bietet Konfigurationsmöglichkeiten für die Anwendung. Sie ist über den Navigationspunkt "Einstellungen" in der Sidebar erreichbar.
+
+Die Ansicht ist in Sektionen unterteilt. Die primäre Sektion in dieser Phase ist die **Sektion Mitarbeit**.
+
+## 2. Sektion: Mitarbeit (Vorgefertigte Kommentare)
+Hier können Lehrer vorgefertigte Kommentare für die drei Bewertungszeichen der Mitarbeit (`+`, `~`, `-`) verwalten.
+
+### 2.1 Benutzeroberfläche (UI)
+* **Tab/Bereichs-Überschrift:** `Mitarbeitskommentare verwalten`
+* **Beschreibung:** Ein Hinweistext, der erklärt, dass diese Kommentare bei der Notenvergabe in der Matrix schnell ausgewählt werden können.
+* **Erstellungs-Formular:**
+  * **Zeichen-Auswahl:** Button-Gruppe oder Dropdown zur Auswahl des Typs (`+`, `~`, `-`).
+  * **Textfeld:** Eingabefeld für den Kommentar (z. B. "Sehr aktive Beteiligung").
+  * **Button:** `Kommentar hinzufügen` (Stil: Primär, Icon: `Plus`).
+* **Kommentar-Listen (nach Zeichen gruppiert):**
+  * Drei separate Spalten oder Sektionen für `+` (Grün), `~` (Gelb/Orange) und `-` (Rot).
+  * **Einträge in der Liste:** Jeder Eintrag zeigt:
+    * Den Kommentartext.
+    * **Aktions-Buttons (Reihenfolge):** Pfeil-oben und Pfeil-unten Icons, um die Reihenfolge der Kommentare innerhalb dieses Zeichens zu verändern.
+    * **Lösch-Button:** Trash-Icon zum Entfernen des Kommentars.
+    * **Bearbeitungs-Button:** Edit-Icon, das den Text direkt in einem Inline-Eingabefeld oder einem modalen Dialog editierbar macht.
+
+### 2.2 Datenmodell & Persistence
+Die Einstellungen werden in Firestore in einem zentralen Dokument unter `/settings/collaboration` gespeichert:
+
+```typescript
+export interface PredefinedComment {
+  id: string;
+  text: string;
+  type: '+' | '-' | '~';
+}
+
+export interface PredefinedCommentsSettings {
+  comments: PredefinedComment[];
+}
+```
+
+* Die Sortierreihenfolge in der UI entspricht exakt der Reihenfolge der Elemente im Array `comments` (nach Typ gefiltert).
+* Änderungen (Hinzufügen, Löschen, Editieren, Verschieben) werden direkt via Service-Layer in Firestore persistiert.
+
+---
+
+## 3. Integration in die Notenmatrix (Notenvergabe)
+Wenn der Lehrer in der Matrix auf ein Feld der Mitarbeit klickt (Typ `collaborationSum`), um eine neue Bewertung hinzuzufügen oder eine bestehende zu bearbeiten, öffnet sich das `CollaborationEntryModal`.
+
+### 3.1 Anpassung des Modals
+* **Größenänderung:** Das Modal wird breiter gestaltet (z. B. `min-width: 450px` oder zweispaltiges Layout), um Platz für die Schnellauswahl zu bieten.
+* **Schnellauswahl-Bereich:**
+  * Unterhalb oder rechts neben der Zeichenauswahl werden die vorgefertigten Kommentare angezeigt, die dem aktuell ausgewählten Zeichen (`+`, `~` oder `-`) entsprechen.
+  * Wechselt der Lehrer das Zeichen im Modal, aktualisiert sich die Liste der angezeigten vorgefertigten Kommentare sofort.
+* **Interaktion:**
+  * Klick auf einen vorgefertigten Kommentar übernimmt diesen Text direkt in das Feld "Notiz".
+  * Der Lehrer kann den Text danach bei Bedarf immer noch manuell anpassen oder ergänzen.
+  * Das Abschicken des Formulars speichert den Eintrag wie gewohnt.

@@ -14,7 +14,7 @@ import {
   orderBy
 } from "firebase/firestore";
 import CryptoJS from "crypto-js";
-import type { Course, Student, Grade, CourseEntry, AppUser } from "../schema";
+import type { Course, Student, Grade, CourseEntry, AppUser, PredefinedComment } from "../schema";
 
 export const firebaseService = {
   
@@ -180,5 +180,26 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
       }, { merge: true });
     });
     return await Promise.all(promises);
+  },
+
+  // --- 5. EINSTELLUNGEN-VERWALTUNG (Settings) ---
+
+  // Abonniert vorgefertigte Mitarbeitskommentare in Echtzeit
+  subscribeToPredefinedComments: (callback: (comments: PredefinedComment[]) => void) => {
+    const docRef = doc(db, "settings", "collaboration");
+    return onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        callback((data.comments || []) as PredefinedComment[]);
+      } else {
+        callback([]);
+      }
+    });
+  },
+
+  // Speichert vorgefertigte Mitarbeitskommentare
+  savePredefinedComments: async (comments: PredefinedComment[]) => {
+    const docRef = doc(db, "settings", "collaboration");
+    return await setDoc(docRef, { comments });
   }
 };
