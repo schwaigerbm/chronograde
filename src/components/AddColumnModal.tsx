@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { X, Save, ChevronRight, ChevronLeft } from 'lucide-react';
+import { 
+  X, 
+  Save, 
+  ChevronRight, 
+  ChevronLeft, 
+  Users, 
+  FileText, 
+  Award, 
+  CalendarCheck, 
+  TrendingUp 
+} from 'lucide-react';
 import type { CourseEntry } from '../schema';
 
 interface AddColumnModalProps {
@@ -72,7 +82,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card" style={{ maxWidth: '500px' }}>
+      <div className="modal-card modal-medium">
         <div className="modal-header">
           <h3>Beurteilungsspalte hinzufügen</h3>
           <button className="btn-icon" onClick={reset}><X size={20} /></button>
@@ -81,35 +91,38 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
         <div className="modal-body">
           {step === 1 ? (
             <div className="step-container">
-              <p className="step-description">Wählen Sie den Typ der Beurteilung:</p>
-              <div className="type-grid">
+              <p className="step-description" style={{ marginBottom: '16px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                Wählen Sie die Art der neuen Beurteilungsspalte aus:
+              </p>
+              <div className="type-card-grid">
                 {[
-                  { id: 'groupAssignment', label: 'Gruppenzuordnung', desc: 'Zahlen 1-9' },
-                  { id: 'manual', label: 'Manueller Name', desc: 'Test, Schularbeit, etc.' },
-                  { id: 'collaborationSum', label: 'Mitarbeit', desc: 'Systematische Mitarbeit (+, ~, -)' },
-                  { id: 'presenceSum', label: 'Anwesenheit', desc: 'Anwesenheitsliste' },
-                  { id: 'calculated', label: 'Meilenstein', desc: 'Berechnete Note (z.B. Semester)' },
-                ].map((item) => (
-                  <label 
-                    key={item.id}
-                    className={`type-option ${type === item.id ? 'active' : ''}`}
-                  >
-                    <div className="option-content">
+                  { id: 'groupAssignment', label: 'Gruppenzuordnung', desc: 'Schülern Gruppen (Zahlen 1-9) zuweisen', icon: Users, tint: 'group' },
+                  { id: 'manual', label: 'Manueller Eintrag', desc: 'Eigener Name für Schularbeiten, Tests, o.ä.', icon: FileText, tint: 'manual' },
+                  { id: 'collaborationSum', label: 'Mitarbeit', desc: 'Systematische Mitarbeit erfassen (+, ~, -)', icon: Award, tint: 'collaboration' },
+                  { id: 'presenceSum', label: 'Anwesenheit', desc: 'Anwesenheitsliste für den Unterricht führen', icon: CalendarCheck, tint: 'presence' },
+                  { id: 'calculated', label: 'Meilenstein', desc: 'Berechnete Gesamtnote zu einem Stichtag', icon: TrendingUp, tint: 'calculated' },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <label 
+                      key={item.id}
+                      className={`type-card ${type === item.id ? 'active' : ''}`}
+                    >
                       <input 
                         type="radio" 
                         name="type" 
                         value={item.id} 
                         checked={type === item.id}
                         onChange={() => setType(item.id as any)}
-                        className="radio-input"
                       />
-                      <div className="option-text">
-                        <div className="option-label">{item.label}</div>
-                        <div className="option-desc">{item.desc}</div>
+                      <div className={`type-card-icon-wrapper ${item.tint}`}>
+                        <Icon size={22} />
                       </div>
-                    </div>
-                  </label>
-                ))}
+                      <div className="type-card-title">{item.label}</div>
+                      <div className="type-card-desc">{item.desc}</div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           ) : (

@@ -2051,3 +2051,100 @@ input:checked + .slider:before {
   z-index: 40;
   background: transparent;
 }
+
+/* --- AddColumnModal Medium Size & Cards --- */
+.modal-card.modal-medium {
+  max-width: 800px;
+  width: 90%;
+}
+
+.type-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.type-card {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.type-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.08);
+}
+
+.type-card.active {
+  background-color: #eff6ff;
+  border-color: var(--primary-color);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.12);
+}
+
+.type-card-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.type-card:hover .type-card-icon-wrapper {
+  transform: scale(1.1);
+}
+
+/* Custom background tints for icon wrappers based on column type */
+.type-card-icon-wrapper.group {
+  background-color: #f0fdf4; /* green 50 */
+  color: #16a34a; /* green 600 */
+}
+.type-card-icon-wrapper.manual {
+  background-color: #eff6ff; /* blue 50 */
+  color: var(--primary-color); /* blue 600 */
+}
+.type-card-icon-wrapper.collaboration {
+  background-color: #fffbeb; /* amber 50 */
+  color: #d97706; /* amber 600 */
+}
+.type-card-icon-wrapper.presence {
+  background-color: #fff1f2; /* rose 50 */
+  color: #e11d48; /* rose 600 */
+}
+.type-card-icon-wrapper.calculated {
+  background-color: #faf5ff; /* purple 50 */
+  color: #9333ea; /* purple 600 */
+}
+
+.type-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.type-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.type-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
