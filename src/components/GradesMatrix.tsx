@@ -16,7 +16,8 @@ import {
   Pencil,
   TrendingUp,
   FileDown,
-  FileText
+  FileText,
+  ChevronDown
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
@@ -161,6 +162,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [isConfigureModalOpen, setIsConfigureModalOpen] = useState(false);
   const [isTrendSettingsModalOpen, setIsTrendSettingsModalOpen] = useState(false);
   const [isPDFColumnSelectModalOpen, setIsPDFColumnSelectModalOpen] = useState(false);
+  const [isActionsDropdownOpen, setIsActionsDropdownOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<CourseEntry | null>(null);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
@@ -398,21 +400,56 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           <h1 className="main-title">Leistungsbeurteilung</h1>
           <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%' }}>
             <h2 className="sub-title">{course.name}</h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="dropdown-container">
               <button 
-                className="btn-secondary btn-sm" 
-                onClick={() => setIsPDFColumnSelectModalOpen(true)} 
+                className="btn-secondary btn-sm"
+                onClick={() => setIsActionsDropdownOpen(!isActionsDropdownOpen)}
                 style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
-                title="Gesamte Matrix als PDF exportieren"
               >
-                <FileDown size={16} /> PDF Export
+                <span>Aktionen</span>
+                <ChevronDown size={16} />
               </button>
-              <button className="btn-secondary btn-sm" onClick={() => setIsConfigureModalOpen(true)} style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Settings size={16} /> Ansicht konfigurieren
-              </button>
-              <button className="btn-primary btn-sm" onClick={() => setIsAddColumnModalOpen(true)} style={{ width: 'auto', marginTop: 0 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Plus size={16} /> Beurteilungsspalte hinzufügen</span>
-              </button>
+              
+              {isActionsDropdownOpen && (
+                <>
+                  <div 
+                    className="dropdown-overlay" 
+                    onClick={() => setIsActionsDropdownOpen(false)}
+                  />
+                  <div className="dropdown-menu">
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        setIsActionsDropdownOpen(false);
+                        setIsAddColumnModalOpen(true);
+                      }}
+                    >
+                      <Plus size={16} />
+                      <span>Beurteilungsspalte hinzufügen</span>
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        setIsActionsDropdownOpen(false);
+                        setIsConfigureModalOpen(true);
+                      }}
+                    >
+                      <Settings size={16} />
+                      <span>Ansicht konfigurieren</span>
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        setIsActionsDropdownOpen(false);
+                        setIsPDFColumnSelectModalOpen(true);
+                      }}
+                    >
+                      <FileDown size={16} />
+                      <span>PDF Export</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
