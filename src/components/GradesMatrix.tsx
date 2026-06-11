@@ -14,7 +14,9 @@ import {
   EyeOff,
   Settings,
   Pencil,
-  TrendingUp
+  TrendingUp,
+  FileDown,
+  FileText
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
@@ -26,6 +28,7 @@ import { ConfigureViewModal } from './ConfigureViewModal';
 import { DialogModal } from './DialogModal';
 import { formatDate } from '../lib/utils';
 import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment } from '../schema';
+import { exportMatrixPDF, exportStudentReportPDF } from './PDFExports';
 
 interface GradesMatrixProps {
   course: Course;
@@ -156,8 +159,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
   const [isConfigureModalOpen, setIsConfigureModalOpen] = useState(false);
-  const [isCourseSettingsModalOpen, setIsCourseSettingsModalOpen] = useState(false);
   const [isTrendSettingsModalOpen, setIsTrendSettingsModalOpen] = useState(false);
+  const [isPDFColumnSelectModalOpen, setIsPDFColumnSelectModalOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<CourseEntry | null>(null);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [activeAttendanceColumnId, setActiveAttendanceColumnId] = useState<string | null>(null);
@@ -212,7 +215,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
   const handleUpdateCourseSettings = async (data: Partial<Course>) => {
     await firebaseService.updateCourse(course.id, data);
-    setIsCourseSettingsModalOpen(false);
     setIsTrendSettingsModalOpen(false);
   };
 
@@ -397,6 +399,14 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%' }}>
             <h2 className="sub-title">{course.name}</h2>
             <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                className="btn-secondary btn-sm" 
+                onClick={() => setIsPDFColumnSelectModalOpen(true)} 
+                style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
+                title="Gesamte Matrix als PDF exportieren"
+              >
+                <FileDown size={16} /> PDF Export
+              </button>
               <button className="btn-secondary btn-sm" onClick={() => setIsConfigureModalOpen(true)} style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Settings size={16} /> Ansicht konfigurieren
               </button>
@@ -415,15 +425,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
               <th className="sticky-col student-header">
                 <div className="header-content">
                   <div className="header-level-1">SCHÜLER</div>
-                  <div className="header-level-2 action-row">
-                    <button 
-                      className="btn-header-action" 
-                      onClick={() => setIsCourseSettingsModalOpen(true)}
-                      title="Kurs-Einstellungen"
-                    >
-                      <Info size={14} />
-                    </button>
-                  </div>
+                  <div className="header-level-2 action-row"></div>
                 </div>
               </th>
               {visibleColumns.map(col => {
@@ -544,6 +546,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                       <span className="student-number">{index + 1}</span>
                       <span className="student-lastname">{student.lastName}</span>
                       <span className="student-firstname">{student.firstName}</span>
+                      <button 
+                        className="btn-student-pdf"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          exportStudentReportPDF(student, course, grades, visibleColumns);
+                        }}
+                        title={`PDF-Leistungsdatenblatt für ${student.firstName} ${student.lastName} herunterladen`}
+                      >
+                        <FileText size={13} />
+                      </button>
                       {student.photoBase64 && (
                         <div className="student-avatar-tooltip">
                           <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
@@ -640,12 +652,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onSave={handleConfigureColumns}
       />
 
-      <CourseSettingsModal 
-        isOpen={isCourseSettingsModalOpen}
-        onClose={() => setIsCourseSettingsModalOpen(false)}
-        course={course}
-        onSave={handleUpdateCourseSettings}
-      />
+
 
       <TrendSettingsModal 
         isOpen={isTrendSettingsModalOpen}
@@ -655,7 +662,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         grades={grades}
         courseId={course.id}
         roundingRule={course.roundingRule || 'commercial'}
-        onSave={(updatedCols) => handleUpdateCourseSettings({ columns: updatedCols })}
+        onSave={(updatedCols, rule) => handleUpdateCourseSettings({ columns: updatedCols, roundingRule: rule })}
         showDialog={showDialog}
       />
 
@@ -666,6 +673,18 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           onClose={() => setBreakdownData(null)}
         />
       )}
+
+      <PDFColumnSelectModal
+        isOpen={isPDFColumnSelectModalOpen}
+        onClose={() => setIsPDFColumnSelectModalOpen(false)}
+        columns={course.columns}
+        course={course}
+        onConfirm={(selectedColIds, includeTrend) => {
+          const selectedColumns = course.columns.filter(col => selectedColIds.includes(col.id));
+          exportMatrixPDF(course, students, grades, selectedColumns, includeTrend);
+          setIsPDFColumnSelectModalOpen(false);
+        }}
+      />
 
       <DialogModal 
         isOpen={dialogConfig.isOpen}
@@ -735,41 +754,7 @@ const CalculationBreakdown = ({ studentName, breakdown, onClose }: { studentName
   );
 };
 
-const CourseSettingsModal = ({ isOpen, onClose, course, onSave }: { isOpen: boolean, onClose: () => void, course: Course, onSave: (data: Partial<Course>) => void }) => {
-  const [roundingRule, setRoundingRule] = useState<Course['roundingRule']>(course.roundingRule || 'commercial');
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="modal-overlay">
-      <div className="modal-card" style={{ maxWidth: '400px' }}>
-        <div className="modal-header">
-          <h3>Kurs-Einstellungen: {course.name}</h3>
-          <button className="btn-icon" onClick={onClose}><XIcon size={20} /></button>
-        </div>
-        <div className="modal-body p-8">
-          <div className="form-group">
-            <label className="form-label">Globale Rundungsregel (Trend)</label>
-            <select 
-              className="form-input" 
-              value={roundingRule}
-              onChange={e => setRoundingRule(e.target.value as any)}
-            >
-              <option value="commercial">Kaufmännisch (Standard)</option>
-              <option value="studentFriendly">Schülerfreundlich (Aufrunden)</option>
-            </select>
-            <p className="field-hint">Beeinflusst, wie der Live-Trend berechnet wird.</p>
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
-          <button className="btn-primary" onClick={() => onSave({ roundingRule })}>Speichern</button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
 
 const TrendSettingsModal = ({ 
   isOpen, 
@@ -789,12 +774,13 @@ const TrendSettingsModal = ({
   grades: Record<string, Record<string, Grade>>,
   courseId: string,
   roundingRule: 'commercial' | 'studentFriendly',
-  onSave: (updatedCols: CourseEntry[]) => void,
+  onSave: (updatedCols: CourseEntry[], roundingRule: 'commercial' | 'studentFriendly') => void,
   showDialog: (config: any) => void
 }) => {
   const [localColumns, setLocalColumns] = useState<CourseEntry[]>([]);
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [localRoundingRule, setLocalRoundingRule] = useState<'commercial' | 'studentFriendly'>(roundingRule);
 
   useEffect(() => {
     if (isOpen) {
@@ -820,8 +806,9 @@ const TrendSettingsModal = ({
       }
       setLocalColumns(initialCols);
       setNewMilestoneTitle('');
+      setLocalRoundingRule(roundingRule);
     }
-  }, [isOpen, columns]);
+  }, [isOpen, columns, roundingRule]);
 
   if (!isOpen) return null;
 
@@ -861,7 +848,7 @@ const TrendSettingsModal = ({
 
       // 2. Noten für alle Schüler generieren (Snapshot)
       const updates = students.map(student => {
-        const trend = calculateAverage(student.id, localColumns, grades, undefined, roundingRule);
+        const trend = calculateAverage(student.id, localColumns, grades, undefined, localRoundingRule);
         return {
           studentId: student.id,
           columnId: newColumnId,
@@ -881,7 +868,7 @@ const TrendSettingsModal = ({
         type: 'success',
         isAlert: true
       });
-      onSave(updatedColumns); // Triggert Update in der Matrix
+      onSave(updatedColumns, localRoundingRule); // Triggert Update in der Matrix
       onClose();
     } catch (err) {
       console.error("Fehler beim Erstellen des Snapshots:", err);
@@ -992,7 +979,29 @@ const TrendSettingsModal = ({
             </div>
           </div>
 
-          <div className="snapshot-section" style={{ marginTop: '32px', paddingTop: '24px', borderTop: '2px dashed var(--border-color)' }}>
+          {/* Rundungsregel */}
+          <div className="rounding-section" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '2px dashed var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <Info size={18} className="text-primary" />
+              <h4 style={{ margin: 0, fontSize: '14px' }}>Globale Rundungsregel</h4>
+            </div>
+            <div className="form-group">
+              <select 
+                className="form-input" 
+                value={localRoundingRule}
+                onChange={e => setLocalRoundingRule(e.target.value as any)}
+                style={{ width: '100%' }}
+              >
+                <option value="commercial">Kaufmännisch (Standard)</option>
+                <option value="studentFriendly">Schülerfreundlich (Aufrunden)</option>
+              </select>
+              <p className="field-hint" style={{ marginTop: '6px' }}>
+                Beeinflusst, wie der Live-Trend und Meilenstein-Vorschläge berechnet werden.
+              </p>
+            </div>
+          </div>
+
+          <div className="snapshot-section" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '2px dashed var(--border-color)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <TrendingUp size={18} className="text-primary" />
               <h4 style={{ margin: 0, fontSize: '14px' }}>Snapshot erstellen</h4>
@@ -1022,7 +1031,7 @@ const TrendSettingsModal = ({
         </div>
         <div className="modal-footer">
           <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
-          <button className="btn-primary" onClick={() => onSave(localColumns)} disabled={isProcessing}>Gewichtung speichern</button>
+          <button className="btn-primary" onClick={() => onSave(localColumns, localRoundingRule)} disabled={isProcessing}>Speichern</button>
         </div>
       </div>
     </div>,
@@ -1550,6 +1559,139 @@ const PresenceEntryModal = ({ position, onSave, onDelete, onClose, entry }: { po
               <Trash2 size={12} /> Eintrag löschen
             </button>
           </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+const PDFColumnSelectModal = ({
+  isOpen,
+  onClose,
+  columns,
+  course,
+  onConfirm
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  columns: CourseEntry[];
+  course: Course;
+  onConfirm: (selectedColIds: string[], includeTrend: boolean) => void;
+}) => {
+  const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
+  const [includeTrend, setIncludeTrend] = useState(course.showTrend !== false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const initial: Record<string, boolean> = {};
+      columns.forEach(col => {
+        initial[col.id] = col.isVisible !== false;
+      });
+      setSelectedIds(initial);
+      setIncludeTrend(course.showTrend !== false);
+    }
+  }, [isOpen, columns, course.showTrend]);
+
+  if (!isOpen) return null;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleSelectAll = () => {
+    const updated: Record<string, boolean> = {};
+    columns.forEach(col => {
+      updated[col.id] = true;
+    });
+    setSelectedIds(updated);
+  };
+
+  const handleDeselectAll = () => {
+    const updated: Record<string, boolean> = {};
+    columns.forEach(col => {
+      updated[col.id] = false;
+    });
+    setSelectedIds(updated);
+  };
+
+  const handleConfirm = () => {
+    const selected = columns
+      .filter(col => selectedIds[col.id])
+      .map(col => col.id);
+    onConfirm(selected, includeTrend);
+  };
+
+  return createPortal(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Spalten für PDF-Export auswählen</h3>
+          <button className="btn-icon" onClick={onClose}><XIcon size={20} /></button>
+        </div>
+        <div className="modal-body p-8">
+          <p className="field-hint" style={{ marginBottom: '12px' }}>
+            Wählen Sie aus, welche Beurteilungen in dem exportierten PDF enthalten sein sollen:
+          </p>
+          
+          <div className="pdf-selection-toolbar" style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <button type="button" className="btn-secondary btn-sm" onClick={handleSelectAll} style={{ width: 'auto', padding: '4px 8px', fontSize: '11px', marginTop: 0 }}>
+              Alle auswählen
+            </button>
+            <button type="button" className="btn-secondary btn-sm" onClick={handleDeselectAll} style={{ width: 'auto', padding: '4px 8px', fontSize: '11px', marginTop: 0 }}>
+              Auswahl aufheben
+            </button>
+          </div>
+
+          <div className="pdf-columns-list" style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '300px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px', marginBottom: '12px' }}>
+            {columns.map(col => (
+              <label 
+                key={col.id} 
+                className="pdf-column-checkbox-row"
+              >
+                <input 
+                  type="checkbox" 
+                  checked={!!selectedIds[col.id]} 
+                  onChange={() => toggleSelect(col.id)} 
+                />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600' }}>{col.title}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                    {col.date ? formatDate(col.date) : 'Kein Datum'}
+                  </span>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {course.showTrend !== false && (
+            <label 
+              className="pdf-column-checkbox-row"
+              style={{ borderTop: '1px solid var(--border-color)', marginTop: '8px', paddingTop: '8px', cursor: 'pointer' }}
+            >
+              <input 
+                type="checkbox" 
+                checked={includeTrend} 
+                onChange={() => setIncludeTrend(!includeTrend)} 
+              />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-color)' }}>Gesamt-Trend</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                  Berechnete Endnote im PDF anzeigen
+                </span>
+              </div>
+            </label>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
+          <button 
+            className="btn-primary" 
+            onClick={handleConfirm}
+            disabled={!Object.values(selectedIds).some(v => v)}
+          >
+            PDF generieren
+          </button>
         </div>
       </div>
     </div>,

@@ -217,12 +217,12 @@ Für alle automatischen Berechnungen (Trend & Meilensteine) gilt eine **zentrale
 *   **Schülerfreundlich:** Der Prozentwert wird **immer auf die nächste ganze Zahl aufgerundet** (`Math.ceil`), um im Zweifelsfall die bessere Note zu ermöglichen (In dubio pro reo).
 
 **Konfiguration:**
-Die Rundungsregel wird ausschließlich über den Info-Button im Header der Schüler-Spalte (Kurs-Einstellungen) definiert und gilt konsistent für den Live-Trend sowie alle Meilenstein-Vorschläge.
+Die Rundungsregel wird direkt im Einstellungsmodal der Trend-Spalte konfiguriert und gilt konsistent für den Live-Trend sowie alle Meilenstein-Vorschläge.
 
 ### 5.3 TREND-Konfiguration (Zentrales Gewichtungs-Menü)
 Die TREND-Spalte verfügt über ein eigenes Konfigurations-Menü (erreichbar über das Bearbeitungs-Icon im Header).
 
-* **Funktion:** Ermöglicht die zentrale Steuerung aller Gewichtungen (`calcFactor`) und des Berechnungs-Status (`calc`) aller relevanten Spalten an einem Ort.
+* **Funktion:** Ermöglicht die zentrale Steuerung aller Gewichtungen (`calcFactor`), des Berechnungs-Status (`calc`) aller relevanten Spalten sowie der globalen Rundungsregel an einem Ort.
 * **Gekoppelte Schieberegler (100%-Logik):**
     * Das Menü stellt sicher, dass die Summe aller aktiven Gewichtungen (`calc: true`) **immer exakt 100%** ergibt.
     * Wird ein Schieberegler verändert, passen sich alle anderen aktiven Regler automatisch und proportional an, um die 100%-Marke zu halten.
@@ -241,7 +241,36 @@ Im Dialog `Ansicht konfigurieren` oder beim Bearbeiten einer Spalte (`Edit-Icon`
 * **Gewichtung (`calcFactor`):** Definition des Einflusses in Prozent.
 * **Sichtbarkeit:** Ausblenden von Spalten, ohne die Daten zu löschen.
 
+## 7. PDF-Export (Option A - Vektor-Export)
+Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner Schüler-Datenblätter als hochwertige, druckfertige PDF-Dokumente im Vektorformat via `@react-pdf/renderer`.
+
+### 7.1 Gesamt-Matrix PDF-Export
+* **Aktion:** Ein Klick auf den Button `PDF Export` (mit Datei-Icon, Stil: Sekundär) in der Kopfzeile der Matrix.
+* **Interaktion (Vorauswahl-Dialog):** Vor der PDF-Generierung öffnet sich ein elegantes Modal-Dialogfenster ("Spalten für PDF-Export auswählen"). 
+    * Im Dialog werden alle existierenden Beurteilungsspalten des Kurses (sowohl aktuell in der GUI sichtbare als auch ausgeblendete Spalten) als Liste mit Checkboxen angezeigt.
+    * Die Checkboxen sind standardmäßig mit dem aktuellen Sichtbarkeitsstatus der Spalten in der Matrix vorselektiert.
+    * Falls die Trend-Spalte im Kurs aktiv ist, wird eine separate Option angeboten, um den **Gesamt-Trend** im PDF ein- oder auszublenden.
+    * Es gibt Schnellwahl-Aktionen wie "Alle auswählen" und "Auswahl aufheben".
+    * Der Benutzer bestätigt mit dem Button "PDF generieren" (Stil: Primär) oder bricht die Aktion ab.
+* **Layout:** Querformat A4.
+* **Inhalt:**
+    * Briefkopf mit dem Kursnamen, Schuljahr und Datum des Exports. Es werden **keine** Angaben zur Klasse oder Lehrperson aufgedruckt.
+    * Eine saubere, skalierte Tabelle aller aktiven Schüler und der **ausgewählten** Beurteilungsspalten.
+    * Die Tabelle verwendet zur visuellen Strukturierung ein **Streifenmuster (Zebra-Striping)** mit abwechselnden Hintergrundfarben für die Zeilen.
+    * Enthält auch die berechneten Noten/Prozentwerte und die Meilensteine sowie optional die Trend-Spalte (sofern im Auswahldialog ausgewählt).
+    * Kopfzeilen-Texte der Matrix-Spalten werden zur Platzersparnis geneigt oder kompakt dargestellt.
+
+### 7.2 Einzel-Schüler PDF-Export (Datenblatt)
+* **Aktion:** Ein Klick auf ein PDF-Icon (Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`).
+* **Layout:** Hochformat A4.
+* **Inhalt:**
+    * Briefkopf: "Leistungsnachweis", Schulname ("Chronograde School Admin 2026"), Kursname, Schuljahr. Es werden **keine** Angaben zur Klasse oder Lehrperson aufgedruckt.
+    * Schülerdaten: Vorname und Nachname des Schülers sowie das **Profilbild des Schülers (falls vorhanden)**, welches oben rechts im Datenblatt platziert wird.
+    * **Übersicht der Leistungen:** Eine chronologische Liste aller erfassten Leistungen.
+        * Spalten der Liste: Titel der Leistung, Datum, Typ, Bewertung (z.B. Note, Prozent, oder Mitarbeitszeichen `+`/`~`/`-`), sowie die zugehörige Notiz (Kommentar).
+    * **Zusammenfassung:** Die berechneten Meilensteine und der aktuelle gewichtete Live-Trend des Schülers.
+
 ---
 
-## 7. Implementierungshinweise & Testing (gemini.md)
+## 8. Implementierungshinweise & Testing (gemini.md)
 * **Testing der Service-Layer:** Um die oben genannte `serviceFirebase` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollten in Jest zwingend `beforeAll` und `afterAll` Hooks implementiert werden. Dies gewährleistet, dass Testdaten (wie Mock-Schüler oder generierte Noten) vor den Testläufen sauber angelegt und im Nachgang wieder restlos aus der Firestore-Testumgebung gelöscht (Clean-up) werden.

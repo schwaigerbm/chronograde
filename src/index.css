@@ -1754,7 +1754,7 @@ input:checked + .slider:before {
 /* --- STUDENT CELLS IN MATRIX --- */
 .student-cell-content {
   display: grid;
-  grid-template-columns: 20px 110px 1fr;
+  grid-template-columns: 20px 110px 1fr 24px;
   gap: 12px;
   align-items: center;
   width: 100%;
@@ -1781,6 +1781,33 @@ input:checked + .slider:before {
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-muted);
+}
+
+.btn-student-pdf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease-in-out;
+  padding: 0;
+}
+
+.student-cell-content:hover .btn-student-pdf {
+  opacity: 0.4;
+}
+
+.student-cell-content .btn-student-pdf:hover {
+  opacity: 1;
+  background-color: rgba(37, 99, 235, 0.05);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 /* --- STUDENT HOVER AVATAR TOOLTIP --- */
@@ -1842,4 +1869,27 @@ input:checked + .slider:before {
   object-fit: cover;
   border-radius: 6px;
   display: block;
+}
+
+/* --- PDF COLUMN SELECT MODAL --- */
+.pdf-column-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 1px solid transparent;
+}
+
+.pdf-column-checkbox-row:hover {
+  background-color: #f8fafc;
+}
+
+.pdf-column-checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
 }
