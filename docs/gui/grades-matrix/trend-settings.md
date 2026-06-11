@@ -27,6 +27,9 @@ Das Modal ist für eine hohe Informationsdichte und optimale Bildschirmausnutzun
   * Wenn außer $X$ alle anderen aktiven Regler fixiert (gesperrt) sind, kann Regler $X$ nicht verändert werden.
 * **Deaktivierung:** Wird eine Spalte deaktiviert (`calc: false`), wird ihr Lock-Status automatisch aufgehoben.
 * **Persistierung:** Der Fixierungszustand wird im Feld `isLocked` (optionaler boolean) im `CourseEntry`-Datenmodell gespeichert und persistiert, sodass die Sperren beim erneuten Laden wieder zur Verfügung stehen.
+* **Gleichverteilungs-Button (Zentrieren):** Neben dem Schloss-Symbol gibt es eine Schaltfläche (mit dem Waage-Symbol `Scale`), mit der der jeweilige Regler auf den exakten Mittelwert der verbleibenden freien Prozentanteile gesetzt werden kann:
+  $$V_{\text{neu}} = \text{Math.round}(\text{freie Anteile} / \text{Anzahl der unfixierten Regler})$$
+  Die restlichen nicht-fixierten Spalten werden daraufhin proportional normalisiert.
 
 ### 2.2 Globale Rundungsregel
 * Ermöglicht die Auswahl der Rundungsregel für den Trend und alle Meilenstein-Vorschläge:

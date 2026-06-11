@@ -1,7 +1,7 @@
 // src/components/TrendSettingsModal.tsx
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X as XIcon, TrendingUp, Info, Lock, Unlock } from 'lucide-react';
+import { X as XIcon, TrendingUp, Info, Lock, Unlock, Scale } from 'lucide-react';
 import { calculateAverage } from '../lib/averageCalculator';
 import { firebaseService } from '../services/firebaseService';
 import type { CourseEntry, Student, Grade } from '../schema';
@@ -284,6 +284,24 @@ export const TrendSettingsModal = ({
     setLocalColumns(prevCols => prevCols.map(c => c.id === id ? { ...c, isLocked } : c));
   };
 
+  const handleSetEqualShare = (id: string) => {
+    const col = localColumns.find(c => c.id === id);
+    if (!col || !col.calc || lockedColIds[id]) return;
+
+    const active = localColumns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment');
+    const activeLocked = active.filter(a => lockedColIds[a.id]);
+    const sumLocked = activeLocked.reduce((sum, c) => sum + c.calcFactor, 0);
+
+    const remaining = Math.max(0, 100 - sumLocked);
+    const activeUnlocked = active.filter(c => !lockedColIds[c.id]);
+    
+    if (activeUnlocked.length > 0) {
+      const share = Math.round(remaining / activeUnlocked.length);
+      const nextCols = localColumns.map(c => c.id === id ? { ...c, calcFactor: share } : c);
+      setLocalColumns(normalize(nextCols, id, lockedColIds));
+    }
+  };
+
   const activeCount = localColumns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment').length;
 
   return createPortal(
@@ -316,14 +334,26 @@ export const TrendSettingsModal = ({
                         </span>
                         
                         {col.calc && activeCount > 1 && (
-                          <button 
-                            type="button" 
-                            className={`lock-btn ${isLocked ? 'active' : ''}`}
-                            onClick={() => handleToggleLock(col.id)}
-                            title={isLocked ? "Gewichtung entsperren" : "Gewichtung sperren (fixieren)"}
-                          >
-                            {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
-                          </button>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {!isLocked && (
+                              <button 
+                                type="button" 
+                                className="scale-btn"
+                                onClick={() => handleSetEqualShare(col.id)}
+                                title="Gewichtung auf Mittelwert der freien Anteile zentrieren (gleichverteilen)"
+                              >
+                                <Scale size={12} />
+                              </button>
+                            )}
+                            <button 
+                              type="button" 
+                              className={`lock-btn ${isLocked ? 'active' : ''}`}
+                              onClick={() => handleToggleLock(col.id)}
+                              title={isLocked ? "Gewichtung entsperren" : "Gewichtung sperren (fixieren)"}
+                            >
+                              {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>

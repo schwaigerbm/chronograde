@@ -1431,7 +1431,7 @@ input:checked + .slider:before {
   width: 92%;
 }
 
-.lock-btn {
+.lock-btn, .scale-btn {
   background: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-muted);
@@ -1446,10 +1446,16 @@ input:checked + .slider:before {
   padding: 0;
 }
 
-.lock-btn:hover {
+.lock-btn:hover, .scale-btn:hover {
   background-color: var(--border-color);
   color: var(--text-main);
   border-color: #cbd5e1;
+}
+
+.scale-btn:hover {
+  background-color: #eff6ff;
+  color: var(--primary-color);
+  border-color: #bfdbfe;
 }
 
 .lock-btn.active {
