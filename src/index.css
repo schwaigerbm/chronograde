@@ -1425,6 +1425,89 @@ input:checked + .slider:before {
 .font-mono { font-family: monospace; }
 .text-primary { color: var(--primary-color); }
 
+/* --- TrendSettingsModal Lock and Size Styling --- */
+.modal-card.modal-large {
+  max-width: 900px;
+  width: 92%;
+}
+
+.lock-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  padding: 0;
+}
+
+.lock-btn:hover {
+  background-color: var(--border-color);
+  color: var(--text-main);
+  border-color: #cbd5e1;
+}
+
+.lock-btn.active {
+  background-color: #eff6ff; /* Soft blue background */
+  border-color: #bfdbfe; /* Soft blue border */
+  color: var(--primary-color);
+}
+
+.lock-btn.active:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.weight-item input[type="range"] {
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.weight-item input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Split Layout for Trend Settings */
+.trend-settings-split-layout {
+  display: flex;
+  gap: 32px;
+}
+
+.trend-settings-left-col {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trend-settings-right-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-left: 1px solid var(--border-color);
+  padding-left: 32px;
+}
+
+@media (max-width: 768px) {
+  .trend-settings-split-layout {
+    flex-direction: column;
+    gap: 24px;
+  }
+  .trend-settings-right-col {
+    border-left: none;
+    border-top: 1px dashed var(--border-color);
+    padding-left: 0;
+    padding-top: 24px;
+  }
+}
+
 /* --- SETTINGS VIEW --- */
 .settings-content-area {
   padding: 24px;

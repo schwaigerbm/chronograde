@@ -121,7 +121,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Hover über Zelle: Plus-Button erscheint (für Neuanlage).
     * **Mitarbeits-Popup (CollaborationEntryModal):** Klick auf ein bestehendes Zeichen oder den Plus-Button öffnet das Formular.
         * **Zentrierte Ausrichtung:** Das Fenster öffnet sich immer im Zentrum des Bildschirms (als modales Overlay mit abgedunkeltem Hintergrund), um ein Abschneiden am Bildschirmrand (insbesondere bei Schülern am Tabellenende) zu verhindern.
-        * **Schnellauswahl für Kommentare (Zweispaltiges Layout):** Das Modal ist vergrößert. Links befinden sich die Standard-Eingabefelder (Zeichen-Auswahl, manuelle Notiz, Datum). Rechts wird eine Liste der in den Einstellungen hinterlegten vorgefertigten Kommentare für das selektierte Zeichen (+, ~, oder -) angezeigt. Ein Klick auf einen vorgefertigten Kommentar übernimmt den Text direkt in das Notizfeld.
+        * **Schnellauswahl für Kommentare (Zweispaltiges Layout):** Das Modal is vergrößert. Links befinden sich die Standard-Eingabefelder (Zeichen-Auswahl, manuelle Notiz, Datum). Rechts wird eine Liste der in den Einstellungen hinterlegten vorgefertigten Kommentare für das selektierte Zeichen (+, ~, oder -) angezeigt. Ein Klick auf einen vorgefertigten Kommentar übernimmt den Text direkt in das Notizfeld.
         * Pflichtfeld: `Notiz` (z.B. "Lautes Schwätzen") muss eingegeben werden.
         * Optional: `Datum` kann angepasst werden (Standard: aktuelles Datum).
     * Darstellung in der Zelle (Detail):
@@ -180,7 +180,6 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * **Visualisierung:** Eine manuell geänderte Note wird mit einem kleinen "Pencil-Icon" markiert, um sie vom reinen Rechenwert zu unterscheiden.
 
 ## 5. Sticky Summary Column (Live-Trend)
-Zusätzlich zu den Meilenstein-Spalten gibt es am rechten Rand der Matrix eine optional einblendbare (sticky) Auswertungsspalte.
 
 ### 5.1 Berechnungs-Philosophie: Relative Gewichtung
 Die Berechnung des Durchschnitts folgt dem Prinzip der **relativen Gewichtung**. Der Einfluss (`calcFactor`) einer Spalte wird immer im Verhältnis zur Gesamtsumme aller Gewichtungen berechnet.
@@ -208,7 +207,7 @@ Die Berechnung des Durchschnitts folgt dem Prinzip der **relativen Gewichtung**.
 
 * **Visualisierung:**
     * Bleibt beim horizontalen Scrollen immer am rechten Rand fixiert (Sticky).
-* **Visuelles Feedback:** Ein Klick auf die Zelle in der Summary-Spalte öffnet ein Popover mit einem **Calculation-Breakdown**.
+* **Visuelles Feedback:** Ein Klick auf die Zelle in der Summary-Spalte öffnet unaufdringlich einen Calculation Breakdown.
 
 ### 5.2 Rundungsregeln
 Für alle automatischen Berechnungen (Trend & Meilensteine) gilt eine **zentrale Rundungsregel**, die global für den Kurs festgelegt wird.
@@ -221,16 +220,7 @@ Die Rundungsregel wird direkt im Einstellungsmodal der Trend-Spalte konfiguriert
 
 ### 5.3 TREND-Konfiguration (Zentrales Gewichtungs-Menü)
 Die TREND-Spalte verfügt über ein eigenes Konfigurations-Menü (erreichbar über das Bearbeitungs-Icon im Header).
-
-* **Funktion:** Ermöglicht die zentrale Steuerung aller Gewichtungen (`calcFactor`), des Berechnungs-Status (`calc`) aller relevanten Spalten sowie der globalen Rundungsregel an einem Ort.
-* **Gekoppelte Schieberegler (100%-Logik):**
-    * Das Menü stellt sicher, dass die Summe aller aktiven Gewichtungen (`calc: true`) **immer exakt 100%** ergibt.
-    * Wird ein Schieberegler verändert, passen sich alle anderen aktiven Regler automatisch und proportional an, um die 100%-Marke zu halten.
-* **Snapshot-Funktion (Trend fixieren):**
-    * Es ist möglich, den aktuell berechneten TREND-Wert als feste Note in einen **neuen Meilenstein** (z.B. "Note Elternsprechtag") zu überführen.
-    * Dieser Vorgang erstellt automatisch eine neue Spalte vom Typ `calculated`, setzt bei allen Schülern den Meilenstein auf den aktuellen Rechenwert und markiert diesen als "manuell überschrieben" (`isOverridden: true`).
-* **Synchronisation (Zwei-Wege-Edit):**
-    * Änderungen in diesem zentralen Menü aktualisieren sofort die Einstellungen der einzelnen Beurteilungsspalten.
+Die detaillierte Benutzeroberfläche und Funktionsweise (inklusive Gewichtungsfixierung und Layout) ist im eigenen Pflichtenheft [Spezifikation: Trend-Konfiguration](file:///c:/Users/user/Documents/chronograde/docs/gui/grades-matrix/trend-settings.md) beschrieben.
 
 ## 6. Spalten-Management & Konfiguration
 Im Dialog `Ansicht konfigurieren` oder beim Bearbeiten einer Spalte (`Edit-Icon` in Ebene 2) können folgende Parameter jederzeit angepasst werden:

@@ -23,6 +23,7 @@ export interface CourseEntry {
   isColorEnabled?: boolean; // Farbmodus aktiv
   showDateInHeader?: boolean; // Datum im Header anzeigen
   isVisible?: boolean;    // Spalte in der Matrix sichtbar (Standard: true)
+  isLocked?: boolean;     // Gewichtung gesperrt/fixiert
   subEntries?: CourseEntry[]; // Untergeordnete Einträge
   priority: number;       // int: Zum chronologischen oder manuellen Ordnen der Einträge
 }
