@@ -41,6 +41,13 @@ Das Modal ist für eine hohe Informationsdichte und optimale Bildschirmausnutzun
 * Berechnet den Snapshot-Trend für alle Schüler auf Basis der im Modal gewählten Spaltengewichtungen und der ausgewählten Rundungsregel.
 * Erstellt die Spalte in Firestore und befüllt die Noten für alle Schüler als überschriebene Meilenstein-Werte.
 
+### 2.4 Trend-Farbmodus (Heatmap)
+* Ermöglicht das Ein- und Ausschalten des Farbmodus (Heatmap) für die Trend-Spalte.
+* **Option:** Ein Toggle-Schalter (Switch) "Farbmodus (Heatmap)" in der rechten Spalte des Modals.
+* **Verhalten:**
+  * Wenn aktiv, werden die Hintergrundfarben der Live-Trend-Zellen in der Matrix basierend auf der berechneten Note (1 bis 5) eingefärbt (analog zu den regulären Notenspalten).
+  * Wenn inaktiv, wird keine Hintergrundfarbe in den Trend-Zellen angezeigt (nur Text).
+
 ## 3. Komponentenschnittstelle (TypeScript-Props)
 
 Die Komponente wird als eigenständige Datei `src/components/TrendSettingsModal.tsx` realisiert.
@@ -56,9 +63,11 @@ export interface TrendSettingsModalProps {
   grades: Record<string, Record<string, Grade>>;
   courseId: string;
   roundingRule: 'commercial' | 'studentFriendly';
+  isTrendColorEnabled: boolean;
   onSave: (
     updatedCols: CourseEntry[], 
-    roundingRule: 'commercial' | 'studentFriendly'
+    roundingRule: 'commercial' | 'studentFriendly',
+    isTrendColorEnabled: boolean
   ) => void;
   showDialog: (config: {
     isOpen?: boolean;

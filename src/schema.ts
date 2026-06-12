@@ -38,6 +38,7 @@ export interface Course {
   archived: boolean;   // true = wird im Dashboard nicht mehr angezeigt
   showTrend?: boolean; // Sichtbarkeit der Sticky TREND Spalte
   roundingRule?: 'commercial' | 'studentFriendly'; // Globale Rundungsregel für den Trend
+  isTrendColorEnabled?: boolean; // Farbmodus (Heatmap) für den Trend aktiv
   columns: CourseEntry[]; 
   enrolledStudents: string[]; // Liste der Schüler-IDs (Enrollment)
 }

@@ -372,7 +372,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           <span>{col.title}</span>
                         </div>
                         
-                        {col.showDateInHeader !== false && col.type !== 'presenceSum' && (
+                        {col.showDateInHeader !== false && col.type !== 'presenceSum' && col.type !== 'collaborationSum' && (
                           <div className="horizontal-date">
                             {col.type === 'calculated' ? (col.cutoffDate ? formatDate(col.cutoffDate) : '') : formatDate(col.date, false)}
                           </div>
@@ -528,17 +528,36 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                       </td>
                     );
                   })}
-                  {course.showTrend !== false && (
-                    <td 
-                      className="sticky-col-right summary-cell"
-                      onClick={() => setBreakdownData({ studentName: `${student.firstName} ${student.lastName}`, data: liveSummary })}
-                    >
-                      <div className="summary-content">
-                        <span className="summary-grade">{liveSummary.grade || '-'}</span>
-                        {liveSummary.percent !== null && <span className="summary-percent">{liveSummary.percent}%</span>}
-                      </div>
-                    </td>
-                  )}
+                  {course.showTrend !== false && (() => {
+                    const trendHeatmapStyle = course.isTrendColorEnabled && liveSummary.grade
+                      ? getHeatmapStyle(
+                          { calcType: 'grade', isColorEnabled: true } as any, 
+                          { value: liveSummary.grade }
+                        )
+                      : {};
+                    return (
+                      <td 
+                        className="sticky-col-right summary-cell"
+                        onClick={() => setBreakdownData({ studentName: `${student.firstName} ${student.lastName}`, data: liveSummary })}
+                        style={trendHeatmapStyle}
+                      >
+                        <div className="summary-content">
+                          <span className="summary-grade" style={{ color: trendHeatmapStyle.color }}>{liveSummary.grade || '-'}</span>
+                          {liveSummary.percent !== null && (
+                            <span 
+                              className="summary-percent" 
+                              style={{ 
+                                color: trendHeatmapStyle.color ? 'inherit' : undefined, 
+                                opacity: trendHeatmapStyle.color ? 0.9 : undefined 
+                              }}
+                            >
+                              {liveSummary.percent}%
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })()}
                 </tr>
               );
             })}
@@ -591,7 +610,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         grades={grades}
         courseId={course.id}
         roundingRule={course.roundingRule || 'commercial'}
-        onSave={(updatedCols, rule) => handleUpdateCourseSettings({ columns: updatedCols, roundingRule: rule })}
+        isTrendColorEnabled={!!course.isTrendColorEnabled}
+        onSave={(updatedCols, rule, colorEnabled) => handleUpdateCourseSettings({ columns: updatedCols, roundingRule: rule, isTrendColorEnabled: colorEnabled })}
         showDialog={showDialog}
       />
 

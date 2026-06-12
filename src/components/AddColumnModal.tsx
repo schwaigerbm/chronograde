@@ -55,7 +55,7 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
       calc: isCalcAllowed ? calc : false,
       calcFactor: isCalcAllowed ? calcFactor : 0,
       calcType: type === 'collaborationSum' ? 'percent' : calcType,
-      showDateInHeader: type === 'groupAssignment' ? false : showDateInHeader,
+      showDateInHeader: (type === 'groupAssignment' || type === 'collaborationSum' || type === 'presenceSum') ? false : showDateInHeader,
       priority: Date.now(),
     };
 

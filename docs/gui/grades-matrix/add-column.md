@@ -25,6 +25,7 @@ Jeder der 5 Spaltentypen wird als eigenständige Karte (`.type-card`) gerendert:
    * Symbol: `Award` (Auszeichnung)
    * Titel: Mitarbeit
    * Beschreibung: Systematische Mitarbeit erfassen (+, ~, -).
+   * Besonderheit: Im Tabellenkopf für die Mitarbeit wird kein Datum angezeigt (showDateInHeader: false).
 4. **Anwesenheit (`presenceSum`):**
    * Symbol: `CalendarCheck` (Kalender)
    * Titel: Anwesenheit
@@ -44,7 +45,7 @@ Jeder der 5 Spaltentypen wird als eigenständige Karte (`.type-card`) gerendert:
 ## 2. Funktionalität
 
 ### 2.1 Ablaufsteuerung (Wizard-Schritte)
-* **Gruppe, Mitarbeit, Anwesenheit:** Erfordern keine weiteren Angaben in Schritt 2. Beim Klick auf "Speichern" in Schritt 1 wird die Spalte direkt mit Standardwerten (z.B. Titel "Mitarbeit", Gewichtung `0%`, etc.) erstellt und das Modal geschlossen.
+* **Gruppe, Mitarbeit, Anwesenheit:** Erfordern keine weiteren Angaben in Schritt 2. Beim Klick auf "Speichern" in Schritt 1 wird die Spalte direkt mit Standardwerten (z.B. Titel "Mitarbeit", Gewichtung `0%`, etc.) erstellt, besitzt kein Datum im Header und das Modal geschlossen.
 * **Manueller Name, Meilenstein:** Ein Klick auf "Weiter" führt zu Schritt 2 zur detaillierten Dateneingabe.
 
 ### 2.2 Schritt 2: Formular & Validierung

@@ -14,7 +14,12 @@ export interface TrendSettingsModalProps {
   grades: Record<string, Record<string, Grade>>;
   courseId: string;
   roundingRule: 'commercial' | 'studentFriendly';
-  onSave: (updatedCols: CourseEntry[], roundingRule: 'commercial' | 'studentFriendly') => void;
+  isTrendColorEnabled: boolean;
+  onSave: (
+    updatedCols: CourseEntry[], 
+    roundingRule: 'commercial' | 'studentFriendly',
+    isTrendColorEnabled: boolean
+  ) => void;
   showDialog: (config: any) => void;
 }
 
@@ -26,6 +31,7 @@ export const TrendSettingsModal = ({
   grades, 
   courseId,
   roundingRule,
+  isTrendColorEnabled,
   onSave,
   showDialog
 }: TrendSettingsModalProps) => {
@@ -33,6 +39,7 @@ export const TrendSettingsModal = ({
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [localRoundingRule, setLocalRoundingRule] = useState<'commercial' | 'studentFriendly'>(roundingRule);
+  const [localIsTrendColorEnabled, setLocalIsTrendColorEnabled] = useState<boolean>(isTrendColorEnabled);
   const [lockedColIds, setLockedColIds] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -60,6 +67,7 @@ export const TrendSettingsModal = ({
       setLocalColumns(initialCols);
       setNewMilestoneTitle('');
       setLocalRoundingRule(roundingRule);
+      setLocalIsTrendColorEnabled(isTrendColorEnabled);
       
       const initialLocks: Record<string, boolean> = {};
       initialCols.forEach(c => {
@@ -69,7 +77,7 @@ export const TrendSettingsModal = ({
       });
       setLockedColIds(initialLocks);
     }
-  }, [isOpen, columns, roundingRule]);
+  }, [isOpen, columns, roundingRule, isTrendColorEnabled]);
 
   if (!isOpen) return null;
 
@@ -222,7 +230,7 @@ export const TrendSettingsModal = ({
         type: 'success',
         isAlert: true
       });
-      onSave(updatedColumns, localRoundingRule); // Triggert Update in der Matrix
+      onSave(updatedColumns, localRoundingRule, localIsTrendColorEnabled); // Triggert Update in der Matrix
       onClose();
     } catch (err) {
       console.error("Fehler beim Erstellen des Snapshots:", err);
@@ -396,6 +404,28 @@ export const TrendSettingsModal = ({
               </div>
             </div>
 
+            {/* Farbmodus (Heatmap) */}
+            <div className="color-section" style={{ marginTop: 0, paddingTop: '24px', borderTop: '2px dashed var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Info size={16} className="text-primary" />
+                <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>FARBMODUS (HEATMAP)</h4>
+              </div>
+              <div className="toggle-box" style={{ margin: 0, padding: '12px 16px' }}>
+                <div>
+                  <div className="option-label" style={{ fontSize: '13px' }}>Trend einfärben</div>
+                  <div className="option-desc" style={{ fontSize: '11px' }}>Zellen basierend auf Trendnote einfärben</div>
+                </div>
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={localIsTrendColorEnabled} 
+                    onChange={() => setLocalIsTrendColorEnabled(!localIsTrendColorEnabled)} 
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+            </div>
+
             {/* Snapshot */}
             <div className="snapshot-section" style={{ marginTop: 0, paddingTop: '24px', borderTop: '2px dashed var(--border-color)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -435,7 +465,7 @@ export const TrendSettingsModal = ({
                 ...c,
                 isLocked: c.calc ? !!lockedColIds[c.id] : false
               }));
-              onSave(sanitizedCols, localRoundingRule);
+              onSave(sanitizedCols, localRoundingRule, localIsTrendColorEnabled);
             }} 
             disabled={isProcessing}
           >

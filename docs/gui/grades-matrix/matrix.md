@@ -87,6 +87,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 ### Verzweigung C: Mitarbeit (`collaborationSum`)
 * **Konzept:** Systematische Erfassung von Stundenleistungen. In der Kompaktansicht wird der Prozentwert angezeigt.
 * **Spalten-Kopfzeile Interaktionen:**
+    * Im Tabellenkopf für die Mitarbeit wird kein Datum angezeigt.
     * Unter der Beschriftung befindet sich ein **"+" Button** (Ebene 2): Öffnet ein Modal zur Mitarbeit-Schnellerfassung für die gesamte Gruppe.
     * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 
@@ -207,6 +208,7 @@ Die Berechnung des Durchschnitts folgt dem Prinzip der **relativen Gewichtung**.
 
 * **Visualisierung:**
     * Bleibt beim horizontalen Scrollen immer am rechten Rand fixiert (Sticky).
+    * Falls in der Trend-Konfiguration der Farbmodus (Heatmap) aktiviert ist, wird die Zelle basierend auf der berechneten Note (1 = Dunkelgrün, 2 = Hellgrün, 3 = Weiß, 4 = Leicht rot, 5 = Dunkelrot) eingefärbt.
 * **Visuelles Feedback:** Ein Klick auf die Zelle in der Summary-Spalte öffnet unaufdringlich einen Calculation Breakdown.
 
 ### 5.2 Rundungsregeln

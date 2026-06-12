@@ -41,7 +41,7 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
       calc: isCalcAllowed ? calc : false,
       calcFactor: isCalcAllowed ? calcFactor : 0,
       isColorEnabled,
-      showDateInHeader: column.type === 'groupAssignment' ? false : showDateInHeader,
+      showDateInHeader: (column.type === 'groupAssignment' || column.type === 'collaborationSum' || column.type === 'presenceSum') ? false : showDateInHeader,
     };
 
     if (column.type === 'calculated') {
