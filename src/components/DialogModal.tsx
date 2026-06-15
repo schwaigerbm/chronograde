@@ -62,9 +62,13 @@ export const DialogModal = ({
           {message}
         </p>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', width: '100%' }}>
           {!isAlert && (
-            <button className="btn-secondary" onClick={onClose} style={{ minWidth: '100px' }}>
+            <button 
+              className="btn-secondary" 
+              onClick={onClose} 
+              style={{ flex: 1, height: '40px', padding: '0 16px', fontSize: '14px', marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
               {cancelLabel}
             </button>
           )}
@@ -75,7 +79,14 @@ export const DialogModal = ({
               onClose();
             }}
             style={{ 
-              minWidth: '100px', 
+              flex: 1, 
+              height: '40px', 
+              padding: '0 16px', 
+              fontSize: '14px', 
+              marginTop: 0, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
               backgroundColor: type === 'danger' ? 'var(--danger-color)' : undefined,
               borderColor: type === 'danger' ? 'var(--danger-color)' : undefined
             }}

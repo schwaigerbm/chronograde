@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Sparkles } from 'lucide-react';
-import type { CourseEntry, SubTask } from '../schema';
+import { X, Save, Plus, Trash2, Sparkles, BarChart3 } from 'lucide-react';
+import type { CourseEntry, SubTask, Student, GradesState } from '../schema';
+import { EvaluationStatisticsModal } from './EvaluationStatisticsModal';
 
 interface EditColumnModalProps {
   isOpen: boolean;
   onClose: () => void;
   column: CourseEntry | null;
   onSave: (updatedColumn: CourseEntry) => void;
+  students: Student[];
+  grades: GradesState;
 }
 
-export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnModalProps) => {
+export const EditColumnModal = ({ 
+  isOpen, 
+  onClose, 
+  column, 
+  onSave,
+  students = [],
+  grades = {}
+}: EditColumnModalProps) => {
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [cutoffDate, setCutoffDate] = useState('');
@@ -100,6 +111,19 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
     onClose();
   };
 
+  const gradedCount = column && column.type === 'evaluation' 
+    ? students.filter(s => grades[s.id]?.[column.id]?.value !== undefined).length 
+    : 0;
+
+  const totalStudentsCount = students.length;
+
+  const averageGradePreview = column && column.type === 'evaluation' && gradedCount > 0
+    ? (students.reduce((sum, s) => {
+        const val = parseFloat(grades[s.id]?.[column.id]?.value?.toString() || '0');
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0) / gradedCount).toFixed(2)
+    : '-';
+
   return (
     <div className="modal-overlay">
       <div className={`modal-card ${column.type === 'evaluation' ? 'modal-large' : ''}`} style={column.type !== 'evaluation' ? { maxWidth: '400px' } : undefined}>
@@ -168,6 +192,47 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
                       />
                       <span className="slider"></span>
                     </label>
+                  </div>
+                </div>
+
+                {/* Sektion Statistik */}
+                <div className="evaluation-section">
+                  <h4 className="evaluation-section-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <BarChart3 size={16} /> Statistik
+                  </h4>
+                  <div style={{ padding: '8px 0' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                      <div style={{ flex: 1, minWidth: '100px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Erfasst</div>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', marginTop: '4px' }}>
+                          {gradedCount} <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-muted)' }}>/ {totalStudentsCount}</span>
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: '100px', background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Ø Note</div>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f766e', marginTop: '4px' }}>
+                          {averageGradePreview}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      className="btn-primary"
+                      onClick={() => setIsStatsOpen(true)}
+                      style={{ 
+                        width: '100%', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: '8px', 
+                        padding: '10px 16px',
+                        borderRadius: '8px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      <BarChart3 size={16} /> Analyse & Verteilung (Vollbild)
+                    </button>
                   </div>
                 </div>
               </div>
@@ -705,6 +770,16 @@ export const EditColumnModal = ({ isOpen, onClose, column, onSave }: EditColumnM
           </button>
         </div>
       </div>
+
+      {column && column.type === 'evaluation' && (
+        <EvaluationStatisticsModal
+          isOpen={isStatsOpen}
+          onClose={() => setIsStatsOpen(false)}
+          column={column}
+          students={students}
+          grades={grades}
+        />
+      )}
     </div>
   );
 };

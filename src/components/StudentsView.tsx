@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Wrench, Trash2, X, AlertTriangle, User, Camera } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Plus, Wrench, Trash2, AlertTriangle } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import type { Student } from '../schema';
-import { compressImageToBase64 } from '../lib/utils';
+import { StudentEditModal } from './StudentEditModal';
 
 export const StudentsView = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -47,27 +47,29 @@ export const StudentsView = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentStudent?.firstName || !currentStudent?.lastName) return;
+  const handleSaveStudent = async (studentData: Partial<Student>, shouldContinue: boolean) => {
+    if (!studentData.firstName || !studentData.lastName) return;
 
     try {
-      if (currentStudent.id) {
-        await firebaseService.updateStudent(currentStudent.id, {
-          firstName: currentStudent.firstName,
-          lastName: currentStudent.lastName,
-          photoBase64: currentStudent.photoBase64 || ""
+      if (studentData.id) {
+        await firebaseService.updateStudent(studentData.id, {
+          firstName: studentData.firstName,
+          lastName: studentData.lastName,
+          photoBase64: studentData.photoBase64 || ""
         });
       } else {
         await firebaseService.addStudent({
-          firstName: currentStudent.firstName,
-          lastName: currentStudent.lastName,
-          classId: currentStudent.classId || 'General',
-          photoBase64: currentStudent.photoBase64 || ""
+          firstName: studentData.firstName,
+          lastName: studentData.lastName,
+          classId: studentData.classId || 'General',
+          photoBase64: studentData.photoBase64 || ""
         });
       }
-      setIsEditModalOpen(false);
-      setCurrentStudent(null);
+      
+      if (!shouldContinue) {
+        setIsEditModalOpen(false);
+        setCurrentStudent(null);
+      }
     } catch (error) {
       console.error("Error saving student:", error);
     }
@@ -144,88 +146,16 @@ export const StudentsView = () => {
       </div>
 
       {/* Edit/Add Modal */}
-      {isEditModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3>{currentStudent?.id ? 'Schüler bearbeiten' : 'Schüler hinzufügen'}</h3>
-              <button className="btn-icon" onClick={() => setIsEditModalOpen(false)}><X size={20} /></button>
-            </div>
-            <form onSubmit={handleSave}>
-              <div className="modal-body">
-                {/* Profilbild Upload Sektion */}
-                <div className="student-photo-section" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
-                  <div className="avatar-preview-container" style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {currentStudent?.photoBase64 ? (
-                      <>
-                        <img src={currentStudent.photoBase64} alt="Vorschau" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <button 
-                          type="button" 
-                          onClick={() => setCurrentStudent(prev => ({ ...prev!, photoBase64: "" }))}
-                          style={{ position: 'absolute', top: '2px', right: '2px', backgroundColor: 'rgba(15, 23, 42, 0.6)', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', padding: 0 }}
-                          title="Foto löschen"
-                        >
-                          <X size={10} />
-                        </button>
-                      </>
-                    ) : (
-                      <User size={28} className="text-muted" style={{ color: 'var(--text-muted)' }} />
-                    )}
-                  </div>
-                  
-                  <div className="photo-upload-controls" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label className="btn-secondary btn-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', width: 'fit-content', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '12px', fontWeight: '500' }}>
-                      <Camera size={14} /> Foto auswählen
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            try {
-                              const base64 = await compressImageToBase64(file);
-                              setCurrentStudent(prev => ({ ...prev!, photoBase64: base64 }));
-                            } catch (err) {
-                              console.error("Error compressing image:", err);
-                            }
-                          }
-                        }}
-                        style={{ display: 'none' }}
-                      />
-                    </label>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>JPEG/PNG, wird auto-komprimiert</span>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Vorname</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={currentStudent?.firstName || ''}
-                    onChange={e => setCurrentStudent(prev => ({ ...prev!, firstName: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Nachname</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={currentStudent?.lastName || ''}
-                    onChange={e => setCurrentStudent(prev => ({ ...prev!, lastName: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setIsEditModalOpen(false)}>Abbrechen</button>
-                <button type="submit" className="btn-primary">Speichern</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <StudentEditModal 
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setCurrentStudent(null);
+        }}
+        student={currentStudent}
+        onSave={handleSaveStudent}
+        students={students}
+      />
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
@@ -239,9 +169,21 @@ export const StudentsView = () => {
             <div className="modal-body">
               <p>Wollen Sie den Schüler <strong>{currentStudent?.firstName} {currentStudent?.lastName}</strong> wirklich löschen?</p>
             </div>
-            <div className="modal-footer">
-              <button className="btn-danger" onClick={handleDelete}>Ja</button>
-              <button className="btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>Nein</button>
+            <div className="modal-footer" style={{ display: 'flex', gap: '12px', width: '100%' }}>
+              <button 
+                className="btn-danger" 
+                onClick={handleDelete} 
+                style={{ flex: 1, height: '40px', padding: '0 16px', fontSize: '14px', marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                Ja
+              </button>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setIsDeleteModalOpen(false)} 
+                style={{ flex: 1, height: '40px', padding: '0 16px', fontSize: '14px', marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                Nein
+              </button>
             </div>
           </div>
         </div>

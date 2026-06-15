@@ -37,19 +37,44 @@ Anzeige der Schülerdatensätze aus der `students` Collection via `serviceFireba
 
 **WICHTIGER UI-HINWEIS:** Es dürfen keine Browser-nativen Funktionen wie `alert()` oder `confirm()` verwendet werden. Alle Bestätigungen (z.B. beim Löschen) oder Fehlermeldungen müssen über App-interne, elegante Dialog-Fenster (Modals) realisiert werden.
 
-### 5.1 Schüler bearbeiten
-* **Auslöser:** Klick auf das Schraubenschlüssel-Icon.
-* **Profilbild-Sektion (Neu):**
+Der Schüler-Dialog ist als eigenständige, wiederverwendbare React-Komponente (`StudentEditModal`) implementiert.
+
+### 5.1 Schüler anlegen & bearbeiten (`StudentEditModal`)
+* **Auslöser:** Klick auf den Button `Hinzufügen` im Header oder das Schraubenschlüssel-Icon in einer Tabellenzeile.
+* **Profilbild-Sektion:**
     * Zeigt eine runde Bild-Vorschau (Avatar) des Schülers.
     * Bei vorhandenem Bild gibt es ein kleines Kreuz-Icon, um das Bild zu löschen.
     * Button `Foto auswählen` (mit Kamera-Icon) zum Auswählen eines neuen Bildes.
-    * Das ausgewählte Bild wird direkt im Browser auf maximal **120x120 Pixel** herunterskaliert, mit einer JPEG-Qualität von **70 %** komprimiert und als Base64-Daten-URL im Feld `photoBase64` gespeichert. Dies spart Speicherplatz in Firestore und vermeidet zusätzliche Speichergebühren.
+    * Das ausgewählte Bild wird direkt im Browser auf maximal **120x120 Pixel** herunterskaliert, mit einer JPEG-Qualität von **70 %** komprimiert und als Base64-Daten-URL im Feld `photoBase64` gespeichert.
 * **Felder:**
-    * Input: `Vorname`
+    * Input: `Vorname` (erhält beim Öffnen automatisch den Fokus)
     * Input: `Nachname`
-* **Buttons:**
-    * `Speichern`: Ruft die entsprechende Update-Funktion in `serviceFirebase` auf und speichert die Daten (inkl. `photoBase64`) in Firestore.
-    * `Abbrechen`: Schließt das Fenster ohne Speichern.
+* **Keyboard-Ablauf & Bulk-Hinzufügen (Nur im Hinzufügen-Modus):**
+    * Um ein schnelles Hinzufügen vieler Schüler ohne Mausbenutzung zu ermöglichen, gibt es im Hinzufügen-Modus einen zusätzlichen primären Button **„Speichern & Weiter“** (Submit-Button).
+    * Der Ablauf ist vollständig über Tastatur bedienbar:
+      1. Eingabe `Vorname` -> `Tab` -> Eingabe `Nachname`.
+      2. Wird nach dem Ausfüllen des Nachnamens die `Tab`-Taste gedrückt, springt der Fokus direkt auf den Button **„Speichern & Weiter“**.
+      3. Drücken der `Enter`-Taste (löst „Speichern & Weiter“ aus).
+      4. Der Schüler wird im Backend gespeichert, die Eingabefelder werden geleert und der Fokus wird automatisch wieder zurück in das Feld `Vorname` gesetzt, um den nächsten Schüler zu erfassen.
+      5. Um die Erfassung abzuschließen, kann der Benutzer per `Tab` auf **„Speichern & Schließen“** oder **„Abbrechen“** navigieren oder die `ESC`-Taste drücken.
+* **Aktions-Buttons im Footer:**
+    * **Im Hinzufügen-Modus:**
+      * `Abbrechen` (Sekundär): Schließt das Fenster ohne zu speichern.
+      * `Speichern & Schließen` (Sekundär): Speichert den Schüler und schließt das Modal.
+      * `Speichern & Weiter` (Primär / Submit): Speichert den Schüler, leert die Felder und fokussiert den Vornamen.
+    * **Im Bearbeiten-Modus:**
+      * `Abbrechen` (Sekundär): Schließt das Fenster ohne zu speichern.
+      * `Speichern` (Primär / Submit): Speichert die Änderungen und schließt das Modal.
+* **Dubletten-Prüfung bei Vor- und Nachname:**
+    * Beim Klicken auf „Speichern“ oder „Speichern & Weiter“ (oder Absenden des Formulars) wird geprüft, ob bereits ein Schüler mit der exakten Kombination aus Vorname und Nachname (bereinigt und case-insensitive) existiert.
+    * **Verhalten bei „Speichern“ (Save & Close) und im Bearbeitungsmodus:**
+        * Es erscheint ein kleiner Warnungs-Dialog: *"Schüler existiert bereits. Ein Schüler mit dem Namen ... ist bereits vorhanden."*
+        * Nach dem Bestätigen der Meldung werden alle Dialoge geschlossen (es wird kein Duplikat erzeugt).
+    * **Verhalten bei „Speichern & Weiter“ (Save & Continue):**
+        * Es erscheint ebenfalls ein kleiner Warnungs-Dialog.
+        * Dieser verschwindet automatisch nach 2 Sekunden (oder manuell bei Klick auf OK).
+        * Danach wird ein neuer, leerer Hinzufügen-Dialog gestartet und der Eingabefokus direkt auf das Feld **„Vorname“** gelegt, um die nächste Erfassung zu ermöglichen (es wird kein Duplikat erzeugt).
+
 
 ### 5.2 Löschen bestätigen
 * **Auslöser:** Klick auf das Mistkübel-Icon.

@@ -621,6 +621,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsEditColumnModalOpen(false)}
         column={editingColumn}
         onSave={handleEditColumn}
+        students={students}
+        grades={grades}
       />
 
       <AttendanceModal 

@@ -11,13 +11,11 @@ import {
   X, 
   AlertTriangle,
   ChevronUp,
-  ChevronDown,
-  UserMinus,
-  ArrowUp,
-  ArrowDown
+  ChevronDown
 } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import type { Course, Student } from '../schema';
+import { EnrollmentModal } from './EnrollmentModal';
 
 export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course) => void }) => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -38,7 +36,6 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
   const [currentCourse, setCurrentCourse] = useState<Partial<Course> | null>(null);
   
   // Enrollment State
-  const [studentSearchTerm, setStudentSearchTerm] = useState('');
 
   // Load courses
   useEffect(() => {
@@ -103,7 +100,6 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
   const handleOpenEnrollment = (course: Course) => {
     setCurrentCourse(course);
     setIsEnrollmentModalOpen(true);
-    setStudentSearchTerm('');
   };
 
   const handleOpenDelete = (course: Course) => {
@@ -168,29 +164,12 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
   };
 
   // Enrollment Functions
-  const enrolledStudents = useMemo(() => {
-    if (!currentCourse?.enrolledStudents) return [];
-    return currentCourse.enrolledStudents
-      .map(id => students.find(s => s.id === id))
-      .filter((s): s is Student => !!s);
-  }, [currentCourse?.enrolledStudents, students]);
-
-  const filteredSearchStudents = useMemo(() => {
-    if (!studentSearchTerm) return [];
-    return students.filter(s => 
-      !currentCourse?.enrolledStudents?.includes(s.id) &&
-      (s.firstName.toLowerCase().includes(studentSearchTerm.toLowerCase()) || 
-       s.lastName.toLowerCase().includes(studentSearchTerm.toLowerCase()))
-    ).slice(0, 5);
-  }, [students, studentSearchTerm, currentCourse?.enrolledStudents]);
-
   const addStudentToCourse = async (studentId: string) => {
     if (!currentCourse?.id) return;
     const newList = [...(currentCourse.enrolledStudents || []), studentId];
     const updatedCourse = { ...currentCourse, enrolledStudents: newList };
     setCurrentCourse(updatedCourse);
     await firebaseService.saveCourse(updatedCourse as any);
-    setStudentSearchTerm('');
   };
 
   const removeStudentFromCourse = async (studentId: string) => {
@@ -207,17 +186,13 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= currentCourse.enrolledStudents.length) return;
 
-    setCurrentCourse(prev => {
-      if (!prev || !prev.enrolledStudents) return prev;
-      const newList = [...prev.enrolledStudents];
-      const [movedItem] = newList.splice(index, 1);
-      newList.splice(targetIndex, 0, movedItem);
-      
-      const updated = { ...prev, enrolledStudents: newList };
-      // Wir speichern im Hintergrund
-      firebaseService.saveCourse(updated as any).catch(err => console.error("Reorder failed", err));
-      return updated;
-    });
+    const newList = [...currentCourse.enrolledStudents];
+    const [movedItem] = newList.splice(index, 1);
+    newList.splice(targetIndex, 0, movedItem);
+    
+    const updatedCourse = { ...currentCourse, enrolledStudents: newList };
+    setCurrentCourse(updatedCourse);
+    await firebaseService.saveCourse(updatedCourse as any);
   };
 
   return (
@@ -361,91 +336,19 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
       )}
 
       {/* Enrollment Modal */}
-      {isEnrollmentModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>Schüler-Zuweisung: {currentCourse?.name}</h3>
-              <button className="btn-icon" onClick={() => setIsEnrollmentModalOpen(false)}><X size={20} /></button>
-            </div>
-            <div className="modal-body">
-              <div className="search-bar" style={{ marginBottom: '20px' }}>
-                <div className="search-input-wrapper">
-                  <Search size={18} className="search-icon" />
-                  <input 
-                    type="text" 
-                    placeholder="Schüler suchen..." 
-                    value={studentSearchTerm}
-                    onChange={(e) => setStudentSearchTerm(e.target.value)}
-                    className="form-input"
-                  />
-                  {studentSearchTerm && filteredSearchStudents.length > 0 && (
-                    <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                      {filteredSearchStudents.map(student => (
-                        <div 
-                          key={student.id} 
-                          className="search-result-item"
-                          onClick={() => addStudentToCourse(student.id)}
-                          style={{ padding: '10px 16px', cursor: 'pointer' }}
-                        >
-                          {student.lastName}, {student.firstName}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <h4 style={{ fontWeight: 600, marginBottom: '8px' }}>Teilnehmerliste</h4>
-              <div className="enrolled-list">
-                {enrolledStudents.length === 0 ? (
-                  <p className="text-muted text-center py-4">Noch keine Schüler zugewiesen.</p>
-                ) : (
-                  <table className="data-table">
-                    <tbody>
-                      {enrolledStudents.map((student, index) => (
-                        <tr key={student.id}>
-                          <td style={{ width: '40px', color: '#64748b' }}>{index + 1}</td>
-                          <td>{student.lastName}, {student.firstName}</td>
-                          <td className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button 
-                                className="btn-icon btn-sm" 
-                                onClick={() => moveStudent(index, 'up')}
-                                disabled={index === 0}
-                                title="Hoch"
-                              >
-                                <ArrowUp size={14} />
-                              </button>
-                              <button 
-                                className="btn-icon btn-sm" 
-                                onClick={() => moveStudent(index, 'down')}
-                                disabled={index === enrolledStudents.length - 1}
-                                title="Runter"
-                              >
-                                <ArrowDown size={14} />
-                              </button>
-                              <button 
-                                className="btn-icon btn-sm danger" 
-                                onClick={() => removeStudentFromCourse(student.id)}
-                                title="Entfernen"
-                              >
-                                <UserMinus size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-primary" onClick={() => setIsEnrollmentModalOpen(false)} style={{ width: 'auto', marginTop: 0 }}>Fertig</button>
-            </div>
-          </div>
-        </div>
+      {isEnrollmentModalOpen && currentCourse && (
+        <EnrollmentModal 
+          isOpen={isEnrollmentModalOpen}
+          onClose={() => {
+            setIsEnrollmentModalOpen(false);
+            setCurrentCourse(null);
+          }}
+          course={currentCourse as Course}
+          students={students}
+          onEnroll={addStudentToCourse}
+          onUnenroll={removeStudentFromCourse}
+          onReorder={moveStudent}
+        />
       )}
 
       {/* Archive Confirmation Modal */}

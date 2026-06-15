@@ -589,6 +589,17 @@ input:checked + .slider:before {
   gap: 12px;
 }
 
+.modal-footer button {
+  margin-top: 0 !important;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+}
+
 /* --- MATRIX TABLE SPECIFICS --- */
 .matrix-scroll-area {
   overflow-x: auto;
