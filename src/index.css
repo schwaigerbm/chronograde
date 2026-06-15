@@ -576,6 +576,8 @@ input:checked + .slider:before {
 
 .modal-body {
   padding: 24px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
 }
 
 .modal-footer {
@@ -2128,6 +2130,15 @@ input:checked + .slider:before {
   background-color: #faf5ff; /* purple 50 */
   color: #9333ea; /* purple 600 */
 }
+.type-card-icon-wrapper.evaluation {
+  background-color: #ecfeff; /* cyan 50 */
+  color: #0891b2; /* cyan 600 */
+}
+
+.matrix-header-cell.evaluation-col, .matrix-cell.evaluation-col {
+  width: 200px;
+  min-width: 200px;
+}
 
 .type-card-title {
   font-size: 15px;
@@ -2147,4 +2158,64 @@ input:checked + .slider:before {
   opacity: 0;
   width: 0;
   height: 0;
+}
+
+/* Split Layout for Evaluation Modal */
+.evaluation-layout-grid {
+  display: flex;
+  gap: 32px;
+}
+
+.evaluation-layout-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.evaluation-layout-col:last-child {
+  border-left: 1px solid var(--border-color);
+  padding-left: 32px;
+}
+
+@media (max-width: 768px) {
+  .evaluation-layout-grid {
+    flex-direction: column;
+    gap: 24px;
+  }
+  .evaluation-layout-col:last-child {
+    border-left: none;
+    border-top: 1px dashed var(--border-color);
+    padding-left: 0;
+    padding-top: 24px;
+  }
+}
+
+.evaluation-section {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.evaluation-section-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary-color);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.section-subtitle {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-main);
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 4px;
 }

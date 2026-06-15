@@ -47,6 +47,8 @@ export const calculateAverage = (
     
     if (col.type === 'collaborationSum') {
       percent = getCollaborationPercentage(grade.entries);
+    } else if (col.type === 'evaluation') {
+      percent = grade.evaluationPercent !== undefined && grade.evaluationPercent !== null ? grade.evaluationPercent : null;
     } else if (grade.value !== undefined && grade.value !== '') {
       if (col.calcType === 'sign') {
         if (grade.value === '+') percent = 100;

@@ -32,6 +32,7 @@ import type { Course, CourseEntry, Grade, GradeEntry, PredefinedComment } from '
 import { exportMatrixPDF, exportStudentReportPDF } from './PDFExports';
 import { TrendSettingsModal } from './TrendSettingsModal';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
+import { EvaluationEntryModal } from './EvaluationEntryModal';
 
 interface GradesMatrixProps {
   course: Course;
@@ -63,6 +64,11 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
   const [hoveredColId, setHoveredColId] = useState<string | null>(null);
   const [breakdownData, setBreakdownData] = useState<{ studentName: string, data: any } | null>(null);
+
+  // Evaluation Point Entry States
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [activeEvaluationColumn, setActiveEvaluationColumn] = useState<CourseEntry | null>(null);
+  const [activeEvaluationStudent, setActiveEvaluationStudent] = useState<{ id: string, name: string } | null>(null);
 
   // Custom Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
@@ -209,6 +215,32 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       setActiveCollaborationColumnId(null);
     } catch (err) {
       console.error("Fehler beim Speichern der Mitarbeit:", err);
+    }
+  };
+
+  const handleSaveEvaluationPoints = async (
+    reachedPoints: Record<string, number>, 
+    totalPoints: number, 
+    percentage: number, 
+    calculatedGrade: number
+  ) => {
+    if (!activeEvaluationColumn || !activeEvaluationStudent) return;
+
+    const gradeUpdate: Grade = {
+      value: calculatedGrade,
+      date: new Date().toISOString(),
+      subTaskPoints: reachedPoints,
+      evaluationPoints: totalPoints,
+      evaluationPercent: percentage
+    };
+
+    try {
+      await updateGrade(activeEvaluationStudent.id, activeEvaluationColumn.id, gradeUpdate);
+      setIsEvaluationModalOpen(false);
+      setActiveEvaluationColumn(null);
+      setActiveEvaluationStudent(null);
+    } catch (err) {
+      console.error("Fehler beim Speichern der Auswertungspunkte:", err);
     }
   };
 
@@ -361,7 +393,11 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                 return (
                   <th 
                     key={col.id} 
-                    className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'} ${col.type === 'calculated' ? 'milestone-header' : ''}`}
+                    className={`matrix-header-cell ${hoveredColId === col.id ? 'col-hovered' : ''} ${
+                      (col.type === 'collaborationSum' || col.type === 'presenceSum' || col.type === 'evaluation') && showDetails[col.id]
+                        ? (col.type === 'evaluation' ? 'evaluation-col' : 'collaboration-col')
+                        : 'standard-col'
+                    } ${col.type === 'calculated' ? 'milestone-header' : ''}`}
                     onMouseEnter={() => setHoveredColId(col.id)}
                     onMouseLeave={() => setHoveredColId(null)}
                   >
@@ -418,7 +454,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           <ChevronLeft size={14} />
                         </button>
                         
-                        {(col.type === 'presenceSum' || col.type === 'collaborationSum') && (
+                        {(col.type === 'presenceSum' || col.type === 'collaborationSum' || col.type === 'evaluation') && (
                           <button 
                             className="btn-header-action" 
                             onClick={() => toggleDetails(col.id)}
@@ -504,12 +540,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     }
 
                     const heatmapStyle = getHeatmapStyle(col, grade);
-                    const isHidden = (col.type === 'presenceSum' || col.type === 'collaborationSum') && !showDetails[col.id];
+                    const isHidden = (col.type === 'presenceSum' || col.type === 'collaborationSum' || col.type === 'evaluation') && !showDetails[col.id];
                     
                     return (
                       <td 
                         key={col.id} 
-                        className={`matrix-cell ${isHidden ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${col.type === 'collaborationSum' && showDetails[col.id] ? 'collaboration-col' : 'standard-col'} ${col.type === 'calculated' ? 'milestone-cell' : ''}`}
+                        className={`matrix-cell ${isHidden ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${
+                          (col.type === 'collaborationSum' || col.type === 'presenceSum' || col.type === 'evaluation') && showDetails[col.id]
+                            ? (col.type === 'evaluation' ? 'evaluation-col' : 'collaboration-col')
+                            : 'standard-col'
+                        } ${col.type === 'calculated' ? 'milestone-cell' : ''}`}
                         onMouseEnter={() => setHoveredColId(col.id)}
                         onMouseLeave={() => setHoveredColId(null)}
                         style={heatmapStyle}
@@ -524,6 +564,11 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
                           isHidden={isHidden}
                           heatmapStyle={heatmapStyle}
+                          onOpenEvaluation={() => {
+                            setActiveEvaluationColumn(col);
+                            setActiveEvaluationStudent({ id: student.id, name: `${student.firstName} ${student.lastName}` });
+                            setIsEvaluationModalOpen(true);
+                          }}
                         />
                       </td>
                     );
@@ -614,6 +659,21 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onSave={(updatedCols, rule, colorEnabled) => handleUpdateCourseSettings({ columns: updatedCols, roundingRule: rule, isTrendColorEnabled: colorEnabled })}
         showDialog={showDialog}
       />
+
+      {isEvaluationModalOpen && activeEvaluationColumn && activeEvaluationStudent && (
+        <EvaluationEntryModal
+          isOpen={isEvaluationModalOpen}
+          onClose={() => {
+            setIsEvaluationModalOpen(false);
+            setActiveEvaluationColumn(null);
+            setActiveEvaluationStudent(null);
+          }}
+          studentName={activeEvaluationStudent.name}
+          column={activeEvaluationColumn}
+          grade={grades[activeEvaluationStudent.id]?.[activeEvaluationColumn.id]}
+          onSave={handleSaveEvaluationPoints}
+        />
+      )}
 
       {breakdownData && (
         <CalculationBreakdown 
@@ -717,9 +777,10 @@ interface GradeCellProps {
   onDeleteEntry: (entryId: string) => void;
   isHidden?: boolean;
   heatmapStyle?: React.CSSProperties;
+  onOpenEvaluation?: () => void;
 }
 
-const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDeleteEntry, isHidden, heatmapStyle }: GradeCellProps) => {
+const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDeleteEntry, isHidden, heatmapStyle, onOpenEvaluation }: GradeCellProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [editingEntry, setEditingEntry] = useState<GradeEntry | null>(null);
@@ -987,6 +1048,41 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
           </div>
         );
       }
+
+      case 'evaluation':
+        if (isHidden) {
+          return (
+            <div 
+              className="manual-cell-content"
+              onClick={onOpenEvaluation}
+              style={{ color: heatmapStyle?.color, display: 'flex', flexDirection: 'column', padding: '4px 0', height: '100%', justifyContent: 'center' }}
+            >
+              <span style={{ fontSize: '15px', fontWeight: 'bold' }}>{grade?.value || <span className="empty-placeholder">-</span>}</span>
+              {grade?.evaluationPercent !== undefined && (
+                <span style={{ fontSize: '10px', opacity: 0.85 }}>{grade.evaluationPercent}%</span>
+              )}
+            </div>
+          );
+        }
+        return (
+          <div 
+            className="manual-cell-content"
+            onClick={onOpenEvaluation}
+            style={{ color: heatmapStyle?.color, display: 'flex', flexDirection: 'column', padding: '6px 4px', fontSize: '11px', textAlign: 'left', width: '100%', cursor: 'pointer' }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '4px', width: '100%' }}>
+              {column.subTasks?.map(task => (
+                <span key={task.id} style={{ background: 'rgba(0,0,0,0.04)', padding: '2px 6px', borderRadius: '4px', display: 'block', width: '100%' }}>
+                  {task.title}: {grade?.subTaskPoints?.[task.id] !== undefined ? grade.subTaskPoints[task.id] : 0}/{task.maxPoints}
+                </span>
+              ))}
+            </div>
+            <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '4px', marginTop: '2px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <span>{grade?.evaluationPoints !== undefined ? grade.evaluationPoints : 0} Pkt.</span>
+              <span>Note {grade?.value || '-'}</span>
+            </div>
+          </div>
+        );
 
       default:
         return <span className="empty-placeholder">-</span>;

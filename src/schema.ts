@@ -13,7 +13,7 @@ export interface Student {
 export interface CourseEntry {
   id: string;
   title: string;       // z.B. "1. Schularbeit"
-  type: 'manual' | 'collaborationSum' | 'collaborationEntry' | 'groupAssignment' | 'presenceSum' | 'presenceEntry' | 'calculated'; // Art der Leistung
+  type: 'manual' | 'collaborationSum' | 'collaborationEntry' | 'groupAssignment' | 'presenceSum' | 'presenceEntry' | 'calculated' | 'evaluation'; // Art der Leistung
   date: string;        // Geplantes Datum
   cutoffDate?: string;  // Nur für type 'calculated': Stichtag für die Berechnung
   roundingRule?: 'commercial' | 'studentFriendly'; // Rundungsregel für Ergebnisse
@@ -25,7 +25,22 @@ export interface CourseEntry {
   isVisible?: boolean;    // Spalte in der Matrix sichtbar (Standard: true)
   isLocked?: boolean;     // Gewichtung gesperrt/fixiert
   subEntries?: CourseEntry[]; // Untergeordnete Einträge
+  subTasks?: SubTask[];     // Für Teilaufgaben-Auswertungen
+  gradingKey?: EvaluationGradingKey; // Notenschlüssel für Auswertungen
   priority: number;       // int: Zum chronologischen oder manuellen Ordnen der Einträge
+}
+
+export interface SubTask {
+  id: string;
+  title: string;       // z.B. "Aufgabe 1"
+  maxPoints: number;   // Maximale Punkte
+}
+
+export interface EvaluationGradingKey {
+  grade1MinPoints: number; // Sehr Gut ab
+  grade2MinPoints: number; // Gut ab
+  grade3MinPoints: number; // Befriedigend ab
+  grade4MinPoints: number; // Genügend ab
 }
 
 // 3. KURSE (Fächer)
@@ -59,6 +74,9 @@ export interface Grade {
   note?: string;          // Optionales Hover-Kommentar (Text)
   isOverridden?: boolean; // Nur für calculated: Manuell überschrieben
   entries?: GradeEntry[]; // Für collaborationSum/presenceSum
+  subTaskPoints?: Record<string, number>; // Für Auswertung: subTaskId -> erreichte Punkte
+  evaluationPoints?: number;  // Erreichte Gesamtpunkte
+  evaluationPercent?: number; // Erreichte Prozentpunkte
   updatedAt?: string;
 }
 

@@ -6,10 +6,19 @@ Dieses Dokument spezifiziert die Benutzeroberfläche und Funktionsweise des Moda
 
 Das Modal wird vergrößert, um eine übersichtliche, kartenbasierte Auswahl des Spaltentyps im ersten Schritt zu ermöglichen.
 
-* **Modal-Größe:** Mittelgroßes Format (`maxWidth: 800px`, `width: 90%`), um genügend Platz für die Typkarten zu bieten.
+* **Modal-Größe & Scrollbarkeit:** Mittelgroßes Format (`maxWidth: 800px`, `width: 90%`). Um ein Überlaufen des Bildschirms zu verhindern, ist der Modal-Body vertikal scrollbar (`max-height: calc(100vh - 160px)`, `overflow-y: auto`).
 * **Zweistufiger Assistent (Wizard):**
   * **Schritt 1: Typauswahl:** Die Spaltentypen werden als interaktive Karten (Cards) in einem responsiven Grid dargestellt.
-  * **Schritt 2: Detailkonfiguration:** Formularfelder zur Eingabe von Name, Datum, Gewichtung und Bewertungsart. (Wird nur für Typen benötigt, die weitere Angaben verlangen, d.h. `manual` und `calculated`).
+  * **Schritt 2: Detailkonfiguration:**
+    * Für die Typen `manual` und `calculated` werden die Formularfelder in einer übersichtlichen, einspaltigen Liste dargestellt.
+    * Für den Typ `evaluation` (Auswertung) wird das Modal vergrößert (`modal-large`) und ein **zweispaltiges Grid-Layout mit vier Sektionen** verwendet:
+      * **Linke Spalte:**
+        * **Sektion "Allgemeines":** Name (Bezeichnung), Datum.
+        * **Sektion "Darstellung" (darunter):** Datum im Header anzeigen (Switch), Farbmodus (Heatmap) (Switch).
+      * **Rechte Spalte:**
+        * **Sektion "Teilaufgaben":** Dynamische Teilaufgaben-Konfiguration und Gesamtpunkte-Anzeige.
+        * **Sektion "Beurteilung" (darunter):** Notenschlüssel (Mindestpunkte 1-4) und Bewertungseinfluss (Switch & Schieberegler).
+    * Funktionale Sektionen werden durch separate Karten-Rahmen (`border: 1px solid var(--border-color)`) und leichte Hintergrundtönungen visuell strukturiert.
 
 ### 1.1 Schritt 1: Karten-Design (Card-based Selection)
 Jeder der 5 Spaltentypen wird als eigenständige Karte (`.type-card`) gerendert:
