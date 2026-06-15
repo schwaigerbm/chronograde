@@ -1,35 +1,43 @@
 // src/components/EvaluationEntryModal.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, ClipboardList } from 'lucide-react';
-import type { CourseEntry, Grade } from '../schema';
+import type { CourseEntry, Grade, Student } from '../schema';
 
 interface EvaluationEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  studentId: string;
   studentName: string;
   column: CourseEntry;
   grade?: Grade;
+  students: Student[];
   onSave: (
     reachedPoints: Record<string, number>, 
     totalPoints: number, 
     percentage: number, 
-    calculatedGrade: number
+    calculatedGrade: number,
+    nextStudentId?: string
   ) => void;
 }
 
 export const EvaluationEntryModal = ({
   isOpen,
   onClose,
+  studentId,
   studentName,
   column,
   grade,
+  students = [],
   onSave
 }: EvaluationEntryModalProps) => {
   const [reachedPoints, setReachedPoints] = useState<Record<string, number>>({});
   const subTasks = column.subTasks || [];
   const totalMaxPoints = subTasks.reduce((sum, t) => sum + (t.maxPoints || 0), 0);
 
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state with grade when modal opens or when grade changes
   useEffect(() => {
     if (isOpen) {
       const initialPoints: Record<string, number> = {};
@@ -41,6 +49,30 @@ export const EvaluationEntryModal = ({
       setReachedPoints(initialPoints);
     }
   }, [isOpen, column, grade]);
+
+  // Autofocus the first subtask input and select its content when the modal opens or the student changes
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        if (firstInputRef.current) {
+          firstInputRef.current.focus();
+          firstInputRef.current.select();
+        }
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, studentId]);
+
+  // Global ESC key listener to close modal
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -70,26 +102,33 @@ export const EvaluationEntryModal = ({
     else if (totalReachedPoints >= grade4MinPoints) calculatedGrade = 4;
   }
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = (nextId?: string) => {
     onSave(
       reachedPoints, 
       totalReachedPoints, 
       Math.round(percentage * 10) / 10, 
-      calculatedGrade
+      calculatedGrade,
+      nextId
     );
   };
 
+  // Find next student in the list for Tab traversal
+  const currentIdx = students.findIndex(s => s.id === studentId);
+  const nextStudent = currentIdx !== -1 && currentIdx < students.length - 1
+    ? students[currentIdx + 1]
+    : null;
+
   return createPortal(
-    <div className="modal-overlay">
+    <div className="modal-overlay" style={{ zIndex: 1100 }}>
       <div className="modal-card modal-medium">
         <div className="modal-header">
           <div>
-            <h3 style={{ margin: 0 }}>Punkte erfassen</h3>
+            <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: 'var(--text-main)' }}>{studentName}</h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              {column.title} &bull; <strong>{studentName}</strong>
+              {column.title} &bull; Punkte erfassen
             </p>
           </div>
-          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+          <button type="button" className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
 
         <div className="modal-body trend-settings-split-layout">
@@ -97,8 +136,10 @@ export const EvaluationEntryModal = ({
           <div className="trend-settings-left-col">
             <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>PUNKTE PRO AUFGABE</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {subTasks.map(task => {
+              {subTasks.map((task, index) => {
                 const max = task.maxPoints || 0;
+                const isFirst = index === 0;
+                const isLast = index === subTasks.length - 1;
                 return (
                   <div key={task.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <div>
@@ -107,6 +148,7 @@ export const EvaluationEntryModal = ({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input 
+                        ref={isFirst ? firstInputRef : undefined}
                         type="number"
                         className="form-input text-center"
                         style={{ width: '80px', padding: '6px' }}
@@ -115,6 +157,15 @@ export const EvaluationEntryModal = ({
                         step="0.5"
                         value={reachedPoints[task.id] ?? ''}
                         onChange={e => handlePointChange(task.id, max, e.target.value)}
+                        onFocus={e => e.target.select()}
+                        onKeyDown={isLast ? (e) => {
+                          if (e.key === 'Tab' && !e.shiftKey) {
+                            if (nextStudent) {
+                              e.preventDefault();
+                              handleConfirmSave(nextStudent.id);
+                            }
+                          }
+                        } : undefined}
                       />
                       <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-muted)' }}>/ {max} Pkt.</span>
                     </div>
@@ -158,14 +209,22 @@ export const EvaluationEntryModal = ({
           </div>
         </div>
 
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
+        <div className="modal-footer" style={{ display: 'flex', gap: '12px', width: '100%' }}>
           <button 
-            className="btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', marginTop: 0 }}
-            onClick={handleConfirmSave}
+            type="button" 
+            className="btn-secondary" 
+            onClick={onClose}
+            style={{ flex: 1, height: '40px', padding: '0 16px', fontSize: '14px', marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <Save size={18} /> Speichern
+            Abbrechen
+          </button>
+          <button 
+            type="button"
+            className="btn-primary" 
+            style={{ flex: 1, height: '40px', padding: '0 16px', fontSize: '14px', marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => handleConfirmSave()}
+          >
+            <Save size={18} style={{ marginRight: '6px' }} /> Speichern
           </button>
         </div>
       </div>

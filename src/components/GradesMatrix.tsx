@@ -222,7 +222,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     reachedPoints: Record<string, number>, 
     totalPoints: number, 
     percentage: number, 
-    calculatedGrade: number
+    calculatedGrade: number,
+    nextStudentId?: string
   ) => {
     if (!activeEvaluationColumn || !activeEvaluationStudent) return;
 
@@ -236,6 +237,18 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
     try {
       await updateGrade(activeEvaluationStudent.id, activeEvaluationColumn.id, gradeUpdate);
+      
+      if (nextStudentId) {
+        const nextStudent = students.find(s => s.id === nextStudentId);
+        if (nextStudent) {
+          setActiveEvaluationStudent({
+            id: nextStudent.id,
+            name: `${nextStudent.lastName}, ${nextStudent.firstName}`
+          });
+          return;
+        }
+      }
+
       setIsEvaluationModalOpen(false);
       setActiveEvaluationColumn(null);
       setActiveEvaluationStudent(null);
@@ -670,9 +683,11 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
             setActiveEvaluationColumn(null);
             setActiveEvaluationStudent(null);
           }}
+          studentId={activeEvaluationStudent.id}
           studentName={activeEvaluationStudent.name}
           column={activeEvaluationColumn}
           grade={grades[activeEvaluationStudent.id]?.[activeEvaluationColumn.id]}
+          students={students}
           onSave={handleSaveEvaluationPoints}
         />
       )}
