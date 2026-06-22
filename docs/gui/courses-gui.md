@@ -28,7 +28,7 @@ Eine responsive Tabelle zur Anzeige der Gruppenobjekte (intern: courses).
 *   **Schüler (Users Icon):** Öffnet das Enrollment-Modal zur Schüler-Zuweisung.
 *   **Archivieren (Archive Icon):** Nur bei aktiven Gruppen. Bestätigungs-Dialog (Ja/Nein) -> `archived: true`.
 *   **Wiederherstellen (RotateCcw Icon):** Nur bei archivierten Gruppen. Bestätigungs-Dialog (Ja/Nein) -> `archived: false`.
-*   **Löschen (Trash2 Icon):** Nur bei archivierten Gruppen. Bestätigungs-Dialog (Ja/Nein) -> Dokument endgültig aus Firestore löschen.
+*   **Löschen (Trash2 Icon):** Nur bei archivierten Gruppen. Bestätigungs-Dialog mit zusätzlicher Sicherheitsabfrage (Eintippen des Gruppennamens zur Freischaltung des Lösch-Buttons) -> Dokument endgültig aus Firestore löschen.
 
 ---
 
@@ -36,7 +36,7 @@ Eine responsive Tabelle zur Anzeige der Gruppenobjekte (intern: courses).
 
 ### A. Gruppe hinzufügen / bearbeiten
 *   **Eingabefelder:**
-    *   `name` (Text): Name des Fachs/der Gruppe.
+    *   `name` (Text): Name des Fachs/der Gruppe (erhält beim Öffnen automatisch den Tastatur-Fokus).
     *   `year` (String): Schuljahr (Format "2025/26").
 *   **Aktionen:** Speichern (Validierung: Name darf nicht leer sein) | Abbrechen.
 

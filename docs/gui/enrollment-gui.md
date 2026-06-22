@@ -16,6 +16,7 @@ Das Modal öffnet sich als zentriertes Overlay über der Gruppenverwaltung:
   * Das Dropdown schwebt absolut positioniert über dem restlichen Inhalt.
 * **Teilnehmerliste:**
   * Eine Liste der aktuell der Gruppe zugewiesenen Schüler (mit laufender Nummer, Name, Sortier-Buttons für Reihenfolge und Entfernen-Button).
+  * **Sicherheitsabfrage bei Schüler-Entfernung:** Ein Klick auf das Entfernen-Symbol (`UserMinus`) löscht den Schüler nicht direkt, sondern fordert eine kurze Bestätigung über einen Bestätigungs-Dialog, um unbeabsichtigte Löschungen im schnellen Arbeitsfluss zu vermeiden.
 
 ---
 

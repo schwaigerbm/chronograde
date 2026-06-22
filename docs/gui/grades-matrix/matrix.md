@@ -5,6 +5,7 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 
 * **Hauptüberschrift (H1):** `Leistungsbeurteilung`
 * **Unterüberschrift (H2):** `[Name der Gruppe / Course]`
+* **Gruppen-Schnellauswahl:** (Entfernt) Die Gruppen-Schnellauswahl wurde entfernt. Der Wechsel von Gruppen/Kursen erfolgt ausschließlich über die Sidebar/Hauptnavigation.
 * **Aktions-Buttons:** Direkt rechts neben der Unterüberschrift platziert.
     * **Button 1:** `Ansicht konfigurieren` (Stil: Sekundär, Icon: `Settings`).
     * **Button 2:** `Beurteilungsspalte hinzufügen` (Stil: Primär, Icon: `Plus`).
@@ -17,7 +18,7 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 ## 3. Daten-Tabelle (Notenübersicht)
 Anzeige der Leistungsmatrix für die gewählte Gruppe.
 
-* **Design-Vorgabe (Platzersparnis):** Um bei vielen Beurteilungen Platz zu sparen, müssen alle **Spaltenüberschriften senkrecht** dargestellt werden. Technisch soll dies via `writing-mode: vertical-rl; transform: rotate(180deg);` realisiert werden, um eine saubere Baseline-Ausrichtung am unteren Rand zu gewährleisten. Das Aktionsmenü (Drei-Punkte) wird fix im Header platziert.
+* **Design-Vorgabe (Platzersparnis):** Um bei vielen Beurteilungen und Schülerzeilen Platz zu sparen, müssen alle **Spaltenüberschriften senkrecht** dargestellt werden. Technisch soll dies via `writing-mode: vertical-rl; transform: rotate(180deg);` realisiert werden, um eine saubere Baseline-Ausrichtung am unteren Rand zu gewährleisten. Zudem wird die Zeilenhöhe der Tabelle durch kompaktes Padding optimiert (Schülerspalte-Padding reduziert auf `4px 12px` und Datenzellen auf `4px 8px`), während die Schriftgröße bei gut lesbaren `14px` verbleibt. Das Main-Content Layout-Padding wird von `40px` auf `24px` verringert und die Matrix-Scroll-Area erhält mehr maximale Höhe (`calc(100vh - 160px)`), damit mehr Zeilen gleichzeitig ohne Scrollen sichtbar sind. Das Aktionsmenü (Drei-Punkte) wird fix im Header platziert.
 * **Design-Vorgabe (Spaltenbreite):** Die Spalte für die Gruppenzuordnung muss exakt die gleiche schmale Breite aufweisen wie die Beurteilungsspalten für manuelle Vergabe von Noten oder Zeichen.
 * **UX-Vorgabe (Scrollbalken-Verbot):** Es darf **unter keinen Umständen** vorkommen, dass beim Öffnen von Kontextmenüs oder Modals innerhalb der Matrix rechtsseitige Scrollbalken am Matrix-Fenster erscheinen. Die Menüs müssen so aufgebaut sein, dass sie außerhalb des Tabellenflusses (z.B. via Portals oder intelligenter Positionierung) schweben.
 * **UX-Vorgabe (Crosshair-Highlighting):** Um die Navigation in großen Tabellen zu erleichtern, muss ein "Crosshair"-Effekt implementiert werden: Beim Hover über eine Zelle sollen sowohl die gesamte Zeile als auch die dazugehörige Spalte dezent visuell hervorgehoben werden.
@@ -69,6 +70,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Klick in die Zelle: Eingabe einer Zahl wird aktiviert.
     * Validierung: Erlaubt sind nur Zahlen von 1 bis 9.
     * Speichern (On-Blur): Bei Klick außerhalb der Zelle wird der Wert als `Grade` (ohne Datum) gespeichert. Die Gruppenzuordnung entspricht hierbei dem `Value`.
+    * **Keyboard-Navigation:** Mit den Pfeiltasten `ArrowUp` und `ArrowDown` (oder `Enter`) kann der Fokus direkt von Zelle zu Zelle in der Spalte nach oben oder unten navigiert werden, um eine flüssige Bearbeitung aller Schüler zu ermöglichen.
 
 ### Verzweigung B: Manueller Name (`manual`)
 * **Felder (Schritt 2):**
@@ -79,10 +81,36 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Schieberegler (Slider): `Einfluss` (0 - 100%)
 * **Aktion:** `Speichern` beendet den Dialog.
 * **Tabellen-Update:** Neue Spalte mit dem eingegebenen Namen.
-* **Zellen-Interaktion (Hover/Klick öffnet Kontextmenü):**
-    * Bei Typ `percent`: Schieberegler (0 - 100%) wird angezeigt.
-    * Bei Typ `grade`: Dropdown/Auswahl der Schulnoten (1-Sehr Gut, 2-Gut, 3-Befriedigend, 4-Genügend, 5-Nicht Genügend).
-    * Bei Typ `sign`: Auswahl der Symbole `+`, `-` und `~`.
+* **Zellen-Interaktion (Klick öffnet Modal):**
+    * Bei Klick auf eine Zelle vom Typ `manual` oder zur manuellen Überschreibung bei `calculated` öffnet sich ein zentriertes Modal (`ManualEntryModal`) in der Mitte des Bildschirms.
+    * Das Modal zeigt den Namen des Schülers sowie den Titel der Spalte.
+    * **Beurteilungstyp "Note" (`grade`):**
+        * Anzeige von fünf großen Buttons untereinander mit der Bezeichnung:
+            * "1-Sehr gut"
+            * "2-Gut"
+            * "3-Befriedigend"
+            * "4-Genügend"
+            * "5-Nicht Genügend"
+        * Der aktuell ausgewählte Wert ist visuell hervorgehoben.
+    * **Beurteilungstyp "Prozent" (`percent`):**
+        * Bietet einen Schieberegler (Slider, 0 - 100%) und eine Direkteingabe (Number-Input) nebeneinander.
+        * Beide Eingabemöglichkeiten sind synchronisiert. Der Wert der Direkteingabe wird auf den Bereich 0 - 100 beschränkt.
+    * **Beurteilungstyp "Zeichen" (`sign`):**
+        * Anzeige von drei großen, sauberen Symbolen (`+`, `~`, `-`) als Schaltflächen.
+    * Das Modal enthält zusätzlich:
+        * Einen Button "Eintrag löschen" (oder ähnlich), um den aktuellen Wert zu entfernen.
+        * Eine "Abbrechen" (Stil: Sekundär) Schaltfläche im Footer (keine globale "Speichern" Schaltfläche).
+        * **Sofortiges Speichern und Schließen:**
+            * Bei Auswahl einer Note oder eines Zeichens wird der Wert sofort gespeichert und das Modal schließt sich.
+            * Bei Prozenten wird das Modal geschlossen und der Wert gespeichert, sobald der Schieberegler losgelassen wird (MouseUp/TouchEnd) oder die Eingabe im Textfeld bestätigt wird (durch Drücken der Enter-Taste oder Klick auf ein Bestätigungssymbol neben der Eingabe).
+* **Schnelleingabe über Tastatur (Hover):**
+    * Wenn der Mauszeiger über einer Zelle vom Typ `manual` (bzw. `calculated` bei Noten) schwebt und keine anderen Eingabefelder aktiv sind:
+        * **Bei Typ `grade`:** Durch Drücken einer der Tasten `1` bis `5` wird die entsprechende Note (`1` bis `5`) direkt in der Zelle eingetragen und gespeichert (ohne das Modal zu öffnen).
+        * **Bei Typ `sign`:**
+            * Drücken der Taste `1` trägt das Zeichen `+` ein.
+            * Drücken der Taste `2` trägt das Zeichen `~` ein.
+            * Drücken der Taste `3` trägt das Zeichen `-` ein.
+
 
 ### Verzweigung C: Mitarbeit (`collaborationSum`)
 * **Konzept:** Systematische Erfassung von Stundenleistungen. In der Kompaktansicht wird der Prozentwert angezeigt.
@@ -122,7 +150,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Hover über Zelle: Plus-Button erscheint (für Neuanlage).
     * **Mitarbeits-Popup (CollaborationEntryModal):** Klick auf ein bestehendes Zeichen oder den Plus-Button öffnet das Formular.
         * **Zentrierte Ausrichtung:** Das Fenster öffnet sich immer im Zentrum des Bildschirms (als modales Overlay mit abgedunkeltem Hintergrund), um ein Abschneiden am Bildschirmrand (insbesondere bei Schülern am Tabellenende) zu verhindern.
-        * **Schnellauswahl für Kommentare (Zweispaltiges Layout):** Das Modal is vergrößert. Links befinden sich die Standard-Eingabefelder (Zeichen-Auswahl, manuelle Notiz, Datum). Rechts wird eine Liste der in den Einstellungen hinterlegten vorgefertigten Kommentare für das selektierte Zeichen (+, ~, oder -) angezeigt. Ein Klick auf einen vorgefertigten Kommentar übernimmt den Text direkt in das Notizfeld.
+        * **Schnellauswahl für Kommentare (Zweispaltiges Layout):** Das Modal is vergrößert. Links befinden sich die Standard-Eingabefelder (Zeichen-Auswahl, manuelle Notiz, Datum). Rechts wird eine Liste der in den Einstellungen hinterlegten vorgefertigten Kommentare für das selektierte Zeichen (+, ~, oder -) angezeigt. Ein Klick auf einen vorgefertigten Kommentar übernimmt den Text direkt in das Notizfeld. **Ein Doppelklick auf einen vorgefertigten Kommentar** übernimmt den Text und führt sofort das Speichern (OK) aus, wodurch das Modal direkt geschlossen wird.
         * Pflichtfeld: `Notiz` (z.B. "Lautes Schwätzen") muss eingegeben werden.
         * Optional: `Datum` kann angepasst werden (Standard: aktuelles Datum).
     * Darstellung in der Zelle (Detail):
@@ -178,7 +206,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 * **Zellen-Interaktion (Overriding):**
     * Die Zelle zeigt initial den berechneten Wert (z.B. "3").
     * **Klick auf Zelle:** Öffnet ein Menü, in dem der Lehrer die Note manuell anpassen kann ("Pädagogisches Ermessen").
-    * **Visualisierung:** Eine manuell geänderte Note wird mit einem kleinen "Pencil-Icon" markiert, um sie vom reinen Rechenwert zu unterscheiden.
+    * **Visualisierung:** Eine manuell geänderte Note wird mit einem kleinen "Pencil-Icon" markiert, um sie vom reinen Rechenwert zu unterscheiden. **Zusätzlich** erhält eine manuell überschriebene Zelle eine auffällige, dezente farbliche Markierung (z. B. einen warmen, leicht gelblichen/orangefarbenen Hintergrund), um sie sofort visuell von automatisch berechneten Werten abzuheben.
 
 ## 5. Sticky Summary Column (Live-Trend)
 

@@ -9,7 +9,9 @@ import {
   Folder,
   Calendar,
   LogIn,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { StudentsView } from './components/StudentsView';
@@ -29,14 +31,15 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-
+  const [showPassword, setShowPassword] = useState(false);
+ 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
       setLoginError("Bitte Benutzernamen und Passwort eingeben.");
       return;
     }
-
+ 
     setIsLoggingIn(true);
     setLoginError(null);
     try {
@@ -48,7 +51,7 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
       setIsLoggingIn(false);
     }
   };
-
+ 
   return (
     <div className="login-container">
       <div className="login-card">
@@ -65,7 +68,7 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
             {loginError}
           </div>
         )}
-
+ 
         <form onSubmit={handleLogin}>
           <div className="form-group">
             <label className="form-label">Benutzername</label>
@@ -80,13 +83,36 @@ const LoginView = ({ onLogin }: LoginViewProps) => {
           </div>
           <div className="form-group">
             <label className="form-label">Passwort</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="form-input"
-              placeholder="••••••••"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-input"
+                placeholder="••••••••"
+                style={{ paddingRight: '40px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0
+                }}
+                title={showPassword ? "Passwort ausblenden" : "Passwort anzeigen"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"

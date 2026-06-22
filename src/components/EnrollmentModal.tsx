@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, ArrowUp, ArrowDown, UserMinus } from 'lucide-react';
 import type { Course, Student } from '../schema';
+import { DialogModal } from './DialogModal';
 
 interface EnrollmentModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const EnrollmentModal = ({
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isSaving, setIsSaving] = useState(false);
+  const [studentToUnenroll, setStudentToUnenroll] = useState<Student | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -214,7 +216,7 @@ export const EnrollmentModal = ({
                           </button>
                           <button 
                             className="btn-icon btn-sm danger" 
-                            onClick={() => onUnenroll(student.id)}
+                            onClick={() => setStudentToUnenroll(student)}
                             disabled={isSaving}
                             title="Entfernen"
                           >
@@ -239,6 +241,21 @@ export const EnrollmentModal = ({
           </button>
         </div>
       </div>
+      <DialogModal 
+        isOpen={!!studentToUnenroll}
+        title="Schüler abmelden"
+        message={`Möchtest du den Schüler "${studentToUnenroll?.firstName} ${studentToUnenroll?.lastName}" wirklich aus dieser Gruppe entfernen?`}
+        type="danger"
+        confirmLabel="Entfernen"
+        cancelLabel="Abbrechen"
+        onConfirm={async () => {
+          if (studentToUnenroll) {
+            await onUnenroll(studentToUnenroll.id);
+            setStudentToUnenroll(null);
+          }
+        }}
+        onClose={() => setStudentToUnenroll(null)}
+      />
     </div>,
     document.body
   );

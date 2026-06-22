@@ -8,6 +8,10 @@ export const StudentsView = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [showAvatars, setShowAvatars] = useState<boolean>(() => {
+    const saved = localStorage.getItem("chronograde_show_avatars");
+    return saved ? JSON.parse(saved) : true;
+  });
   
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -100,8 +104,8 @@ export const StudentsView = () => {
         </div>
       </div>
 
-      <div className="search-bar">
-        <div className="search-input-wrapper">
+      <div className="search-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div className="search-input-wrapper" style={{ flex: 1, minWidth: '200px' }}>
           <Search size={18} className="search-icon" />
           <input 
             type="text" 
@@ -111,12 +115,29 @@ export const StudentsView = () => {
             className="form-input"
           />
         </div>
+        <label className="switch-container" style={{ margin: 0 }}>
+          <span className={`switch-label ${!showAvatars ? 'active' : ''}`}>Bilder aus</span>
+          <label className="switch">
+            <input 
+              type="checkbox" 
+              checked={showAvatars} 
+              onChange={() => {
+                const newVal = !showAvatars;
+                setShowAvatars(newVal);
+                localStorage.setItem("chronograde_show_avatars", JSON.stringify(newVal));
+              }} 
+            />
+            <span className="slider"></span>
+          </label>
+          <span className={`switch-label ${showAvatars ? 'active' : ''}`}>Bilder ein</span>
+        </label>
       </div>
 
       <div className="table-wrapper">
         <table className="data-table">
           <thead>
             <tr>
+              {showAvatars && <th style={{ width: '60px' }}>Foto</th>}
               <th>Vorname</th>
               <th>Nachname</th>
               <th className="text-right">Aktionen</th>
@@ -124,11 +145,24 @@ export const StudentsView = () => {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={3} className="text-center py-8">Lade Schüler...</td></tr>
+              <tr><td colSpan={showAvatars ? 4 : 3} className="text-center py-8">Lade Schüler...</td></tr>
             ) : filteredStudents.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-8 text-muted">Keine Schüler gefunden.</td></tr>
+              <tr><td colSpan={showAvatars ? 4 : 3} className="text-center py-8 text-muted">Keine Schüler gefunden.</td></tr>
             ) : filteredStudents.map(student => (
               <tr key={student.id}>
+                {showAvatars && (
+                  <td>
+                    <div className="avatar-preview-container" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {student.photoBase64 ? (
+                        <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+                          {student.firstName[0]}{student.lastName[0]}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                )}
                 <td>{student.firstName}</td>
                 <td>{student.lastName}</td>
                 <td className="text-right actions-cell">

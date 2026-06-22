@@ -34,6 +34,7 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [currentCourse, setCurrentCourse] = useState<Partial<Course> | null>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
   
   // Enrollment State
 
@@ -104,6 +105,7 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
 
   const handleOpenDelete = (course: Course) => {
     setCurrentCourse(course);
+    setDeleteConfirmName('');
     setIsDeleteModalOpen(true);
   };
 
@@ -312,6 +314,7 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
                     onChange={e => setCurrentCourse(prev => ({ ...prev!, name: e.target.value }))}
                     placeholder="z.B. Mathematik"
                     required
+                    autoFocus
                   />
                 </div>
                 <div className="form-group">
@@ -402,9 +405,26 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
             </div>
             <div className="modal-body">
               <p>Wollen Sie die Gruppe <strong>{currentCourse?.name}</strong> ({currentCourse?.year}) wirklich endgültig löschen? Alle zugehörigen Noten werden ebenfalls entfernt.</p>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label className="form-label">Bitte gib den Gruppennamen <strong>{currentCourse?.name}</strong> zur Bestätigung ein:</label>
+                <input
+                  type="text"
+                  value={deleteConfirmName}
+                  onChange={(e) => setDeleteConfirmName(e.target.value)}
+                  className="form-input"
+                  placeholder={currentCourse?.name}
+                  autoFocus
+                />
+              </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-danger" onClick={handleDeleteCourse}>Ja, löschen</button>
+              <button 
+                className="btn-danger" 
+                onClick={handleDeleteCourse}
+                disabled={deleteConfirmName !== currentCourse?.name}
+              >
+                Ja, löschen
+              </button>
               <button className="btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>Abbrechen</button>
             </div>
           </div>

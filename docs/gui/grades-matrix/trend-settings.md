@@ -30,6 +30,7 @@ Das Modal ist für eine hohe Informationsdichte und optimale Bildschirmausnutzun
 * **Gleichverteilungs-Button (Zentrieren):** Neben dem Schloss-Symbol gibt es eine Schaltfläche (mit dem Waage-Symbol `Scale`), mit der der jeweilige Regler auf den exakten Mittelwert der verbleibenden freien Prozentanteile gesetzt werden kann:
   $$V_{\text{neu}} = \text{Math.round}(\text{freie Anteile} / \text{Anzahl der unfixierten Regler})$$
   Die restlichen nicht-fixierten Spalten werden daraufhin proportional normalisiert.
+* **Button "Alle gleich gewichten":** Eine globale Schaltfläche im Modal, die alle nicht-fixierten (unlocked), aktiven Beurteilungsspalten auf den exakten gleichen Anteil normalisiert (z. B. bei 4 Spalten jeweils 25%). Eventuelle Rundungsdifferenzen (Verbleibende Reste bei Divisionen) werden dem ersten freien Element zugeschlagen.
 
 ### 2.2 Globale Rundungsregel
 * Ermöglicht die Auswahl der Rundungsregel für den Trend und alle Meilenstein-Vorschläge:

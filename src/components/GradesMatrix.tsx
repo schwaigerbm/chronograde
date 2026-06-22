@@ -33,6 +33,7 @@ import { exportMatrixPDF, exportStudentReportPDF } from './PDFExports';
 import { TrendSettingsModal } from './TrendSettingsModal';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
 import { EvaluationEntryModal } from './EvaluationEntryModal';
+import { ManualEntryModal } from './ManualEntryModal';
 
 interface GradesMatrixProps {
   course: Course;
@@ -70,6 +71,12 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [activeEvaluationColumn, setActiveEvaluationColumn] = useState<CourseEntry | null>(null);
   const [activeEvaluationStudent, setActiveEvaluationStudent] = useState<{ id: string, name: string } | null>(null);
 
+  // Manual Entry Modal State
+  const [activeManualCell, setActiveManualCell] = useState<{ studentId: string, studentName: string, column: CourseEntry, grade?: Grade } | null>(null);
+  
+  // Cell Hover Tracking for Quick Entry
+  const [hoveredCell, setHoveredCell] = useState<{ studentId: string, column: CourseEntry } | null>(null);
+
   // Custom Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
     isOpen: boolean;
@@ -88,6 +95,85 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const showDialog = (config: Omit<typeof dialogConfig, 'isOpen'>) => {
     setDialogConfig({ ...config, isOpen: true });
   };
+
+  // Clear states on course change
+  useEffect(() => {
+    setHoveredCell(null);
+    setActiveManualCell(null);
+  }, [course]);
+
+  // Global keydown listener for cell quick entry on hover
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (
+        isAddColumnModalOpen ||
+        isEditColumnModalOpen ||
+        isConfigureModalOpen ||
+        isTrendSettingsModalOpen ||
+        isAttendanceModalOpen ||
+        isCollaborationModalOpen ||
+        isEvaluationModalOpen ||
+        activeManualCell !== null ||
+        dialogConfig.isOpen
+      ) {
+        return;
+      }
+
+      if (!hoveredCell) return;
+      const { studentId, column } = hoveredCell;
+
+      if (column.type === 'manual' || column.type === 'calculated') {
+        if (column.calcType === 'grade') {
+          if (e.key >= '1' && e.key <= '5') {
+            e.preventDefault();
+            const val = Number(e.key);
+            updateGrade(studentId, column.id, {
+              value: val,
+              date: new Date().toISOString(),
+              ...(column.type === 'calculated' ? { isOverridden: true } : {})
+            });
+          }
+        } else if (column.calcType === 'sign') {
+          if (e.key === '1' || e.key === '2' || e.key === '3') {
+            e.preventDefault();
+            let val = '';
+            if (e.key === '1') val = '+';
+            else if (e.key === '2') val = '~';
+            else if (e.key === '3') val = '-';
+            
+            updateGrade(studentId, column.id, {
+              value: val,
+              date: new Date().toISOString()
+            });
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [
+    hoveredCell,
+    isAddColumnModalOpen,
+    isEditColumnModalOpen,
+    isConfigureModalOpen,
+    isTrendSettingsModalOpen,
+    isAttendanceModalOpen,
+    isCollaborationModalOpen,
+    isEvaluationModalOpen,
+    activeManualCell,
+    dialogConfig.isOpen,
+    updateGrade
+  ]);
 
   const handleAddColumn = async (columnData: Omit<CourseEntry, 'id'>) => {
     const newColumn: CourseEntry = {
@@ -335,8 +421,10 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       <div className="view-header">
         <div className="title-group">
           <h1 className="main-title">Leistungsbeurteilung</h1>
-          <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%' }}>
-            <h2 className="sub-title">{course.name}</h2>
+          <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h2 className="sub-title" style={{ margin: 0 }}>{course.name}</h2>
+            </div>
             <div className="dropdown-container">
               <button 
                 className="btn-secondary btn-sm"
@@ -563,8 +651,14 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                             ? (col.type === 'evaluation' ? 'evaluation-col' : 'collaboration-col')
                             : 'standard-col'
                         } ${col.type === 'calculated' ? 'milestone-cell' : ''}`}
-                        onMouseEnter={() => setHoveredColId(col.id)}
-                        onMouseLeave={() => setHoveredColId(null)}
+                        onMouseEnter={() => {
+                          setHoveredColId(col.id);
+                          setHoveredCell({ studentId: student.id, column: col });
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredColId(null);
+                          setHoveredCell(null);
+                        }}
                         style={heatmapStyle}
                       >
                         <GradeCell 
@@ -581,6 +675,14 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                             setActiveEvaluationColumn(col);
                             setActiveEvaluationStudent({ id: student.id, name: `${student.firstName} ${student.lastName}` });
                             setIsEvaluationModalOpen(true);
+                          }}
+                          onOpenManualEdit={(studentId, column, currentGrade) => {
+                            setActiveManualCell({
+                              studentId,
+                              studentName: `${student.lastName}, ${student.firstName}`,
+                              column,
+                              grade: currentGrade
+                            });
                           }}
                         />
                       </td>
@@ -692,6 +794,42 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         />
       )}
 
+      {activeManualCell && (
+        <ManualEntryModal
+          isOpen={activeManualCell !== null}
+          onClose={() => setActiveManualCell(null)}
+          studentName={activeManualCell.studentName}
+          column={activeManualCell.column}
+          currentValue={activeManualCell.grade?.value}
+          isCalculated={activeManualCell.column.type === 'calculated'}
+          onSave={async (val) => {
+            const { studentId, column } = activeManualCell;
+            
+            if (column.type === 'calculated') {
+              if (val === null) {
+                await updateGrade(studentId, column.id, { 
+                  value: '', 
+                  date: new Date().toISOString(),
+                  isOverridden: false 
+                });
+              } else {
+                await updateGrade(studentId, column.id, { 
+                  value: val, 
+                  date: new Date().toISOString(),
+                  isOverridden: true 
+                });
+              }
+            } else {
+              await updateGrade(studentId, column.id, { 
+                value: val !== null ? val : '', 
+                date: new Date().toISOString() 
+              });
+            }
+            setActiveManualCell(null);
+          }}
+        />
+      )}
+
       {breakdownData && (
         <CalculationBreakdown 
           studentName={breakdownData.studentName}
@@ -795,9 +933,22 @@ interface GradeCellProps {
   isHidden?: boolean;
   heatmapStyle?: React.CSSProperties;
   onOpenEvaluation?: () => void;
+  onOpenManualEdit: (studentId: string, column: CourseEntry, grade?: Grade) => void;
 }
 
-const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDeleteEntry, isHidden, heatmapStyle, onOpenEvaluation }: GradeCellProps) => {
+const GradeCell = ({ 
+  studentId, 
+  column, 
+  grade, 
+  onUpdateGrade, 
+  onAddEntry, 
+  onEditEntry, 
+  onDeleteEntry, 
+  isHidden, 
+  heatmapStyle, 
+  onOpenEvaluation, 
+  onOpenManualEdit 
+}: GradeCellProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [editingEntry, setEditingEntry] = useState<GradeEntry | null>(null);
@@ -833,6 +984,28 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
             pattern="[1-9]"
             title="Bitte eine Zahl zwischen 1 und 9 eingeben"
             style={{ color: heatmapStyle?.color }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
+                e.preventDefault();
+                const inputs = Array.from(document.querySelectorAll('.group-input')) as HTMLInputElement[];
+                const activeIdx = inputs.indexOf(e.currentTarget);
+                if (activeIdx !== -1) {
+                  if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                    const next = inputs[activeIdx + 1];
+                    if (next) {
+                      next.focus();
+                      next.select();
+                    }
+                  } else if (e.key === 'ArrowUp') {
+                    const prev = inputs[activeIdx - 1];
+                    if (prev) {
+                      prev.focus();
+                      prev.select();
+                    }
+                  }
+                }
+              }
+            }}
           />
         );
       
@@ -840,22 +1013,10 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
         return (
           <div 
             className="manual-cell-content"
-            onClick={handleOpenMenu}
+            onClick={() => onOpenManualEdit(studentId, column, grade)}
             style={{ color: heatmapStyle?.color }}
           >
             {grade?.value || <span className="empty-placeholder">-</span>}
-            {showMenu && (
-              <ManualSelector 
-                type={column.calcType} 
-                currentValue={grade?.value}
-                position={menuPos}
-                onSelect={(val) => {
-                  onUpdateGrade({ value: val ?? undefined, date: new Date().toISOString() });
-                  handleCloseMenu();
-                }}
-                onClose={handleCloseMenu}
-              />
-            )}
           </div>
         );
 
@@ -1029,39 +1190,14 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
       case 'calculated': {
         return (
           <div 
-            className="manual-cell-content calculated-cell"
-            onClick={handleOpenMenu}
+            className={`manual-cell-content calculated-cell ${grade?.isOverridden ? 'is-overridden-grade' : ''}`}
+            onClick={() => onOpenManualEdit(studentId, column, grade)}
             style={{ color: heatmapStyle?.color, position: 'relative' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
               {grade?.value || <span className="empty-placeholder">-</span>}
               {grade?.isOverridden && <Pencil size={10} className="override-icon" />}
             </div>
-            {showMenu && (
-              <ManualSelector 
-                type={column.calcType} 
-                currentValue={grade?.value}
-                position={menuPos}
-                isCalculated={true}
-                onSelect={(val) => {
-                  if (val === null) {
-                    onUpdateGrade({ 
-                      value: '', 
-                      date: new Date().toISOString(),
-                      isOverridden: false 
-                    });
-                  } else {
-                    onUpdateGrade({ 
-                      value: val, 
-                      date: new Date().toISOString(),
-                      isOverridden: true 
-                    });
-                  }
-                  handleCloseMenu();
-                }}
-                onClose={handleCloseMenu}
-              />
-            )}
           </div>
         );
       }
@@ -1110,56 +1246,6 @@ const GradeCell = ({ column, grade, onUpdateGrade, onAddEntry, onEditEntry, onDe
     <div className="grade-cell-inner">
       {renderContent()}
     </div>
-  );
-};
-
-const ManualSelector = ({ type, currentValue, position, onSelect, onClose, isCalculated }: { type: CourseEntry['calcType'], currentValue?: string | number, position: { top: number, left: number }, onSelect: (val: string | number | null) => void, onClose: () => void, isCalculated?: boolean }) => {
-  return createPortal(
-    <div className="modal-overlay menu-overlay" onClick={onClose} style={{ background: 'transparent' }}>
-      <div className="context-menu selector-menu" style={{ top: position.top, left: position.left }} onClick={(e) => e.stopPropagation()}>
-        <div className="menu-options">
-          {isCalculated && (
-            <>
-              <button 
-                className="menu-item" 
-                onClick={() => {
-                  onSelect(null);
-                  onClose();
-                }}
-                style={{ color: 'var(--primary-color)', fontWeight: '600' }}
-              >
-                <span>Autom. Berechnung</span>
-              </button>
-              <div className="menu-divider"></div>
-            </>
-          )}
-          {type === 'grade' && [1, 2, 3, 4, 5].map(g => (
-            <button key={g} className="menu-item" onClick={() => onSelect(g)}>
-              <span>{g}</span> {currentValue == g && <Check size={14} />}
-            </button>
-          ))}
-          {type === 'sign' && ['+', '~', '-'].map(s => (
-            <button key={s} className="menu-item sign-item" onClick={() => onSelect(s)}>
-              {s}
-            </button>
-          ))}
-          {type === 'percent' && (
-            <div className="percent-picker">
-              <input 
-                type="range" 
-                min="0" max="100" 
-                defaultValue={currentValue as number || 0}
-                onMouseUp={(e) => onSelect((e.target as HTMLInputElement).value)}
-                className="range-input"
-              />
-              <div className="range-label">0 - 100%</div>
-            </div>
-          )}
-          <button className="menu-close-btn" onClick={onClose}>Schließen</button>
-        </div>
-      </div>
-    </div>,
-    document.body
   );
 };
 
@@ -1247,6 +1333,10 @@ const CollaborationEntryModal = ({ onSave, onClose, entry }: { onSave: (val: str
                       type="button"
                       className={`predefined-comment-item-btn ${note === c.text ? 'active' : ''}`}
                       onClick={() => setNote(c.text)}
+                      onDoubleClick={() => {
+                        setNote(c.text);
+                        onSave(val, c.text, date);
+                      }}
                     >
                       {c.text}
                     </button>

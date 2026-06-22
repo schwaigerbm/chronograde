@@ -310,6 +310,32 @@ export const TrendSettingsModal = ({
     }
   };
 
+  const handleSetAllEqual = () => {
+    const active = localColumns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment');
+    const unlockedActive = active.filter(c => !lockedColIds[c.id]);
+    
+    if (unlockedActive.length === 0) return;
+    
+    const lockedActive = active.filter(c => lockedColIds[c.id]);
+    const sumLocked = lockedActive.reduce((sum, c) => sum + c.calcFactor, 0);
+    const remaining = Math.max(0, 100 - sumLocked);
+    
+    const share = Math.floor(remaining / unlockedActive.length);
+    const remainder = remaining - (share * unlockedActive.length);
+    
+    let assignedCount = 0;
+    const finalCols = localColumns.map(c => {
+      if (c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment' && !lockedColIds[c.id]) {
+        const factor = assignedCount === 0 ? share + remainder : share;
+        assignedCount++;
+        return { ...c, calcFactor: factor };
+      }
+      return c;
+    });
+    
+    setLocalColumns(finalCols);
+  };
+
   const activeCount = localColumns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment').length;
 
   return createPortal(
@@ -321,7 +347,21 @@ export const TrendSettingsModal = ({
         </div>
         <div className="modal-body trend-settings-split-layout">
           <div className="trend-settings-left-col">
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>GEWICHTUNG (SUMME = 100%)</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>GEWICHTUNG (SUMME = 100%)</h4>
+              {localColumns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment').length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleSetAllEqual}
+                  className="btn-secondary btn-xs"
+                  style={{ fontSize: '11px', padding: '4px 8px', height: '24px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: 0 }}
+                  title="Verteilt die verbleibende Gewichtung gleichmäßig auf alle unfixierten, aktiven Spalten"
+                >
+                  <Scale size={12} />
+                  <span>Alle gleich gewichten</span>
+                </button>
+              )}
+            </div>
             <div className="weight-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {localColumns.filter(c => c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment').map(col => {
                 const isLocked = !!lockedColIds[col.id];

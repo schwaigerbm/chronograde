@@ -1,5 +1,10 @@
 # Spezifikation: Dashboard-Layout & Navigation
 
+## 0. Login-Ansicht
+Die Anwendung startet im Login-Zustand, sofern keine gültige Benutzersitzung aktiv ist.
+* **Komponenten:** Ein Formular mit Eingabefeldern für Benutzername und Passwort.
+* **Passwort-Sichtbarkeit:** Das Passwort-Eingabefeld besitzt am rechten Rand ein interaktives Icon (`Eye` / `EyeOff`), mit dem die Lehrkraft das eingegebene Passwort im Klartext anzeigen bzw. maskieren kann, um Tippfehler zu minimieren.
+
 ## 1. Layout-Struktur
 Das Dashboard nutzt ein klassisches "Sidebar-Layout". Es besteht aus zwei Hauptbereichen:
 1. **Sidebar (Links):** Permanente vertikale Navigationsleiste.

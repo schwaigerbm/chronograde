@@ -50,6 +50,7 @@ Der Datenbankzugriff erfolgt ausschließlich über `src/services/firebaseService
 Bei der Arbeit mit Firestore und Jest müssen zwingend `beforeAll` und `afterAll` Hooks in den Test-Suiten verwendet werden, um eine saubere Testumgebung zu garantieren:
 *   `beforeAll`: Initialisierung der Firebase Emulator Suite und Aufbau der Basis-Testdaten.
 *   `afterAll`: Vollständiger Cleanup (Löschen) der generierten Test-Collections, um Seiteneffekte und Datenverschmutzung zwischen den einzelnen Testläufen strikt zu vermeiden.
+*   **Keine Scratch-Testungen:** Vorerst sollten keine Scratch-Testungen durchgeführt werden (vielleicht zu einem späteren Zeitpunkt).
 
 ---
 
