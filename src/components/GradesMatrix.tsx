@@ -16,7 +16,6 @@ import {
   Pencil,
   TrendingUp,
   FileDown,
-  FileText,
   ChevronDown
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
@@ -28,8 +27,9 @@ import { CollaborationBulkModal } from './CollaborationBulkModal';
 import { ConfigureViewModal } from './ConfigureViewModal';
 import { DialogModal } from './DialogModal';
 import { formatDate } from '../lib/utils';
-import type { Course, CourseEntry, Grade, GradeEntry, PredefinedComment } from '../schema';
-import { exportMatrixPDF, exportStudentReportPDF } from './PDFExports';
+import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment } from '../schema';
+import { exportMatrixPDF } from './PDFExports';
+import { StudentPerformanceDashboard } from './StudentPerformanceDashboard';
 import { TrendSettingsModal } from './TrendSettingsModal';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
 import { EvaluationEntryModal } from './EvaluationEntryModal';
@@ -76,6 +76,9 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   
   // Cell Hover Tracking for Quick Entry
   const [hoveredCell, setHoveredCell] = useState<{ studentId: string, column: CourseEntry } | null>(null);
+
+  // Student Dashboard Overlay State
+  const [selectedStudentForDashboard, setSelectedStudentForDashboard] = useState<Student | null>(null);
 
   // Custom Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
@@ -613,14 +616,14 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                       <span className="student-lastname">{student.lastName}</span>
                       <span className="student-firstname">{student.firstName}</span>
                       <button 
-                        className="btn-student-pdf"
+                        className="btn-student-analysis"
                         onClick={(e) => {
                           e.stopPropagation();
-                          exportStudentReportPDF(student, course, grades, visibleColumns);
+                          setSelectedStudentForDashboard(student);
                         }}
-                        title={`PDF-Leistungsdatenblatt für ${student.firstName} ${student.lastName} herunterladen`}
+                        title={`Leistungsübersicht für ${student.firstName} ${student.lastName} öffnen`}
                       >
-                        <FileText size={13} />
+                        <TrendingUp size={13} />
                       </button>
                       {student.photoBase64 && (
                         <div className="student-avatar-tooltip">
@@ -860,6 +863,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onConfirm={dialogConfig.onConfirm}
         onClose={() => setDialogConfig(prev => ({ ...prev, isOpen: false }))}
       />
+
+      {selectedStudentForDashboard && (
+        <StudentPerformanceDashboard
+          student={selectedStudentForDashboard}
+          course={course}
+          grades={grades}
+          visibleColumns={visibleColumns}
+          onClose={() => setSelectedStudentForDashboard(null)}
+        />
+      )}
     </div>
   );
 };

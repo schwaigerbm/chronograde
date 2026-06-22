@@ -280,15 +280,16 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
     * Enthält auch die berechneten Noten/Prozentwerte und die Meilensteine sowie optional die Trend-Spalte (sofern im Auswahldialog ausgewählt).
     * Kopfzeilen-Texte der Matrix-Spalten werden zur Platzersparnis geneigt oder kompakt dargestellt.
 
-### 7.2 Einzel-Schüler PDF-Export (Datenblatt)
-* **Aktion:** Ein Klick auf ein PDF-Icon (Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`).
-* **Layout:** Hochformat A4.
+### 7.2 Vollbild-Anzeige der Schülerleistungen & Detail-Dashboard
+* **Aktion:** Ein Klick auf ein Analyse-Icon (TrendingUp/LineChart-Symbol, Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`) öffnet eine vollflächige Overlay-Ansicht (Vollbild-Dashboard) mit den detaillierten Leistungen des Schülers.
+* **Layout:** Vollbild-Ansicht (das Fenster deckt den gesamten Browser-Viewport ab). Zweispaltiges Layout:
+    * **Linke Spalte:** Zusammenfassungen oben (Live-Trend, Anwesenheitsquote, Mitarbeit, Meilensteine als Cards nebeneinander angeordnet) und das interaktive Liniendiagramm darunter.
+    * **Rechte Spalte:** Chronologische History-Liste der Leistungsdetails über die gesamte Höhe scrollbar.
 * **Inhalt:**
-    * Briefkopf: "Leistungsnachweis", Schulname ("Chronograde School Admin 2026"), Kursname, Schuljahr. Es werden **keine** Angaben zur Klasse oder Lehrperson aufgedruckt.
-    * Schülerdaten: Vorname und Nachname des Schülers sowie das **Profilbild des Schülers (falls vorhanden)**, welches oben rechts im Datenblatt platziert wird.
-    * **Übersicht der Leistungen:** Eine chronologische Liste aller erfassten Leistungen.
-        * Spalten der Liste: Titel der Leistung, Datum, Typ, Bewertung (z.B. Note, Prozent, oder Mitarbeitszeichen `+`/`~`/`-`), sowie die zugehörige Notiz (Kommentar).
-    * **Zusammenfassung:** Die berechneten Meilensteine und der aktuelle gewichtete Live-Trend des Schülers.
+    * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr. Ein Button zum Generieren des PDF-Einzelberichts (Datenblatt) ist im Header platziert.
+    * **Zusammenfassung (Summary):** Anzeige des aktuellen berechneten Live-Trends (Note und Prozentwert), der Meilensteine (berechnete Noten) sowie Statistiken (Anwesenheitsquote, Verteilung von Mitarbeitsleistungen: positive (+), neutrale (~) und negative (-) Einträge).
+    * **Leistungsverlauf (Visualisierung):** Ein sauber gestaltetes, interaktives SVG-basiertes Liniendiagramm, das den chronologischen Verlauf der Noten (1 bis 5, wobei 1 oben steht) des Schülers im Kurs darstellt.
+    * **Detaillierter Verlauf (Chronologische Liste):** Eine tabellarische oder Feed-basierte Auflistung aller erfassten Noten, Zeichen, Mitarbeitseinträge und Anwesenheiten des Schülers im Kurs, sortiert nach Datum (absteigend), inklusive zugehöriger Kommentare/Notizen.
 
 ---
 
