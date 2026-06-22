@@ -198,7 +198,7 @@ export const StudentPerformanceDashboard = ({
 
   // SVG dimensions & coordinate mapping for Line Chart
   const svgWidth = 600;
-  const svgHeight = 240;
+  const svgHeight = 320;
   const paddingX = 60;
   const paddingY = 30;
 
@@ -309,340 +309,343 @@ export const StudentPerformanceDashboard = ({
           </div>
         </header>
 
-        {/* Dashboard Content Grid */}
-        <div className="dashboard-grid">
-          {/* Column Left: Summaries (top) and Diagram (bottom) */}
-          <div className="dashboard-left-column">
+        {/* Dashboard Body */}
+        <div className="dashboard-body">
+          
+          {/* Summaries Row (Top) */}
+          <div className="dashboard-summaries-row">
             
-            {/* Summaries Row / Grid */}
-            <div className="dashboard-summaries-grid">
-              
-              {/* Live Trend Card */}
-              <div className="dashboard-card live-trend-card">
-                <h2 className="dashboard-card-title">
-                  <TrendingUp size={18} />
-                  <span>Gesamttrend (Live)</span>
-                </h2>
-                <div className="live-trend-content">
-                  {liveSummary.grade ? (
-                    <>
-                      <div className="live-trend-grade-display" data-grade={liveSummary.grade}>
-                        {liveSummary.grade}
-                      </div>
-                      <div className="live-trend-details">
-                        <span className="live-trend-label">{getHungarianGradeLabel(liveSummary.grade)}</span>
-                        <span className="live-trend-percent">{liveSummary.percent}% Schnitt</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="no-data-alert">
-                      <AlertCircle size={20} />
-                      <span>Keine Daten</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Attendance Quote Card */}
-              <div className="dashboard-card">
-                <h2 className="dashboard-card-title">
-                  <Activity size={18} />
-                  <span>Anwesenheit</span>
-                </h2>
-                <div className="stat-card-content">
-                  {attendanceStats.hasPresenceData ? (
-                    <div className="attendance-quote-display">
-                      <div className="attendance-percentage" data-quote={attendanceStats.percent}>
-                        {attendanceStats.percent}%
-                      </div>
-                      <p className="stat-card-subtitle">
-                        {attendanceStats.presentHours}/{attendanceStats.totalHours} Std. anwesend
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="no-data-text">Keine Aufzeichnungen</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Collaboration Distribution Card */}
-              <div className="dashboard-card">
-                <h2 className="dashboard-card-title">
-                  <Award size={18} />
-                  <span>Mitarbeit</span>
-                </h2>
-                <div className="stat-card-content">
-                  {collaborationStats.totalCollabEntries > 0 ? (
-                    <div className="collab-stats-distribution">
-                      <div className="collab-dist-item plus">
-                        <span className="collab-dist-symbol">+</span>
-                        <span className="collab-dist-count">{collaborationStats.plusCount}</span>
-                      </div>
-                      <div className="collab-dist-item neutral">
-                        <span className="collab-dist-symbol">~</span>
-                        <span className="collab-dist-count">{collaborationStats.neutralCount}</span>
-                      </div>
-                      <div className="collab-dist-item minus">
-                        <span className="collab-dist-symbol">-</span>
-                        <span className="collab-dist-count">{collaborationStats.minusCount}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="no-data-text">Keine Aufzeichnungen</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Milestones Card */}
-              <div className="dashboard-card">
-                <h2 className="dashboard-card-title">
-                  <Award size={18} />
-                  <span>Meilensteine</span>
-                </h2>
-                <div className="milestones-list">
-                  {visibleColumns.filter(c => c.type === 'calculated').length > 0 ? (
-                    visibleColumns.filter(c => c.type === 'calculated').slice(0, 2).map(ms => {
-                      let grade = grades[student.id]?.[ms.id];
-                      if (!grade || !grade.isOverridden) {
-                        const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial');
-                        grade = { value: calculated.grade || undefined };
-                      }
-                      return (
-                        <div key={ms.id} className="milestone-item" style={{ padding: '4px 8px' }}>
-                          <span className="milestone-name" style={{ fontSize: '11px' }}>{ms.title}</span>
-                          <div className="milestone-badge" data-grade={grade?.value} style={{ width: '20px', height: '20px', fontSize: '11px' }}>
-                            {grade?.value || '-'}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="no-data-text">Keine Meilensteine</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Visual Chart Card */}
-            <div className="dashboard-card chart-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            {/* Live Trend Card */}
+            <div className="dashboard-card live-trend-card">
               <h2 className="dashboard-card-title">
                 <TrendingUp size={18} />
-                <span>Leistungsverlauf (Noten-Trend)</span>
+                <span>Gesamttrend (Live)</span>
               </h2>
-              <div className="chart-wrapper">
-                {chartPoints.length >= 2 ? (
-                  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                    <svg 
-                      width="100%" 
-                      height="100%" 
-                      viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                      className="trend-svg"
-                    >
-                      <defs>
-                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
-                          <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Threshold grid lines */}
-                      {[1, 2, 3, 4, 5].map(grade => {
-                        const y = paddingY + ((grade - 1) * (svgHeight - paddingY - 40)) / 4;
-                        return (
-                          <g key={grade} className="grid-group">
-                            <line 
-                              x1={paddingX} 
-                              y1={y} 
-                              x2={svgWidth - 20} 
-                              y2={y} 
-                              stroke="#e2e8f0" 
-                              strokeDasharray="4 4"
-                            />
-                            <text 
-                              x={paddingX - 8} 
-                              y={y + 4} 
-                              textAnchor="end" 
-                              className="grid-text"
-                            >
-                              Note {grade}
-                            </text>
-                          </g>
-                        );
-                      })}
-
-                      {/* Bottom axis line */}
-                      <line 
-                        x1={paddingX} 
-                        y1={svgHeight - 30} 
-                        x2={svgWidth - 20} 
-                        y2={svgHeight - 30} 
-                        stroke="#cbd5e1"
-                      />
-
-                      {/* Fill area beneath line */}
-                      <path d={gradientAreaPath} fill="url(#chartGradient)" />
-
-                      {/* Grade line path */}
-                      <path 
-                        d={linePath} 
-                        fill="none" 
-                        stroke="#2563eb" 
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-
-                      {/* Data point circles & hover triggers */}
-                      {chartPoints.map((p, i) => {
-                        const x = paddingX + (i * (svgWidth - paddingX - 20)) / (chartPoints.length - 1);
-                        const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - 40)) / 4;
-                        return (
-                          <g key={i}>
-                            <circle 
-                              cx={x} 
-                              cy={y} 
-                              r="5" 
-                              fill="#ffffff" 
-                              stroke="#2563eb" 
-                              strokeWidth="2" 
-                              className="chart-dot"
-                            />
-                            {/* Larger invisible circle for easier hover interaction */}
-                            <circle 
-                              cx={x} 
-                              cy={y} 
-                              r="15" 
-                              fill="transparent" 
-                              style={{ cursor: 'pointer' }}
-                              onMouseEnter={() => {
-                                setHoveredPoint({
-                                  x: x,
-                                  y: y - 10,
-                                  title: p.title,
-                                  date: p.date,
-                                  percent: p.percent,
-                                  grade: p.grade
-                                });
-                              }}
-                              onMouseLeave={() => setHoveredPoint(null)}
-                            />
-                          </g>
-                        );
-                      })}
-                    </svg>
-                    
-                    {/* SVG Chart Point Tooltip */}
-                    {hoveredPoint && (
-                      <div 
-                        className="chart-tooltip"
-                        style={{
-                          position: 'absolute',
-                          left: `${(hoveredPoint.x / svgWidth) * 100}%`,
-                          top: `${(hoveredPoint.y / svgHeight) * 100}%`,
-                          transform: 'translate(-50%, -100%)'
-                        }}
-                      >
-                        <div className="tooltip-inner">
-                          <strong className="tooltip-title">{hoveredPoint.title}</strong>
-                          <span className="tooltip-date">{formatDate(hoveredPoint.date)}</span>
-                          <div className="tooltip-stats">
-                            <span className="tooltip-percent">{hoveredPoint.percent}%</span>
-                            <span className="tooltip-grade">Note: {hoveredPoint.grade}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              <div className="live-trend-content">
+                {liveSummary.grade ? (
+                  <>
+                    <div className="live-trend-grade-display" data-grade={liveSummary.grade}>
+                      {liveSummary.grade}
+                    </div>
+                    <div className="live-trend-details">
+                      <span className="live-trend-label">{getHungarianGradeLabel(liveSummary.grade)}</span>
+                      <span className="live-trend-percent">{liveSummary.percent}% Schnitt</span>
+                    </div>
+                  </>
                 ) : (
-                  <div className="chart-empty-state">
-                    <TrendingUp size={48} style={{ opacity: 0.2, marginBottom: '12px' }} />
-                    <p>Diagramm benötigt mindestens 2 bewertete Leistungen im Verlauf</p>
+                  <div className="no-data-alert">
+                    <AlertCircle size={20} />
+                    <span>Keine Daten</span>
                   </div>
                 )}
               </div>
             </div>
 
+            {/* Attendance Quote Card */}
+            <div className="dashboard-card">
+              <h2 className="dashboard-card-title">
+                <Activity size={18} />
+                <span>Anwesenheit</span>
+              </h2>
+              <div className="stat-card-content">
+                {attendanceStats.hasPresenceData ? (
+                  <div className="attendance-quote-display">
+                    <div className="attendance-percentage" data-quote={attendanceStats.percent}>
+                      {attendanceStats.percent}%
+                    </div>
+                    <p className="stat-card-subtitle">
+                      {attendanceStats.presentHours}/{attendanceStats.totalHours} Std. anwesend
+                    </p>
+                  </div>
+                ) : (
+                  <p className="no-data-text">Keine Aufzeichnungen</p>
+                )}
+              </div>
+            </div>
+
+            {/* Collaboration Distribution Card */}
+            <div className="dashboard-card">
+              <h2 className="dashboard-card-title">
+                <Award size={18} />
+                <span>Mitarbeit</span>
+              </h2>
+              <div className="stat-card-content">
+                {collaborationStats.totalCollabEntries > 0 ? (
+                  <div className="collab-stats-distribution">
+                    <div className="collab-dist-item plus">
+                      <span className="collab-dist-symbol">+</span>
+                      <span className="collab-dist-count">{collaborationStats.plusCount}</span>
+                    </div>
+                    <div className="collab-dist-item neutral">
+                      <span className="collab-dist-symbol">~</span>
+                      <span className="collab-dist-count">{collaborationStats.neutralCount}</span>
+                    </div>
+                    <div className="collab-dist-item minus">
+                      <span className="collab-dist-symbol">-</span>
+                      <span className="collab-dist-count">{collaborationStats.minusCount}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="no-data-text">Keine Aufzeichnungen</p>
+                )}
+              </div>
+            </div>
+
+            {/* Milestones Card */}
+            <div className="dashboard-card">
+              <h2 className="dashboard-card-title">
+                <Award size={18} />
+                <span>Meilensteine</span>
+              </h2>
+              <div className="milestones-list">
+                {visibleColumns.filter(c => c.type === 'calculated').length > 0 ? (
+                  visibleColumns.filter(c => c.type === 'calculated').slice(0, 2).map(ms => {
+                    let grade = grades[student.id]?.[ms.id];
+                    if (!grade || !grade.isOverridden) {
+                      const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial');
+                      grade = { value: calculated.grade || undefined };
+                    }
+                    return (
+                      <div key={ms.id} className="milestone-item" style={{ padding: '4px 8px' }}>
+                        <span className="milestone-name" style={{ fontSize: '11px' }}>{ms.title}</span>
+                        <div className="milestone-badge" data-grade={grade?.value} style={{ width: '20px', height: '20px', fontSize: '11px' }}>
+                          {grade?.value || '-'}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="no-data-text">Keine Meilensteine</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Column Right: Detailed Timeline List (full height) */}
-          <div className="dashboard-right-column">
-            <div className="dashboard-card list-timeline-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', margin: 0 }}>
-              <h2 className="dashboard-card-title">
-                <Calendar size={18} />
-                <span>Leistungsverlauf im Detail</span>
-              </h2>
-              <div className="timeline-container" style={{ flex: 1, overflowY: 'auto' }}>
-                {historyFeed.length > 0 ? (
-                  <div className="timeline-feed">
-                    {historyFeed.map(item => (
-                      <div key={item.id} className="timeline-item">
-                        {/* Dot indicator */}
-                        <div className="timeline-badge-column">
-                          <span className={`col-type-badge ${getColTypeBadgeClass(item.type)}`}>
-                            {getColTypeLabel(item.type)}
-                          </span>
-                        </div>
-                        
-                        {/* Details content */}
-                        <div className="timeline-content-card">
-                          <div className="timeline-card-header">
-                            <div>
-                              <h3 className="timeline-item-title">{item.title}</h3>
-                              <span className="timeline-item-date">{formatDate(item.date)}</span>
-                            </div>
-                            <div className="timeline-item-result-badge" data-type={item.type}>
-                              {item.displayValue}
+          {/* Workspace (Bottom: Chart Left, History Right) */}
+          <div className="dashboard-workspace">
+            
+            {/* Chart Container (Left Column) */}
+            <div className="dashboard-chart-container">
+              <div className="dashboard-card chart-card">
+                <h2 className="dashboard-card-title">
+                  <TrendingUp size={18} />
+                  <span>Leistungsverlauf (Noten-Trend)</span>
+                </h2>
+                <div className="chart-wrapper">
+                  {chartPoints.length >= 2 ? (
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                      <svg 
+                        width="100%" 
+                        height="100%" 
+                        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                        className="trend-svg"
+                      >
+                        <defs>
+                          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
+                            <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Threshold grid lines */}
+                        {[1, 2, 3, 4, 5].map(grade => {
+                          const y = paddingY + ((grade - 1) * (svgHeight - paddingY - 40)) / 4;
+                          return (
+                            <g key={grade} className="grid-group">
+                              <line 
+                                x1={paddingX} 
+                                y1={y} 
+                                x2={svgWidth - 20} 
+                                y2={y} 
+                                stroke="#e2e8f0" 
+                                strokeDasharray="4 4"
+                              />
+                              <text 
+                                x={paddingX - 8} 
+                                y={y + 4} 
+                                textAnchor="end" 
+                                className="grid-text"
+                              >
+                                Note {grade}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Bottom axis line */}
+                        <line 
+                          x1={paddingX} 
+                          y1={svgHeight - 30} 
+                          x2={svgWidth - 20} 
+                          y2={svgHeight - 30} 
+                          stroke="#cbd5e1"
+                        />
+
+                        {/* Fill area beneath line */}
+                        <path d={gradientAreaPath} fill="url(#chartGradient)" />
+
+                        {/* Grade line path */}
+                        <path 
+                          d={linePath} 
+                          fill="none" 
+                          stroke="#2563eb" 
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+
+                        {/* Data point circles & hover triggers */}
+                        {chartPoints.map((p, i) => {
+                          const x = paddingX + (i * (svgWidth - paddingX - 20)) / (chartPoints.length - 1);
+                          const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - 40)) / 4;
+                          return (
+                            <g key={i}>
+                              <circle 
+                                cx={x} 
+                                cy={y} 
+                                r="5" 
+                                fill="#ffffff" 
+                                stroke="#2563eb" 
+                                strokeWidth="2" 
+                                className="chart-dot"
+                              />
+                              {/* Larger invisible circle for easier hover interaction */}
+                              <circle 
+                                cx={x} 
+                                cy={y} 
+                                r="15" 
+                                fill="transparent" 
+                                style={{ cursor: 'pointer' }}
+                                onMouseEnter={() => {
+                                  setHoveredPoint({
+                                    x: x,
+                                    y: y - 10,
+                                    title: p.title,
+                                    date: p.date,
+                                    percent: p.percent,
+                                    grade: p.grade
+                                  });
+                                }}
+                                onMouseLeave={() => setHoveredPoint(null)}
+                              />
+                            </g>
+                          );
+                        })}
+                      </svg>
+                      
+                      {/* SVG Chart Point Tooltip */}
+                      {hoveredPoint && (
+                        <div 
+                          className="chart-tooltip"
+                          style={{
+                            position: 'absolute',
+                            left: `${(hoveredPoint.x / svgWidth) * 100}%`,
+                            top: `${(hoveredPoint.y / svgHeight) * 100}%`,
+                            transform: 'translate(-50%, -100%)'
+                          }}
+                        >
+                          <div className="tooltip-inner">
+                            <strong className="tooltip-title">{hoveredPoint.title}</strong>
+                            <span className="tooltip-date">{formatDate(hoveredPoint.date)}</span>
+                            <div className="tooltip-stats">
+                              <span className="tooltip-percent">{hoveredPoint.percent}%</span>
+                              <span className="tooltip-grade">Note: {hoveredPoint.grade}</span>
                             </div>
                           </div>
-
-                          {/* Predefined Comment/Note */}
-                          {item.note && (
-                            <div className="timeline-item-note">
-                              <MessageSquare size={13} style={{ marginTop: '2px' }} />
-                              <p className="note-text">{item.note}</p>
-                            </div>
-                          )}
-
-                          {/* Subentries (Presence / Collaboration lists) */}
-                          {item.subEntries && item.subEntries.length > 0 && (
-                            <div className="timeline-sub-entries">
-                              <span className="sub-entries-header">Erfasste Einzelleistungen:</span>
-                              <div className="sub-entries-list">
-                                {item.subEntries.map(sub => {
-                                  let isPositive = sub.value === '+' || sub.value === 'check';
-                                  let isNegative = sub.value === '-';
-                                  
-                                  return (
-                                    <div key={sub.id} className="sub-entry-item">
-                                      <span className="sub-entry-date">{formatDate(sub.date)}</span>
-                                      <div className={`sub-entry-indicator ${isPositive ? 'positive' : isNegative ? 'negative' : 'neutral'}`}>
-                                        {item.type === 'presenceSum' ? (
-                                          isPositive ? <CheckCircle size={12} /> : <XCircle size={12} />
-                                        ) : (
-                                          <span className="sub-entry-symbol">{sub.value}</span>
-                                        )}
-                                      </div>
-                                      <span className="sub-entry-note">
-                                        {sub.note || (item.type === 'presenceSum' ? (isPositive ? 'Anwesend' : 'Abwesend') : 'Kein Kommentar')}
-                                        {sub.hours ? ` (${sub.hours} Std.)` : ''}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="timeline-empty-state">
-                    <p>Keine Einträge für diesen Schüler vorhanden.</p>
-                  </div>
-                )}
+                      )}
+                    </div>
+                  ) : (
+                    <div className="chart-empty-state">
+                      <TrendingUp size={48} style={{ opacity: 0.2, marginBottom: '12px' }} />
+                      <p>Diagramm benötigt mindestens 2 bewertete Leistungen im Verlauf</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* History Container (Right Column) */}
+            <div className="dashboard-timeline-container">
+              <div className="dashboard-card list-timeline-card">
+                <h2 className="dashboard-card-title">
+                  <Calendar size={18} />
+                  <span>Leistungsverlauf im Detail</span>
+                </h2>
+                <div className="timeline-container">
+                  {historyFeed.length > 0 ? (
+                    <div className="timeline-feed">
+                      {historyFeed.map(item => (
+                        <div key={item.id} className="timeline-item">
+                          {/* Dot indicator */}
+                          <div className="timeline-badge-column">
+                            <span className={`col-type-badge ${getColTypeBadgeClass(item.type)}`}>
+                              {getColTypeLabel(item.type)}
+                            </span>
+                          </div>
+                          
+                          {/* Details content */}
+                          <div className="timeline-content-card">
+                            <div className="timeline-card-header">
+                              <div>
+                                <h3 className="timeline-item-title">{item.title}</h3>
+                                <span className="timeline-item-date">{formatDate(item.date)}</span>
+                              </div>
+                              <div className="timeline-item-result-badge" data-type={item.type}>
+                                {item.displayValue}
+                              </div>
+                            </div>
+
+                            {/* Predefined Comment/Note */}
+                            {item.note && (
+                              <div className="timeline-item-note">
+                                <MessageSquare size={13} style={{ marginTop: '2px' }} />
+                                <p className="note-text">{item.note}</p>
+                              </div>
+                            )}
+
+                            {/* Subentries (Presence / Collaboration lists) */}
+                            {item.subEntries && item.subEntries.length > 0 && (
+                              <div className="timeline-sub-entries">
+                                <span className="sub-entries-header">Erfasste Einzelleistungen:</span>
+                                <div className="sub-entries-list">
+                                  {item.subEntries.map(sub => {
+                                    let isPositive = sub.value === '+' || sub.value === 'check';
+                                    let isNegative = sub.value === '-';
+                                    
+                                    return (
+                                      <div key={sub.id} className="sub-entry-item">
+                                        <span className="sub-entry-date">{formatDate(sub.date)}</span>
+                                        <div className={`sub-entry-indicator ${isPositive ? 'positive' : isNegative ? 'negative' : 'neutral'}`}>
+                                          {item.type === 'presenceSum' ? (
+                                            isPositive ? <CheckCircle size={12} /> : <XCircle size={12} />
+                                          ) : (
+                                            <span className="sub-entry-symbol">{sub.value}</span>
+                                          )}
+                                        </div>
+                                        <span className="sub-entry-note">
+                                          {sub.note || (item.type === 'presenceSum' ? (isPositive ? 'Anwesend' : 'Abwesend') : 'Kein Kommentar')}
+                                          {sub.hours ? ` (${sub.hours} Std.)` : ''}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="timeline-empty-state">
+                      <p>Keine Einträge für diesen Schüler vorhanden.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

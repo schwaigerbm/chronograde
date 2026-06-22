@@ -280,11 +280,14 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
     * Enthält auch die berechneten Noten/Prozentwerte und die Meilensteine sowie optional die Trend-Spalte (sofern im Auswahldialog ausgewählt).
     * Kopfzeilen-Texte der Matrix-Spalten werden zur Platzersparnis geneigt oder kompakt dargestellt.
 
-### 7.2 Vollbild-Anzeige der Schülerleistungen & Detail-Dashboard
-* **Aktion:** Ein Klick auf ein Analyse-Icon (TrendingUp/LineChart-Symbol, Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`) öffnet eine vollflächige Overlay-Ansicht (Vollbild-Dashboard) mit den detaillierten Leistungen des Schülers.
-* **Layout:** Vollbild-Ansicht (das Fenster deckt den gesamten Browser-Viewport ab). Zweispaltiges Layout:
-    * **Linke Spalte:** Zusammenfassungen oben (Live-Trend, Anwesenheitsquote, Mitarbeit, Meilensteine als Cards nebeneinander angeordnet) und das interaktive Liniendiagramm darunter.
-    * **Rechte Spalte:** Chronologische History-Liste der Leistungsdetails über die gesamte Höhe scrollbar.
+### 7.2 Große modale Anzeige der Schülerleistungen & Detail-Dashboard
+* **Aktion:** Ein Klick auf ein Analyse-Icon (TrendingUp/LineChart-Symbol, Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`) öffnet eine große, zentrierte Overlay-Ansicht (Modal) mit den detaillierten Leistungen des Schülers.
+* **Layout:** Großes modales Fenster (Breite: 95vw, Höhe: 90vh, abgerundete Ecken) mit einem abgedunkelten Backdrop, so dass die Notenmatrix im Hintergrund dezent sichtbar bleibt. Das Fenster gliedert sich in:
+    * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr und Steuerelemente (PDF-Export, Schließen).
+    * **Zusammenfassungen (Oben):** Horizontal angeordnet über die gesamte Breite des Dashboards (Live-Trend, Anwesenheitsquote, Mitarbeit, Meilensteine als Cards nebeneinander).
+    * **Hauptbereich (Unten):** Zweispaltiges Layout:
+        * **Linke Spalte (Diagramm):** Interaktives SVG-basiertes Liniendiagramm zur Visualisierung des Noten-Trends, permanent sichtbar.
+        * **Rechte Spalte (History):** Chronologische Verlaufsliste der Leistungsdetails, unabhängig scrollbar.
 * **Inhalt:**
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr. Ein Button zum Generieren des PDF-Einzelberichts (Datenblatt) ist im Header platziert.
     * **Zusammenfassung (Summary):** Anzeige des aktuellen berechneten Live-Trends (Note und Prozentwert), der Meilensteine (berechnete Noten) sowie Statistiken (Anwesenheitsquote, Verteilung von Mitarbeitsleistungen: positive (+), neutrale (~) und negative (-) Einträge).
