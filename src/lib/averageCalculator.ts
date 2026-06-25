@@ -1,20 +1,28 @@
 // src/lib/averageCalculator.ts
 import type { CourseEntry, Grade, GradeEntry } from '../schema';
 
-export const getCollaborationPercentage = (entries?: GradeEntry[]): number | null => {
+export const getCollaborationPercentage = (entries?: GradeEntry[], cutoffDate?: string): number | null => {
   if (!entries || entries.length === 0) return null;
-  const totalPoints = entries.reduce((sum, entry) => {
+  const filtered = cutoffDate 
+    ? entries.filter(entry => entry.date <= cutoffDate)
+    : entries;
+  if (filtered.length === 0) return null;
+  const totalPoints = filtered.reduce((sum, entry) => {
     if (entry.value === '+') return sum + 1;
     if (entry.value === '~') return sum + 0.5;
     return sum;
   }, 0);
-  return Math.round((totalPoints / entries.length) * 100);
+  return Math.round((totalPoints / filtered.length) * 100);
 };
 
-export const getPresencePercentage = (entries?: GradeEntry[]): number | null => {
+export const getPresencePercentage = (entries?: GradeEntry[], cutoffDate?: string): number | null => {
   if (!entries || entries.length === 0) return null;
-  const totalHours = entries.reduce((sum, entry) => sum + (entry.hours || 1), 0);
-  const presentHours = entries.reduce((sum, entry) => {
+  const filtered = cutoffDate 
+    ? entries.filter(entry => entry.date <= cutoffDate)
+    : entries;
+  if (filtered.length === 0) return null;
+  const totalHours = filtered.reduce((sum, entry) => sum + (entry.hours || 1), 0);
+  const presentHours = filtered.reduce((sum, entry) => {
     return sum + (entry.value === 'check' ? (entry.hours || 1) : 0);
   }, 0);
   return Math.round((presentHours / totalHours) * 100);
@@ -25,7 +33,8 @@ export const calculateAverage = (
   columns: CourseEntry[], 
   allGrades: Record<string, Record<string, Grade>>, 
   cutoffDate?: string, 
-  roundingRule: 'commercial' | 'studentFriendly' = 'commercial'
+  roundingRule: 'commercial' | 'studentFriendly' = 'commercial',
+  collaborationCalcMode: 'linear' | 'weighted' = 'linear'
 ) => {
   let totalWeightValue = 0;
   let weightedSum = 0;
@@ -46,7 +55,10 @@ export const calculateAverage = (
     let percent: number | null = null;
     
     if (col.type === 'collaborationSum') {
-      percent = getCollaborationPercentage(grade.entries);
+      percent = getCollaborationPercentage(
+        grade.entries, 
+        collaborationCalcMode === 'weighted' ? undefined : cutoffDate
+      );
     } else if (col.type === 'evaluation') {
       percent = grade.evaluationPercent !== undefined && grade.evaluationPercent !== null ? grade.evaluationPercent : null;
     } else if (grade.value !== undefined && grade.value !== '') {

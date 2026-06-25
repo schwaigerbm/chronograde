@@ -42,8 +42,8 @@ export const StudentPerformanceDashboard = ({
 
   // 1. Calculate general stats
   const liveSummary = useMemo(() => {
-    return calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial');
-  }, [student.id, course.columns, grades, course.roundingRule]);
+    return calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+  }, [student.id, course.columns, grades, course.roundingRule, course.collaborationCalcMode]);
 
   // Attendance stats
   const attendanceStats = useMemo(() => {
@@ -115,7 +115,7 @@ export const StudentPerformanceDashboard = ({
       let grade = grades[student.id]?.[col.id];
       
       if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-        const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial');
+        const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
         grade = { 
           value: calculated.grade || undefined,
           date: new Date().toISOString()
@@ -154,15 +154,10 @@ export const StudentPerformanceDashboard = ({
 
     // Sort descending (latest date first)
     return feed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student.id, visibleColumns, grades, course.columns, course.roundingRule]);
+  }, [student.id, visibleColumns, grades, course.columns, course.roundingRule, course.collaborationCalcMode]);
 
   // 3. Generate Chronological Trend Data points for SVG Chart (sorted ascending)
   const chartPoints = useMemo(() => {
-    // Collect all grade columns with weight and date
-    const gradeCols = course.columns
-      .filter(col => col.calc !== false && col.type !== 'calculated' && col.type !== 'presenceSum' && col.type !== 'groupAssignment')
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
     const points: {
       date: string;
       title: string;
@@ -170,31 +165,84 @@ export const StudentPerformanceDashboard = ({
       grade: number;
     }[] = [];
 
-    // Compute live average up to each assessment's date
-    gradeCols.forEach(col => {
-      // Check if student has a grade in this column or collaboration entries
+    // 1. Gather normal assessment columns (excluding collaborationSum, presenceSum, calculated, groupAssignment)
+    const normalCols = course.columns.filter(col => 
+      col.calc !== false && 
+      col.type !== 'calculated' && 
+      col.type !== 'presenceSum' && 
+      col.type !== 'groupAssignment' &&
+      col.type !== 'collaborationSum'
+    );
+
+    const normalEvents: { date: string; title: string }[] = [];
+    normalCols.forEach(col => {
       const grade = grades[student.id]?.[col.id];
       const hasValue = grade && (
         (grade.value !== undefined && grade.value !== '') ||
-        (col.type === 'collaborationSum' && grade.entries && grade.entries.length > 0) ||
         (col.type === 'evaluation' && grade.evaluationPercent !== undefined)
       );
-
       if (hasValue) {
-        const avg = calculateAverage(student.id, course.columns, grades, col.date, course.roundingRule || 'commercial');
-        if (avg.percent !== null && avg.grade !== null) {
-          points.push({
-            date: col.date,
-            title: col.title,
-            percent: avg.percent,
-            grade: avg.grade
-          });
-        }
+        normalEvents.push({
+          date: col.date,
+          title: col.title
+        });
       }
     });
 
-    return points;
-  }, [student.id, course.columns, grades, course.roundingRule]);
+    // 2. Gather individual collaboration entries
+    const collabCol = course.columns.find(col => col.type === 'collaborationSum');
+    const collabEvents: { date: string; title: string }[] = [];
+    const isCollabLinear = !course.collaborationCalcMode || course.collaborationCalcMode === 'linear';
+    if (collabCol && isCollabLinear) {
+      const grade = grades[student.id]?.[collabCol.id];
+      if (grade?.entries) {
+        grade.entries.forEach(entry => {
+          if (entry.date) {
+            collabEvents.push({
+              date: entry.date,
+              title: `Mitarbeit (${entry.value})`
+            });
+          }
+        });
+      }
+    }
+
+    // 3. Combine and sort events
+    const allEvents = [...normalEvents, ...collabEvents]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Deduplicate by day (YYYY-MM-DD) to avoid multiple points on the same day
+    const uniqueDates: string[] = [];
+    const dateToEvents: Record<string, string[]> = {};
+
+    allEvents.forEach(e => {
+      const d = e.date.split('T')[0];
+      if (!dateToEvents[d]) {
+        dateToEvents[d] = [];
+        uniqueDates.push(e.date);
+      }
+      dateToEvents[d].push(e.title);
+    });
+
+    // 4. Calculate live average at each date point
+    uniqueDates.forEach(dateStr => {
+      const d = dateStr.split('T')[0];
+      const titles = dateToEvents[d];
+      const title = titles.join(', ');
+      
+      const avg = calculateAverage(student.id, course.columns, grades, dateStr, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+      if (avg.percent !== null && avg.grade !== null) {
+        points.push({
+          date: dateStr,
+          title,
+          percent: avg.percent,
+          grade: avg.grade
+        });
+      }
+    });
+
+    return points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [student.id, course.columns, grades, course.roundingRule, course.collaborationCalcMode]);
 
   // SVG dimensions & coordinate mapping for Line Chart
   const svgWidth = 600;
@@ -237,6 +285,17 @@ export const StudentPerformanceDashboard = ({
       case 4: return 'Genügend';
       case 5: return 'Nicht genügend';
       default: return '';
+    }
+  };
+
+  const getGradeColor = (g: number): string => {
+    switch (g) {
+      case 1: return '#15803d';
+      case 2: return '#16a34a';
+      case 3: return '#3b82f6';
+      case 4: return '#d97706';
+      case 5: return '#b91c1c';
+      default: return '#2563eb';
     }
   };
 
@@ -402,7 +461,7 @@ export const StudentPerformanceDashboard = ({
                   visibleColumns.filter(c => c.type === 'calculated').slice(0, 2).map(ms => {
                     let grade = grades[student.id]?.[ms.id];
                     if (!grade || !grade.isOverridden) {
-                      const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial');
+                      const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
                       grade = { value: calculated.grade || undefined };
                     }
                     return (
@@ -500,14 +559,57 @@ export const StudentPerformanceDashboard = ({
                           const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - 40)) / 4;
                           return (
                             <g key={i}>
+                              {/* Axis tick mark */}
+                              <line 
+                                x1={x} 
+                                y1={svgHeight - 30} 
+                                x2={x} 
+                                y2={svgHeight - 24} 
+                                stroke="#cbd5e1" 
+                                strokeWidth="1"
+                              />
+
+                              {/* Rotated Axis Title Label */}
+                              <text
+                                x={x}
+                                y={svgHeight - 12}
+                                textAnchor="end"
+                                transform={`rotate(-35, ${x}, ${svgHeight - 12})`}
+                                style={{
+                                  fontSize: '8px',
+                                  fontWeight: '600',
+                                  fill: '#64748b',
+                                  fontFamily: 'sans-serif'
+                                }}
+                              >
+                                {p.title.length > 15 ? p.title.substring(0, 15) + '...' : p.title}
+                              </text>
+
+                              {/* Grade Label above the dot */}
+                              <text
+                                x={x}
+                                y={y - 12}
+                                textAnchor="middle"
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  fill: getGradeColor(p.grade),
+                                  fontFamily: 'sans-serif'
+                                }}
+                              >
+                                {p.grade}
+                              </text>
+
+                              {/* Colored Dot */}
                               <circle 
                                 cx={x} 
                                 cy={y} 
-                                r="5" 
-                                fill="#ffffff" 
-                                stroke="#2563eb" 
+                                r="6" 
+                                fill={getGradeColor(p.grade)} 
+                                stroke="#ffffff" 
                                 strokeWidth="2" 
                                 className="chart-dot"
+                                style={{ filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.15))' }}
                               />
                               {/* Larger invisible circle for easier hover interaction */}
                               <circle 

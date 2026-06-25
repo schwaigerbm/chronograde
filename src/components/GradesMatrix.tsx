@@ -606,7 +606,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           </thead>
           <tbody>
             {students.map((student, index) => {
-              const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial');
+              const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
               
               return (
                 <tr key={student.id}>
@@ -636,7 +636,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     let grade = grades[student.id]?.[col.id];
                     
                     if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial');
+                      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
                       grade = { 
                         value: calculated.grade || undefined,
                         date: new Date().toISOString()
@@ -776,7 +776,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         courseId={course.id}
         roundingRule={course.roundingRule || 'commercial'}
         isTrendColorEnabled={!!course.isTrendColorEnabled}
-        onSave={(updatedCols, rule, colorEnabled) => handleUpdateCourseSettings({ columns: updatedCols, roundingRule: rule, isTrendColorEnabled: colorEnabled })}
+        collaborationCalcMode={course.collaborationCalcMode || 'linear'}
+        onSave={(updatedCols, rule, colorEnabled, collabMode) => handleUpdateCourseSettings({ columns: updatedCols, roundingRule: rule, isTrendColorEnabled: colorEnabled, collaborationCalcMode: collabMode })}
         showDialog={showDialog}
       />
 

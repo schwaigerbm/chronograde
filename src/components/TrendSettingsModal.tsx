@@ -15,10 +15,12 @@ export interface TrendSettingsModalProps {
   courseId: string;
   roundingRule: 'commercial' | 'studentFriendly';
   isTrendColorEnabled: boolean;
+  collaborationCalcMode: 'linear' | 'weighted';
   onSave: (
     updatedCols: CourseEntry[], 
     roundingRule: 'commercial' | 'studentFriendly',
-    isTrendColorEnabled: boolean
+    isTrendColorEnabled: boolean,
+    collaborationCalcMode: 'linear' | 'weighted'
   ) => void;
   showDialog: (config: any) => void;
 }
@@ -32,6 +34,7 @@ export const TrendSettingsModal = ({
   courseId,
   roundingRule,
   isTrendColorEnabled,
+  collaborationCalcMode,
   onSave,
   showDialog
 }: TrendSettingsModalProps) => {
@@ -40,6 +43,7 @@ export const TrendSettingsModal = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [localRoundingRule, setLocalRoundingRule] = useState<'commercial' | 'studentFriendly'>(roundingRule);
   const [localIsTrendColorEnabled, setLocalIsTrendColorEnabled] = useState<boolean>(isTrendColorEnabled);
+  const [localCollaborationCalcMode, setLocalCollaborationCalcMode] = useState<'linear' | 'weighted'>(collaborationCalcMode);
   const [lockedColIds, setLockedColIds] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -68,6 +72,7 @@ export const TrendSettingsModal = ({
       setNewMilestoneTitle('');
       setLocalRoundingRule(roundingRule);
       setLocalIsTrendColorEnabled(isTrendColorEnabled);
+      setLocalCollaborationCalcMode(collaborationCalcMode);
       
       const initialLocks: Record<string, boolean> = {};
       initialCols.forEach(c => {
@@ -77,7 +82,7 @@ export const TrendSettingsModal = ({
       });
       setLockedColIds(initialLocks);
     }
-  }, [isOpen, columns, roundingRule, isTrendColorEnabled]);
+  }, [isOpen, columns, roundingRule, isTrendColorEnabled, collaborationCalcMode]);
 
   if (!isOpen) return null;
 
@@ -210,7 +215,7 @@ export const TrendSettingsModal = ({
 
       // 2. Noten für alle Schüler generieren (Snapshot)
       const updates = students.map(student => {
-        const trend = calculateAverage(student.id, localColumns, grades, undefined, localRoundingRule);
+        const trend = calculateAverage(student.id, localColumns, grades, undefined, localRoundingRule, localCollaborationCalcMode);
         return {
           studentId: student.id,
           columnId: newColumnId,
@@ -337,6 +342,8 @@ export const TrendSettingsModal = ({
   };
 
   const activeCount = localColumns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment').length;
+  const collabCol = localColumns.find(c => c.type === 'collaborationSum');
+  const isCollabCalcActive = collabCol ? !!collabCol.calc : false;
 
   return createPortal(
     <div className="modal-overlay">
@@ -444,6 +451,33 @@ export const TrendSettingsModal = ({
               </div>
             </div>
 
+            {/* Mitarbeits-Berechnungsmodus */}
+            <div className="collaboration-mode-section" style={{ marginTop: 0, paddingTop: '24px', borderTop: '2px dashed var(--border-color)', opacity: isCollabCalcActive ? 1 : 0.55 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <Info size={16} className="text-primary" />
+                <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  MITARBEITS-BERECHNUNG {!isCollabCalcActive && ' (INAKTIV)'}
+                </h4>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <select 
+                  className="form-input" 
+                  value={localCollaborationCalcMode}
+                  onChange={e => setLocalCollaborationCalcMode(e.target.value as any)}
+                  disabled={!isCollabCalcActive}
+                  style={{ width: '100%', padding: '8px 10px', fontSize: '13px', cursor: isCollabCalcActive ? 'pointer' : 'not-allowed' }}
+                >
+                  <option value="linear">Linear mit der Zeit in den Trend einrechnen</option>
+                  <option value="weighted">Als gesamt mit Gewichtung als eigene Spalte</option>
+                </select>
+                <p className="field-hint" style={{ marginTop: '6px' }}>
+                  {isCollabCalcActive 
+                    ? 'Legt fest, ob Mitarbeits-Einzelnoten chronologisch in den Trend einfließen oder die Mitarbeit als statische Gesamtnote gewichtet wird.'
+                    : 'Die Mitarbeits-Spalte ist aktuell inaktiv oder nicht in der Berechnung enthalten.'}
+                </p>
+              </div>
+            </div>
+
             {/* Farbmodus (Heatmap) */}
             <div className="color-section" style={{ marginTop: 0, paddingTop: '24px', borderTop: '2px dashed var(--border-color)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -505,7 +539,7 @@ export const TrendSettingsModal = ({
                 ...c,
                 isLocked: c.calc ? !!lockedColIds[c.id] : false
               }));
-              onSave(sanitizedCols, localRoundingRule, localIsTrendColorEnabled);
+              onSave(sanitizedCols, localRoundingRule, localIsTrendColorEnabled, localCollaborationCalcMode);
             }} 
             disabled={isProcessing}
           >

@@ -54,6 +54,7 @@ export interface Course {
   showTrend?: boolean; // Sichtbarkeit der Sticky TREND Spalte
   roundingRule?: 'commercial' | 'studentFriendly'; // Globale Rundungsregel für den Trend
   isTrendColorEnabled?: boolean; // Farbmodus (Heatmap) für den Trend aktiv
+  collaborationCalcMode?: 'linear' | 'weighted'; // Berechnungsmodus für die Mitarbeit
   columns: CourseEntry[]; 
   enrolledStudents: string[]; // Liste der Schüler-IDs (Enrollment)
 }

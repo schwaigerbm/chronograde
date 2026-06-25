@@ -49,6 +49,12 @@ Das Modal ist für eine hohe Informationsdichte und optimale Bildschirmausnutzun
   * Wenn aktiv, werden die Hintergrundfarben der Live-Trend-Zellen in der Matrix basierend auf der berechneten Note (1 bis 5) eingefärbt (analog zu den regulären Notenspalten).
   * Wenn inaktiv, wird keine Hintergrundfarbe in den Trend-Zellen angezeigt (nur Text).
 
+### 2.5 Mitarbeits-Berechnungsmodus
+* Ermöglicht die Auswahl, wie die Mitarbeit (Typ `collaborationSum`) berechnet und in den Trend einbezogen wird.
+* **Option:** Ein Dropdown-Auswahlfeld "Mitarbeits-Berechnung" in der rechten Spalte des Modals mit folgenden Optionen:
+  * **Linear mit der Zeit:** Die Mitarbeits-Einzelnoten fließen chronologisch gefiltert bis zum jeweiligen Berechnungsstichtag in den Trend ein. Jeder einzelne Mitarbeits-Eintrag erzeugt einen eigenen zeitlichen Datenpunkt auf der Verlaufskurve.
+  * **Als gesamt mit Gewichtung:** Die Mitarbeit wird als statische Gesamtnote/Gesamtwert mit der entsprechenden Gewichtung in die Durchschnittsberechnung einbezogen. Die Einzeleinträge erzeugen keine eigenen Punkte auf der Verlaufskurve. Bei zeitabhängigen Trendberechnungen wird der aktuelle Gesamtprozentsatz der Mitarbeit (ohne zeitliche Filterung) herangezogen.
+
 ## 3. Komponentenschnittstelle (TypeScript-Props)
 
 Die Komponente wird als eigenständige Datei `src/components/TrendSettingsModal.tsx` realisiert.
@@ -65,10 +71,12 @@ export interface TrendSettingsModalProps {
   courseId: string;
   roundingRule: 'commercial' | 'studentFriendly';
   isTrendColorEnabled: boolean;
+  collaborationCalcMode: 'linear' | 'weighted';
   onSave: (
     updatedCols: CourseEntry[], 
     roundingRule: 'commercial' | 'studentFriendly',
-    isTrendColorEnabled: boolean
+    isTrendColorEnabled: boolean,
+    collaborationCalcMode: 'linear' | 'weighted'
   ) => void;
   showDialog: (config: {
     isOpen?: boolean;

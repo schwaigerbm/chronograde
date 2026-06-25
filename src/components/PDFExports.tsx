@@ -11,14 +11,18 @@ import type { Course, Student, CourseEntry, Grade, GradeEntry } from '../schema'
 import { formatDate } from '../lib/utils';
 
 // Helper to calculate collaboration percentage
-const getCollaborationPercentage = (entries?: GradeEntry[]): number | null => {
+const getCollaborationPercentage = (entries?: GradeEntry[], cutoffDate?: string): number | null => {
   if (!entries || entries.length === 0) return null;
-  const totalPoints = entries.reduce((sum, entry) => {
+  const filtered = cutoffDate 
+    ? entries.filter(entry => entry.date <= cutoffDate)
+    : entries;
+  if (filtered.length === 0) return null;
+  const totalPoints = filtered.reduce((sum, entry) => {
     if (entry.value === '+') return sum + 1;
     if (entry.value === '~') return sum + 0.5;
     return sum;
   }, 0);
-  return Math.round((totalPoints / entries.length) * 100);
+  return Math.round((totalPoints / filtered.length) * 100);
 };
 
 // Helper to calculate presence percentage
@@ -45,7 +49,8 @@ const calculateAverage = (
   columns: CourseEntry[],
   grades: Record<string, Record<string, Grade>>,
   cutoffDate?: string,
-  roundingRule: 'commercial' | 'studentFriendly' = 'commercial'
+  roundingRule: 'commercial' | 'studentFriendly' = 'commercial',
+  collaborationCalcMode: 'linear' | 'weighted' = 'linear'
 ): { percent: number | null; grade: number | null } => {
   const activeCols = columns.filter(c => {
     if (!c.calc || c.type === 'calculated' || c.type === 'presenceSum' || c.type === 'groupAssignment') return false;
@@ -75,7 +80,10 @@ const calculateAverage = (
         }
       }
     } else if (col.type === 'collaborationSum') {
-      const p = getCollaborationPercentage(grade?.entries);
+      const p = getCollaborationPercentage(
+        grade?.entries, 
+        collaborationCalcMode === 'weighted' ? undefined : cutoffDate
+      );
       if (p !== null) val = p;
     }
 
@@ -141,6 +149,12 @@ const styles = StyleSheet.create({
   colCardType: { width: '15%' },
   colCardValue: { width: '15%', textAlign: 'center' },
   colCardNote: { width: '25%' },
+  
+  // Specific columns for Grade composition table
+  colCompTitle: { width: '40%', fontFamily: 'Helvetica-Bold' },
+  colCompWeight: { width: '20%', textAlign: 'center' },
+  colCompValue: { width: '20%', textAlign: 'center' },
+  colCompContrib: { width: '20%', textAlign: 'center' },
   
   // Sub-entries for collaboration/presence
   subEntriesContainer: { paddingLeft: 10, paddingVertical: 4, backgroundColor: '#f8fafc', borderTopColor: '#f1f5f9', borderTopWidth: 1 },
@@ -214,7 +228,7 @@ export const MatrixPDFDocument = ({
 
           {/* Student Rows */}
           {students.map((student, index) => {
-            const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial');
+            const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
             
             return (
               <View 
@@ -231,7 +245,7 @@ export const MatrixPDFDocument = ({
                   let grade = grades[student.id]?.[col.id];
                   
                   if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                    const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial');
+                    const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
                     grade = { 
                       value: calculated.grade || undefined
                     };
@@ -286,14 +300,74 @@ export const StudentReportPDFDocument = ({
   grades: Record<string, Record<string, Grade>>;
   visibleColumns: CourseEntry[];
 }) => {
-  const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial');
+  const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
   
+  // 1. Gather all active columns for grade calculation
+  const activeCols = visibleColumns.filter(c => {
+    if (!c.calc || c.type === 'calculated' || c.type === 'presenceSum' || c.type === 'groupAssignment') return false;
+    return true;
+  });
+
+  let totalWeight = 0;
+  const compositionItems = activeCols.map(col => {
+    const grade = grades[student.id]?.[col.id];
+    let val: number | null = null;
+    let displayVal = '-';
+
+    if (col.type === 'manual') {
+      if (grade?.value !== undefined && grade.value !== '') {
+        if (col.calcType === 'percent') {
+          val = Number(grade.value);
+          displayVal = `${grade.value}%`;
+        } else if (col.calcType === 'grade') {
+          const g = Number(grade.value);
+          val = g === 1 ? 100 : g === 2 ? 89 : g === 3 ? 79 : g === 4 ? 64 : 49;
+          displayVal = `Note ${grade.value} (${val}%)`;
+        } else if (col.calcType === 'sign') {
+          const s = grade.value;
+          val = s === '+' ? 100 : s === '~' ? 50 : 0;
+          displayVal = `Zeichen ${grade.value} (${val}%)`;
+        }
+      }
+    } else if (col.type === 'collaborationSum') {
+      const p = getCollaborationPercentage(grade?.entries);
+      if (p !== null) {
+        val = p;
+        displayVal = `${p}%`;
+      }
+    }
+
+    if (val !== null) {
+      const w = col.calcFactor !== undefined ? col.calcFactor : 100;
+      totalWeight += w;
+      return {
+        title: col.title,
+        weight: w,
+        value: val,
+        displayVal,
+      };
+    }
+    return null;
+  }).filter(item => item !== null) as { title: string; weight: number; value: number; displayVal: string }[];
+
+  const compositionList = compositionItems.map(item => {
+    const relWeight = totalWeight > 0 ? Math.round((item.weight / totalWeight) * 1000) / 10 : 0;
+    const contrib = totalWeight > 0 ? Math.round((item.value * (item.weight / totalWeight)) * 10) / 10 : 0;
+    return {
+      title: item.title,
+      relWeight,
+      value: item.value,
+      displayVal: item.displayVal,
+      contrib
+    };
+  });
+
   // Get all active grades for the student
   const gradesList = visibleColumns.map(col => {
     let grade = grades[student.id]?.[col.id];
     
     if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial');
+      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
       grade = { 
         value: calculated.grade || undefined,
         date: new Date().toISOString()
@@ -348,7 +422,7 @@ export const StudentReportPDFDocument = ({
           {visibleColumns.filter(c => c.type === 'calculated').map(ms => {
             let grade = grades[student.id]?.[ms.id];
             if (!grade || !grade.isOverridden) {
-              const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial');
+              const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
               grade = { value: calculated.grade || undefined };
             }
             return (
@@ -364,6 +438,69 @@ export const StudentReportPDFDocument = ({
             );
           })}
         </View>
+
+        {/* Grade Composition Section */}
+        {compositionList.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.sectionTitle}>Zusammensetzung der Gesamtnote (Gewichtung)</Text>
+            <View style={styles.table}>
+              {/* Header */}
+              <View style={styles.tableRowHeader}>
+                <Text style={[styles.th, styles.colCompTitle]}>Beurteilungsbereich (Prüfung/Mitarbeit)</Text>
+                <Text style={[styles.th, styles.colCompWeight]}>Gewichtung (Wie viel zählt es?)</Text>
+                <Text style={[styles.th, styles.colCompValue]}>Erreichte Leistung</Text>
+                <Text style={[styles.th, styles.colCompContrib]}>Anteil an der Gesamtnote</Text>
+              </View>
+
+              {/* Rows */}
+              {compositionList.map((item, idx) => (
+                <View 
+                  key={idx} 
+                  style={[
+                    styles.tableRow,
+                    idx % 2 === 1 ? { backgroundColor: '#f8fafc' } : {}
+                  ]}
+                >
+                  <Text style={[styles.td, styles.colCompTitle]}>{item.title}</Text>
+                  <Text style={[styles.td, styles.colCompWeight]}>{item.relWeight}%</Text>
+                  <Text style={[styles.td, styles.colCompValue]}>{item.displayVal}</Text>
+                  <Text style={[styles.td, styles.colCompContrib]}>{item.contrib}%</Text>
+                </View>
+              ))}
+
+              {/* Sum / Result Row */}
+              <View style={[styles.tableRow, { backgroundColor: '#eff6ff', borderTopColor: '#cbd5e1', borderTopWidth: 1 }]}>
+                <Text style={[styles.td, styles.colCompTitle, { fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }]}>
+                  Gesamtergebnis (rechnerischer Schnitt)
+                </Text>
+                <Text style={[styles.td, styles.colCompWeight, { fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }]}>
+                  100.0%
+                </Text>
+                <Text style={[styles.td, styles.colCompValue, { fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }]}>
+                  -
+                </Text>
+                <Text style={[styles.td, styles.colCompContrib, { fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }]}>
+                  {liveSummary.percent}% (Note {liveSummary.grade})
+                </Text>
+              </View>
+            </View>
+
+            {/* Explanation text */}
+            <Text style={{ fontSize: 7, color: '#64748b', marginTop: 4, fontStyle: 'italic', lineHeight: 1.2 }}>
+              * Berechnungshilfe: Multiplizieren Sie die "Erreichte Leistung" mit der "Gewichtung", um den "Anteil an der Gesamtnote" zu erhalten (Beispiel: 90% Leistung x 40% Gewichtung = 36% Anteil). Die Summe aller Anteile ergibt das Gesamtergebnis.
+            </Text>
+
+            {/* Grade key box */}
+            <View style={{ marginTop: 8, padding: 8, backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 6, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: '#334155' }}>
+              <Text style={{ fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>Gesetzlicher österreichischer Notenschlüssel:</Text>
+              <Text>Sehr gut (1): ab 90%</Text>
+              <Text>Gut (2): ab 80%</Text>
+              <Text>Befriedigend (3): ab 65%</Text>
+              <Text>Genügend (4): ab 50%</Text>
+              <Text>Nicht genügend (5): unter 50%</Text>
+            </View>
+          </View>
+        )}
 
         {/* Details Table */}
         <Text style={styles.sectionTitle}>Aufstellung der Einzelbeurteilungen</Text>

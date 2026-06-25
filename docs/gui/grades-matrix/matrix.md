@@ -290,8 +290,18 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
         * **Rechte Spalte (History):** Chronologische Verlaufsliste der Leistungsdetails, unabhängig scrollbar.
 * **Inhalt:**
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr. Ein Button zum Generieren des PDF-Einzelberichts (Datenblatt) ist im Header platziert.
-    * **Zusammenfassung (Summary):** Anzeige des aktuellen berechneten Live-Trends (Note und Prozentwert), der Meilensteine (berechnete Noten) sowie Statistiken (Anwesenheitsquote, Verteilung von Mitarbeitsleistungen: positive (+), neutrale (~) und negative (-) Einträge).
+    * **Zusammenfassung (Summary):** Anzeige des aktuellen berechneten Live-Trends (Note und Prozentwert), der Meilensteine (berechnete Noten) sowie Statistiken. **Wichtig:** Die Anwesenheitsquote ist eine rein informative Statistik und darf zu keinem Zeitpunkt in die Notenberechnung einfließen.
+    * **PDF-Notenzusammensetzung (BVwG-konform & laienverständlich):** Der PDF-Ausdruck (Leistungsdatenblatt) enthält eine übersichtliche Tabelle zur Notenermittlung:
+        - **Spalten:** Beurteilungsbereich (Prüfung/Mitarbeit), Gewichtung (Wie viel zählt es?), Erreichte Leistung, Anteil an der Gesamtnote.
+        - **Einfache Formel:** Der Anteil an der Gesamtnote je Zeile ist das Ergebnis einer einfachen Multiplikation ($\text{Anteil} = \text{Leistung} \times \text{Gewichtung}$). Die Summe aller Anteile ergibt das Gesamtergebnis.
+        - **Erklärungstext (Berechnungshilfe):** Unter der Tabelle wird ein verständlicher, anschaulicher Hilfetext gedruckt, der das Rechenschema erklärt.
+        - **Notenschlüssel:** Ein kompakter Kasten weist den österreichischen Notenschlüssel (Prozentgrenzen für Sehr gut bis Nicht genügend) aus, damit die Notenfindung direkt nachvollzogen werden kann.
+        - **Rechtliche Konformität:** Diese einfache Darstellung ist für Schüler und Eltern ohne mathematische Vorkenntnisse sofort nachprüfbar und erfüllt damit die Vorgaben des Bundesverwaltungsgerichts an eine transparente Leistungsbeurteilung.
     * **Leistungsverlauf (Visualisierung):** Ein sauber gestaltetes, interaktives SVG-basiertes Liniendiagramm, das den chronologischen Verlauf der Noten (1 bis 5, wobei 1 oben steht) des Schülers im Kurs darstellt.
+        * **Chronologische Berechnung:** Hängt vom eingestellten Mitarbeits-Berechnungsmodus ab. Bei "Linear mit der Zeit" (Standard) werden für jeden Trendpunkt (z. B. Stand Oktober) auch die Mitarbeitseinträge chronologisch gefiltert (nur Einträge bis zu diesem Stichtag fließen in den jeweiligen Trendwert ein). Bei "Als gesamt mit Gewichtung" fließt immer das Gesamtergebnis der Mitarbeit ungefiltert ein.
+        * **Mitarbeit-Einzeleinträge:** Bei "Linear mit der Zeit" erzeugt jeder einzelne erfasste Mitarbeitseintrag (+, ~, -) einen eigenen zeitlichen Datenpunkt auf der Verlaufskurve, um die Auswirkung von stündlichen Leistungen transparent abzubilden. Bei "Als gesamt mit Gewichtung" werden keine separaten Mitarbeits-Punkte auf der Verlaufskurve gezeichnet.
+        * **Farbliche Markierung:** Die einzelnen Trendpunkte (Datenpunkte) auf der Verlaufslinie sind farblich passend zu der berechneten Note an diesem Stichtag markiert (Note 1 & 2 in Grüntönen, Note 3 in Blau, Note 4 in Orange und Note 5 in Rot).
+        * **Direkte Beschriftung:** Die berechnete Note wird direkt über jedem Kurvenpunkt als Zahl (1-5) gerendert. Unterhalb der X-Achsenlinie wird der jeweilige Leistungs- oder Mitarbeitstitel (z. B. "SA 1", "Mitarbeit (+)") gedreht dargestellt, um Überlappungen zu vermeiden.
     * **Detaillierter Verlauf (Chronologische Liste):** Eine tabellarische oder Feed-basierte Auflistung aller erfassten Noten, Zeichen, Mitarbeitseinträge und Anwesenheiten des Schülers im Kurs, sortiert nach Datum (absteigend), inklusive zugehöriger Kommentare/Notizen.
 
 ---
