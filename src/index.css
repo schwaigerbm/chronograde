@@ -3070,16 +3070,20 @@ input:checked + .slider:before {
   background: #f8fafc;
   border: 2px dashed #e2e8f0;
   border-radius: 12px;
-  min-height: 120px;
   padding: 12px;
   vertical-align: top;
   transition: all 0.2s ease-in-out;
   position: relative;
+}
+
+.timetable-slot-content {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   gap: 8px;
   align-content: flex-start;
+  min-height: 120px;
+  width: 100%;
 }
 
 .timetable-slot-cell.drag-over {

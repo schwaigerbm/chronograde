@@ -367,23 +367,25 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                                   onDragLeave={(e) => handleDragLeave(e, cellId)}
                                   onDrop={(e) => handleDrop(e, day.id, slot.id)}
                                 >
-                                  {cellCourses.map(course => (
-                                    <div 
-                                      key={course.id}
-                                      className="timetable-course-card"
-                                      draggable
-                                      onDragStart={(e) => handleDragStart(e, course.id)}
-                                      onDragOver={(e) => e.preventDefault()}
-                                      onDrop={(e) => handleDropOnCard(e, course)}
-                                      onClick={() => setSelectedCourse(course)}
-                                    >
-                                      <h3 className="timetable-course-card-title">{course.name}</h3>
-                                      <p className="timetable-course-card-year">{course.year}</p>
-                                      <div className="timetable-course-card-link">
-                                        Matrix öffnen <ChevronRight size={11} />
+                                  <div className="timetable-slot-content">
+                                    {cellCourses.map(course => (
+                                      <div 
+                                        key={course.id}
+                                        className="timetable-course-card"
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, course.id)}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => handleDropOnCard(e, course)}
+                                        onClick={() => setSelectedCourse(course)}
+                                      >
+                                        <h3 className="timetable-course-card-title">{course.name}</h3>
+                                        <p className="timetable-course-card-year">{course.year}</p>
+                                        <div className="timetable-course-card-link">
+                                          Matrix öffnen <ChevronRight size={11} />
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    ))}
+                                  </div>
                                 </td>
                               );
                             })}
