@@ -3076,8 +3076,10 @@ input:checked + .slider:before {
   transition: all 0.2s ease-in-out;
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 8px;
+  align-content: flex-start;
 }
 
 .timetable-slot-cell.drag-over {
@@ -3112,12 +3114,9 @@ input:checked + .slider:before {
   flex-direction: column;
   gap: 4px;
   user-select: none;
-  margin-bottom: 8px;
   text-align: left;
-}
-
-.timetable-course-card:last-child {
-  margin-bottom: 0;
+  flex: 1 1 180px;
+  max-width: 240px;
 }
 
 .timetable-course-card:active {

@@ -11,7 +11,7 @@ Diese Ansicht dient der strukturierten Auswahl einer Beurteilungsgruppe (Kurs) a
 *   **Spalten:** **Vormittag** (Morning) und **Nachmittag** (Afternoon) (2 Spalten).
 *   **Zeilen:** Wochentage von **Montag bis Samstag** (6 Zeilen).
 *   **Wochentag-Hervorhebung:** Die Zeile des aktuellen Wochentags (basierend auf dem Systemdatum) wird farblich anders hinterlegt (z. B. ein weicher, leicht bläulicher oder grauer Hintergrund mit deutlicher Rahmenmarkierung), um dem Nutzer sofortige Orientierung zu bieten. Samstag wird ebenfalls unterstützt.
-*   **Zellen-Verhalten:** Jede Zelle stellt eine Kombination aus Wochentag und Tageszeit dar (z. B. Montag-Vormittag). Sie fungiert als Dropzone für die Gruppenkarten. Es können pro Halbtag mehrere Gruppenkarten zugewiesen werden; diese werden innerhalb der Zelle vertikal untereinander gestapelt dargestellt.
+*   **Zellen-Verhalten:** Jede Zelle stellt eine Kombination aus Wochentag und Tageszeit dar (z. B. Montag-Vormittag). Sie fungiert als Dropzone für die Gruppenkarten. Es können pro Halbtag mehrere Gruppenkarten zugewiesen werden; diese werden innerhalb der Zelle nebeneinander (Flex-Row mit Wrap) dargestellt. Die Positionierung (Reihenfolge) innerhalb des Halbtags kann flexibel per Drag & Drop durch Ablegen auf eine andere Karte geändert werden.
 
 ### B. Pool nicht zugeordneter Gruppen (Unassigned Pool)
 *   **Position:** Unterhalb oder neben dem Stundenplan platziert.
@@ -28,11 +28,9 @@ Der Ablauf nutzt die native HTML5 Drag & Drop API, um externe Abhängigkeiten zu
 3.  **Dropzones:** 
     *   Alle Zellen des Stundenplans (Wochentag × Slot).
     *   Der Pool der nicht zugeordneten Gruppen.
-4.  **Drop-Aktion:** Beim Ablegen einer Karte in eine Zelle oder den Pool wird:
-    *   Die ID der abgelegten Gruppe ermittelt.
-    *   Das Wochentag- und Slot-Attribut der Gruppe aktualisiert (bzw. auf unzugeordnet gesetzt).
-    *   Die Änderung im Backend (Firestore) gespeichert.
-    *   Die UI aktualisiert sich reaktiv über den Firestore-Snapshot.
+4.  **Drop-Aktion (Zelle/Pool):** Beim Ablegen einer Karte in einer leeren Zelle oder dem Pool wird die Zuweisung aktualisiert und die Karte ans Ende der Liste angefügt.
+5.  **Drop-Aktion (Reordering):** Wird eine Karte direkt auf einer anderen Karte abgelegt, wird sie an der Position dieser Karte eingefügt und die Prioritäten (`priority`) der betroffenen Gruppen in dieser Zelle bzw. im Pool werden neu berechnet und gespeichert.
+6.  **Daten-Speicherung:** Die geänderten Prioritäten und Zuweisungen werden sofort in Firestore gespeichert.
 
 ---
 

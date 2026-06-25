@@ -211,16 +211,63 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     const courseToUpdate = courses.find(c => c.id === courseId);
     if (!courseToUpdate) return;
 
+    // Get current courses in the target cell to determine the next priority
+    const cellCourses = courses.filter(c => c.timetableDay === day && c.timetableSlot === slot);
+    const maxPriority = cellCourses.reduce((max, c) => Math.max(max, c.priority || 0), -1);
+
     const updatedCourse: Course = {
       ...courseToUpdate,
       timetableDay: day,
-      timetableSlot: slot
+      timetableSlot: slot,
+      priority: maxPriority + 1
     };
 
     try {
       await firebaseService.saveCourse(updatedCourse);
     } catch (err) {
       console.error("Error saving course timetable position:", err);
+    }
+  };
+
+  const handleDropOnCard = async (e: React.DragEvent, targetCourse: Course) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCell(null);
+    const courseId = e.dataTransfer.getData('text/plain');
+    if (!courseId || courseId === targetCourse.id) return;
+
+    const courseToUpdate = courses.find(c => c.id === courseId);
+    if (!courseToUpdate) return;
+
+    const targetDay = targetCourse.timetableDay || null;
+    const targetSlot = targetCourse.timetableSlot || null;
+
+    // Get sibling courses in the target slot (excluding the dragged one)
+    const siblingCourses = courses
+      .filter(c => c.timetableDay === targetDay && c.timetableSlot === targetSlot && c.id !== courseId)
+      .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+
+    // Find the index of the target course
+    const targetIndex = siblingCourses.findIndex(c => c.id === targetCourse.id);
+    
+    // Insert the dragged course before the target course
+    const newOrder = [...siblingCourses];
+    newOrder.splice(targetIndex, 0, courseToUpdate);
+
+    // Save all updated courses with their new priorities
+    try {
+      for (let i = 0; i < newOrder.length; i++) {
+        const c = newOrder[i];
+        const updated: Course = {
+          ...c,
+          timetableDay: targetDay,
+          timetableSlot: targetSlot,
+          priority: i
+        };
+        await firebaseService.saveCourse(updated);
+      }
+    } catch (err) {
+      console.error("Error reordering courses:", err);
     }
   };
 
@@ -254,10 +301,14 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
           const currentDayValue = new Date().getDay();
 
           const getCoursesForCell = (dayId: typeof DAYS[number]['id'], slotId: typeof SLOTS[number]['id']) => {
-            return courses.filter(c => c.timetableDay === dayId && c.timetableSlot === slotId);
+            return courses
+              .filter(c => c.timetableDay === dayId && c.timetableSlot === slotId)
+              .sort((a, b) => (a.priority || 0) - (b.priority || 0));
           };
 
-          const unassignedCourses = courses.filter(c => !c.timetableDay || !c.timetableSlot);
+          const unassignedCourses = courses
+            .filter(c => !c.timetableDay || !c.timetableSlot)
+            .sort((a, b) => (a.priority || 0) - (b.priority || 0));
 
           return (
             <div className="view-container">
@@ -322,6 +373,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                                       className="timetable-course-card"
                                       draggable
                                       onDragStart={(e) => handleDragStart(e, course.id)}
+                                      onDragOver={(e) => e.preventDefault()}
+                                      onDrop={(e) => handleDropOnCard(e, course)}
                                       onClick={() => setSelectedCourse(course)}
                                     >
                                       <h3 className="timetable-course-card-title">{course.name}</h3>
@@ -361,6 +414,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                             style={{ minWidth: '180px' }}
                             draggable
                             onDragStart={(e) => handleDragStart(e, course.id)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => handleDropOnCard(e, course)}
                             onClick={() => setSelectedCourse(course)}
                           >
                             <h3 className="timetable-course-card-title">{course.name}</h3>
