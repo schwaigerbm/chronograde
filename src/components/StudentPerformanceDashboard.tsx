@@ -61,6 +61,36 @@ export const StudentPerformanceDashboard = ({
     return calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
   }, [student.id, course.columns, grades, course.roundingRule, course.collaborationCalcMode]);
 
+  // Helper to map percent to visual position on the inverted grade scale (left = 1 / 100%, right = 5 / 0%)
+  // Each of the 5 grades has exactly 20% width of the bar.
+  // Note 1: 90-100% -> 0% to 20% of the bar width
+  // Note 2: 80-90%  -> 20% to 40% of the bar width
+  // Note 3: 65-80%  -> 40% to 60% of the bar width
+  // Note 4: 50-65%  -> 60% to 80% of the bar width
+  // Note 5: 0-50%   -> 80% to 100% of the bar width (compressed)
+  const getMarkerPosition = (percent: number | null): number => {
+    if (percent === null) return 50; // default middle
+    const p = Math.max(0, Math.min(100, percent));
+    
+    if (p >= 90) {
+      const factor = (100 - p) / 10;
+      return factor * 20; // 0% to 20%
+    } else if (p >= 80) {
+      const factor = (90 - p) / 10;
+      return 20 + factor * 20; // 20% to 40%
+    } else if (p >= 65) {
+      const factor = (80 - p) / 15;
+      return 40 + factor * 20; // 40% to 60%
+    } else if (p >= 50) {
+      const factor = (65 - p) / 15;
+      return 60 + factor * 20; // 60% to 80%
+    } else {
+      // Compress the 0% to 50% range into the 80% to 100% space (20% width)
+      const factor = (50 - p) / 50;
+      return 80 + factor * 20; // 80% to 100%
+    }
+  };
+
   // Calculate tendency and "Puzzelstück" suggestions
   const tendencyDetails = useMemo(() => {
     if (liveSummary.percent === null || liveSummary.grade === null) return null;
@@ -174,8 +204,8 @@ export const StudentPerformanceDashboard = ({
         if (factorPercent > 0) {
           const grade = grades[student.id]?.[collabCol.id];
           const entriesCount = grade?.entries?.length || 0;
-          if (entriesCount > 0) {
-            const currentPoints = grade.entries.reduce((sum, entry) => {
+          if (grade && entriesCount > 0) {
+            const currentPoints = (grade.entries || []).reduce((sum, entry) => {
               if (entry.value === '+') return sum + 1;
               if (entry.value === '~') return sum + 0.5;
               return sum;
@@ -450,8 +480,9 @@ export const StudentPerformanceDashboard = ({
         dateToEvents[d] = [];
         uniqueDates.push(e.date);
       }
-      if ('isSnapshot' in e && e.isSnapshot && e.snapshotGrade !== undefined) {
-        dateToSnapshot[d] = e.snapshotGrade;
+      const snapshotEvent = e as any;
+      if (snapshotEvent.isSnapshot && snapshotEvent.snapshotGrade !== undefined) {
+        dateToSnapshot[d] = snapshotEvent.snapshotGrade;
       }
       dateToEvents[d].push(e.title);
     });
@@ -509,7 +540,7 @@ export const StudentPerformanceDashboard = ({
   const svgHeight = 450;
   const paddingX = 65; // Wegen nur Ziffern auf Y-Achse verringert (mehr Platz fürs Diagramm)
   const paddingY = 40;
-  const chartBottomGap = 75; // vergrößert für lesbarere X-Achsen-Beschriftungen
+  const chartBottomGap = 95; // vergrößert für lesbarere X-Achsen-Beschriftungen
 
   const linePath = useMemo(() => {
     if (chartPoints.length < 2) return '';
@@ -635,20 +666,20 @@ export const StudentPerformanceDashboard = ({
           <div className="dashboard-summaries-row">
             
             {/* Live Trend Card */}
-            <div className="dashboard-card live-trend-card" style={{ padding: '10px 16px' }}>
-              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
-                <TrendingUp size={18} />
+            <div className="dashboard-card live-trend-card" style={{ padding: '8px 12px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '4px', paddingBottom: '3px' }}>
+                <TrendingUp size={16} />
                 <span>Gesamttrend (Live)</span>
               </h2>
-              <div className="live-trend-content">
+              <div className="live-trend-content" style={{ gap: '10px' }}>
                 {liveSummary.grade ? (
                   <>
-                    <div className="live-trend-grade-display" data-grade={liveSummary.grade} style={{ height: '48px', width: '48px', fontSize: '24px' }}>
+                    <div className="live-trend-grade-display" data-grade={liveSummary.grade} style={{ height: '42px', width: '42px', fontSize: '20px', borderRadius: '10px' }}>
                       {liveSummary.grade}
                     </div>
                     <div className="live-trend-details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                        <span className="live-trend-label" style={{ fontSize: '13px' }}>{getHungarianGradeLabel(liveSummary.grade)}</span>
+                        <span className="live-trend-label" style={{ fontSize: '12px' }}>{getHungarianGradeLabel(liveSummary.grade)}</span>
                         <span className="live-trend-percent" style={{ fontSize: '11px' }}>{liveSummary.percent}% Schnitt</span>
                       </div>
                       
@@ -656,53 +687,92 @@ export const StudentPerformanceDashboard = ({
                       {tendencyDetails && (
                         <div 
                           className="relative group" 
-                          style={{ marginTop: '6px', cursor: 'help', width: '100%' }}
+                          style={{ marginTop: '18px', cursor: 'help', width: '100%', position: 'relative' }}
                           onMouseEnter={handleMouseEnter}
                           onMouseLeave={handleMouseLeave}
                         >
                           {/* Scale Bar */}
                           <div 
                             style={{
-                              height: '6px',
-                              borderRadius: '3px',
-                              background: 'linear-gradient(to right, #ef4444 0%, #ef4444 50%, #f59e0b 50%, #f59e0b 65%, #3b82f6 65%, #3b82f6 80%, #10b981 80%, #10b981 90%, #15803d 90%, #15803d 100%)',
+                              height: '8px',
+                              borderRadius: '4px',
+                              background: 'linear-gradient(to right, #15803d 0%, #15803d 20%, #16a34a 20%, #16a34a 40%, #3b82f6 40%, #3b82f6 60%, #d97706 60%, #d97706 80%, #ef4444 80%, #ef4444 100%)',
                               width: '100%',
-                              position: 'relative'
+                              position: 'relative',
+                              overflow: 'hidden'
                             }}
-                          />
-                          
-                          {/* Scale Markers (Faint Grade numbers) */}
-                          <div style={{ display: 'flex', position: 'relative', width: '100%', height: '12px', fontSize: '8px', fontWeight: 'bold', color: '#64748b', marginTop: '1px' }}>
-                            <span style={{ position: 'absolute', left: '25%', transform: 'translateX(-50%)' }}>5</span>
-                            <span style={{ position: 'absolute', left: '57.5%', transform: 'translateX(-50%)' }}>4</span>
-                            <span style={{ position: 'absolute', left: '72.5%', transform: 'translateX(-50%)' }}>3</span>
-                            <span style={{ position: 'absolute', left: '85%', transform: 'translateX(-50%)' }}>2</span>
-                            <span style={{ position: 'absolute', left: '95%', transform: 'translateX(-50%)' }}>1</span>
+                          >
+                            {/* Visual break in the red zone (88% to 92%) */}
+                            <div 
+                              style={{
+                                position: 'absolute',
+                                left: '88%',
+                                top: '0',
+                                width: '6px',
+                                height: '100%',
+                                backgroundColor: '#dbeafe', // Matches trend card gradient right-side color
+                                transform: 'skewX(-25deg)'
+                              }}
+                            />
                           </div>
                           
-                          {/* Current Position Pin */}
+                          {/* Scale Markers (Grade numbers 1 to 5) */}
+                          <div style={{ display: 'flex', position: 'relative', width: '100%', height: '10px', fontSize: '9px', fontWeight: 'bold', color: '#475569', marginTop: '2px' }}>
+                            <span style={{ position: 'absolute', left: '10%', transform: 'translateX(-50%)' }}>1</span>
+                            <span style={{ position: 'absolute', left: '30%', transform: 'translateX(-50%)' }}>2</span>
+                            <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>3</span>
+                            <span style={{ position: 'absolute', left: '70%', transform: 'translateX(-50%)' }}>4</span>
+                            <span style={{ position: 'absolute', left: '90%', transform: 'translateX(-50%)' }}>5</span>
+                          </div>
+                          
+                          {/* Current Position Pin (Markerl) */}
                           <div 
                             style={{
                               position: 'absolute',
-                              left: `${liveSummary.percent}%`,
-                              top: '-3px',
+                              left: `${getMarkerPosition(liveSummary.percent)}%`,
+                              top: '-16px',
                               transform: 'translateX(-50%)',
-                              width: '12px',
-                              height: '12px',
-                              borderRadius: '50%',
-                              backgroundColor: 'white',
-                              border: `3px solid ${getGradeColor(liveSummary.grade)}`,
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                              transition: 'left 0.3s ease-out'
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              transition: 'left 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
                             }}
-                          />
+                          >
+                            {/* Marker bubble showing percentage */}
+                            <div 
+                              style={{
+                                backgroundColor: getGradeColor(liveSummary.grade),
+                                color: 'white',
+                                fontSize: '9px',
+                                fontWeight: '900',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                whiteSpace: 'nowrap',
+                                border: '1px solid rgba(255, 255, 255, 0.2)'
+                              }}
+                            >
+                              {liveSummary.percent}%
+                            </div>
+                            {/* Small downward pointer triangle */}
+                            <div 
+                              style={{
+                                width: '0',
+                                height: '0',
+                                borderLeft: '3px solid transparent',
+                                borderRight: '3px solid transparent',
+                                borderTop: `3.5px solid ${getGradeColor(liveSummary.grade)}`,
+                                marginTop: '-1px'
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
                   </>
                 ) : (
                   <div className="no-data-alert">
-                    <AlertCircle size={20} />
+                    <AlertCircle size={18} />
                     <span>Keine Daten</span>
                   </div>
                 )}
@@ -710,62 +780,62 @@ export const StudentPerformanceDashboard = ({
             </div>
  
             {/* Attendance Quote Card */}
-            <div className="dashboard-card" style={{ padding: '10px 16px' }}>
-              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
-                <Activity size={18} />
+            <div className="dashboard-card" style={{ padding: '8px 12px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '4px', paddingBottom: '3px' }}>
+                <Activity size={16} />
                 <span>Anwesenheit</span>
               </h2>
               <div className="stat-card-content">
                 {attendanceStats.hasPresenceData ? (
-                  <div className="attendance-quote-display" style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-                    <div className="attendance-percentage" data-quote={attendanceStats.percent} style={{ fontSize: '22px', lineHeight: 1 }}>
+                  <div className="attendance-quote-display" style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
+                    <div className="attendance-percentage" data-quote={attendanceStats.percent} style={{ fontSize: '20px', lineHeight: 1 }}>
                       {attendanceStats.percent}%
                     </div>
-                    <p className="stat-card-subtitle" style={{ margin: 0, fontSize: '11px' }}>
+                    <p className="stat-card-subtitle" style={{ margin: 0, fontSize: '10px' }}>
                       ({attendanceStats.presentHours}/{attendanceStats.totalHours} Std.)
                     </p>
                   </div>
                 ) : (
-                  <p className="no-data-text">Keine Aufzeichnungen</p>
+                  <p className="no-data-text" style={{ fontSize: '11px' }}>Keine Aufzeichnungen</p>
                 )}
               </div>
             </div>
  
             {/* Collaboration Distribution Card */}
-            <div className="dashboard-card" style={{ padding: '10px 16px' }}>
-              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
-                <Award size={18} />
+            <div className="dashboard-card" style={{ padding: '8px 12px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '4px', paddingBottom: '3px' }}>
+                <Award size={16} />
                 <span>Mitarbeit</span>
               </h2>
               <div className="stat-card-content">
                 {collaborationStats.totalCollabEntries > 0 ? (
-                  <div className="collab-stats-distribution" style={{ gap: '4px', marginTop: '2px' }}>
-                    <div className="collab-dist-item plus" style={{ padding: '3px 2px', borderRadius: '6px' }}>
-                      <span className="collab-dist-symbol" style={{ fontSize: '12px' }}>+</span>
-                      <span className="collab-dist-count" style={{ fontSize: '11px', margin: 0 }}>{collaborationStats.plusCount}</span>
+                  <div className="collab-stats-distribution" style={{ gap: '4px', marginTop: '1px' }}>
+                    <div className="collab-dist-item plus" style={{ padding: '2px 2px', borderRadius: '6px' }}>
+                      <span className="collab-dist-symbol" style={{ fontSize: '11px' }}>+</span>
+                      <span className="collab-dist-count" style={{ fontSize: '10px', margin: 0 }}>{collaborationStats.plusCount}</span>
                     </div>
-                    <div className="collab-dist-item neutral" style={{ padding: '3px 2px', borderRadius: '6px' }}>
-                      <span className="collab-dist-symbol" style={{ fontSize: '12px' }}>~</span>
-                      <span className="collab-dist-count" style={{ fontSize: '11px', margin: 0 }}>{collaborationStats.neutralCount}</span>
+                    <div className="collab-dist-item neutral" style={{ padding: '2px 2px', borderRadius: '6px' }}>
+                      <span className="collab-dist-symbol" style={{ fontSize: '11px' }}>~</span>
+                      <span className="collab-dist-count" style={{ fontSize: '10px', margin: 0 }}>{collaborationStats.neutralCount}</span>
                     </div>
-                    <div className="collab-dist-item minus" style={{ padding: '3px 2px', borderRadius: '6px' }}>
-                      <span className="collab-dist-symbol" style={{ fontSize: '12px' }}>-</span>
-                      <span className="collab-dist-count" style={{ fontSize: '11px', margin: 0 }}>{collaborationStats.minusCount}</span>
+                    <div className="collab-dist-item minus" style={{ padding: '2px 2px', borderRadius: '6px' }}>
+                      <span className="collab-dist-symbol" style={{ fontSize: '11px' }}>-</span>
+                      <span className="collab-dist-count" style={{ fontSize: '10px', margin: 0 }}>{collaborationStats.minusCount}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="no-data-text">Keine Aufzeichnungen</p>
+                  <p className="no-data-text" style={{ fontSize: '11px' }}>Keine Aufzeichnungen</p>
                 )}
               </div>
             </div>
  
             {/* Milestones Card */}
-            <div className="dashboard-card" style={{ padding: '10px 16px' }}>
-              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
-                <Award size={18} />
+            <div className="dashboard-card" style={{ padding: '8px 12px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '4px', paddingBottom: '3px' }}>
+                <Award size={16} />
                 <span>Meilensteine</span>
               </h2>
-              <div className="milestones-list" style={{ gap: '4px' }}>
+              <div className="milestones-list" style={{ gap: '3px' }}>
                 {visibleColumns.filter(c => c.type === 'calculated').length > 0 ? (
                   visibleColumns.filter(c => c.type === 'calculated').slice(0, 2).map(ms => {
                     let grade = grades[student.id]?.[ms.id];
@@ -774,16 +844,16 @@ export const StudentPerformanceDashboard = ({
                       grade = { value: calculated.grade || undefined };
                     }
                     return (
-                      <div key={ms.id} className="milestone-item" style={{ padding: '2px 8px', borderRadius: '6px' }}>
-                        <span className="milestone-name" style={{ fontSize: '11px' }}>{ms.title}</span>
-                        <div className="milestone-badge" data-grade={grade?.value} style={{ width: '18px', height: '18px', fontSize: '10px' }}>
+                      <div key={ms.id} className="milestone-item" style={{ padding: '2px 6px', borderRadius: '6px' }}>
+                        <span className="milestone-name" style={{ fontSize: '10px' }}>{ms.title}</span>
+                        <div className="milestone-badge" data-grade={grade?.value} style={{ width: '16px', height: '16px', fontSize: '9px' }}>
                           {grade?.value || '-'}
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <p className="no-data-text" style={{ marginTop: '4px' }}>Keine Meilensteine</p>
+                  <p className="no-data-text" style={{ marginTop: '2px', fontSize: '11px' }}>Keine Meilensteine</p>
                 )}
               </div>
             </div>
@@ -829,13 +899,13 @@ export const StudentPerformanceDashboard = ({
                                 strokeDasharray="4 4"
                               />
                               <text 
-                                x={paddingX - 10} 
-                                y={y + 5} 
+                                x={paddingX - 12} 
+                                y={y + 6} 
                                 textAnchor="end" 
                                 style={{
-                                  fontSize: '14px',
-                                  fontWeight: '800',
-                                  fill: '#475569',
+                                  fontSize: '18px',
+                                  fontWeight: '950',
+                                  fill: '#0f172a',
                                   fontFamily: 'sans-serif'
                                 }}
                               >
@@ -887,13 +957,13 @@ export const StudentPerformanceDashboard = ({
                               {/* Rotated Axis Title Label */}
                               <text
                                 x={x}
-                                y={p.title === 'Trend' ? svgHeight - 16 : svgHeight - 20}
+                                y={p.title === 'Trend' ? svgHeight - chartBottomGap + 42 : svgHeight - chartBottomGap + 34}
                                 textAnchor={p.title === 'Trend' ? 'middle' : 'end'}
-                                transform={p.title === 'Trend' ? '' : `rotate(-35, ${x}, ${svgHeight - 20})`}
+                                transform={p.title === 'Trend' ? '' : `rotate(-35, ${x}, ${svgHeight - chartBottomGap + 34})`}
                                 style={{
-                                  fontSize: p.title === 'Trend' ? '18px' : '13px',
-                                  fontWeight: '800',
-                                  fill: p.title === 'Trend' ? '#2563eb' : '#1e293b', // darker text for beamer readability
+                                  fontSize: p.title === 'Trend' ? '22px' : '16px',
+                                  fontWeight: '900',
+                                  fill: p.title === 'Trend' ? '#2563eb' : '#0f172a', // darker text for beamer readability
                                   fontFamily: 'sans-serif'
                                 }}
                               >
@@ -903,11 +973,11 @@ export const StudentPerformanceDashboard = ({
                               {/* Grade Label above the dot */}
                               <text
                                 x={x}
-                                y={y - 15}
+                                y={y - 16}
                                 textAnchor="middle"
                                 style={{
-                                  fontSize: '15px',
-                                  fontWeight: '900',
+                                  fontSize: '18px',
+                                  fontWeight: '950',
                                   fill: getGradeColor(p.grade),
                                   fontFamily: 'sans-serif'
                                 }}

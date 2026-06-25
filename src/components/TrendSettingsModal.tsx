@@ -235,7 +235,7 @@ export const TrendSettingsModal = ({
         type: 'success',
         isAlert: true
       });
-      onSave(updatedColumns, localRoundingRule, localIsTrendColorEnabled); // Triggert Update in der Matrix
+      onSave(updatedColumns, localRoundingRule, localIsTrendColorEnabled, localCollaborationCalcMode); // Triggert Update in der Matrix
       onClose();
     } catch (err) {
       console.error("Fehler beim Erstellen des Snapshots:", err);
