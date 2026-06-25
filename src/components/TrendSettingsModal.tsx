@@ -467,8 +467,8 @@ export const TrendSettingsModal = ({
                   disabled={!isCollabCalcActive}
                   style={{ width: '100%', padding: '8px 10px', fontSize: '13px', cursor: isCollabCalcActive ? 'pointer' : 'not-allowed' }}
                 >
-                  <option value="linear">Linear mit der Zeit in den Trend einrechnen</option>
-                  <option value="weighted">Als gesamt mit Gewichtung als eigene Spalte</option>
+                  <option value="weighted">Als gesamte Mitarbeitsnote am Schluss einrechnen (Standard)</option>
+                  <option value="linear">Linear mit der Zeit in den Trend einrechnen (nur bei Bedarf)</option>
                 </select>
                 <p className="field-hint" style={{ marginTop: '6px' }}>
                   {isCollabCalcActive 

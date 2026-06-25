@@ -34,7 +34,7 @@ export const calculateAverage = (
   allGrades: Record<string, Record<string, Grade>>, 
   cutoffDate?: string, 
   roundingRule: 'commercial' | 'studentFriendly' = 'commercial',
-  collaborationCalcMode: 'linear' | 'weighted' = 'linear'
+  collaborationCalcMode: 'linear' | 'weighted' = 'weighted'
 ) => {
   let totalWeightValue = 0;
   let weightedSum = 0;

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   TrendingUp, 
@@ -9,7 +10,8 @@ import {
   CheckCircle, 
   XCircle, 
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Puzzle
 } from 'lucide-react';
 import type { Student, Course, CourseEntry, Grade } from '../schema';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
@@ -40,10 +42,180 @@ export const StudentPerformanceDashboard = ({
     grade: number;
   } | null>(null);
 
+  const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoverPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setHoverPosition(null);
+  };
+
   // 1. Calculate general stats
   const liveSummary = useMemo(() => {
-    return calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+    return calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
   }, [student.id, course.columns, grades, course.roundingRule, course.collaborationCalcMode]);
+
+  // Calculate tendency and "Puzzelstück" suggestions
+  const tendencyDetails = useMemo(() => {
+    if (liveSummary.percent === null || liveSummary.grade === null) return null;
+    const P = liveSummary.percent;
+    const G = liveSummary.grade;
+    
+    let type: 'up' | 'down' | 'stable' = 'stable';
+    let difference = 0;
+    let targetGrade = G;
+    let message = '';
+    let description = '';
+
+    // Calculate active columns weights to give suggestions
+    const activeCols = course.columns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment');
+    const totalWeight = activeCols.reduce((sum, c) => sum + (c.calcFactor || 0), 0) / 100;
+
+    if (G === 1) {
+      const buffer = P - 90 + 1; // e.g. 90% -> 1% buffer (drops to 2 at 89%)
+      if (buffer <= 3) {
+        type = 'down';
+        difference = buffer;
+        targetGrade = 2;
+        message = `Knappes Sehr gut! Nur ${buffer}% Puffer zur Note 2`;
+        description = `Ein minimaler Leistungsabfall oder ein Minus (-) in der Mitarbeit zieht den Schnitt unter 90% und verschlechtert die Note.`;
+      } else {
+        type = 'stable';
+        message = `Stabiles Sehr gut`;
+        description = `Sicheres Sehr gut mit ${buffer}% Puffer zur Note 2.`;
+      }
+    } else if (G === 2) {
+      const distToBetter = 90 - P;
+      const buffer = P - 80 + 1;
+      if (distToBetter <= 3) {
+        type = 'up';
+        difference = distToBetter;
+        targetGrade = 1;
+        message = `Aufstieg möglich! Nur ${distToBetter}% fehlen zur Note 1`;
+        description = `Ein kleines Puzzelstück (z. B. eine positive Mitarbeit-Meldung oder geringe Verbesserung bei einer Beurteilung) reicht für ein Sehr gut (1).`;
+      } else if (buffer <= 3) {
+        type = 'down';
+        difference = buffer;
+        targetGrade = 3;
+        message = `Achtung! Nur ${buffer}% Puffer zur Note 3`;
+        description = `Die Note 2 ist gefährdet. Schon eine kleine Verschlechterung zieht den Schnitt unter 80%.`;
+      } else {
+        type = 'stable';
+        message = `Glatte Note 2`;
+        description = `Stabiler Zweier. ${distToBetter}% fehlen zu Note 1, ${buffer}% Puffer zu Note 3.`;
+      }
+    } else if (G === 3) {
+      const distToBetter = 80 - P;
+      const buffer = P - 65 + 1;
+      if (distToBetter <= 3) {
+        type = 'up';
+        difference = distToBetter;
+        targetGrade = 2;
+        message = `Aufstieg möglich! Nur ${distToBetter}% fehlen zur Note 2`;
+        description = `Ein kleines Puzzelstück (z. B. ein Plus in der Mitarbeit oder ein paar zusätzliche Punkte) reicht für ein Gut (2).`;
+      } else if (buffer <= 3) {
+        type = 'down';
+        difference = buffer;
+        targetGrade = 4;
+        message = `Achtung! Nur ${buffer}% Puffer zur Note 4`;
+        description = `Die Note 3 steht auf der Kippe. Ein kleiner Punktabzug zieht den Schnitt unter 65%.`;
+      } else {
+        type = 'stable';
+        message = `Glatte Note 3`;
+        description = `Stabiler Dreier. ${distToBetter}% fehlen zu Note 2, ${buffer}% Puffer zu Note 4.`;
+      }
+    } else if (G === 4) {
+      const distToBetter = 65 - P;
+      const buffer = P - 50 + 1;
+      if (distToBetter <= 3) {
+        type = 'up';
+        difference = distToBetter;
+        targetGrade = 3;
+        message = `Aufstieg möglich! Nur ${distToBetter}% fehlen zur Note 3`;
+        description = `Es fehlt nur ein kleines Puzzelstück (z. B. eine positive Mitarbeit-Rückmeldung), um ein Befriedigend (3) zu erreichen.`;
+      } else if (buffer <= 3) {
+        type = 'down';
+        difference = buffer;
+        targetGrade = 5;
+        message = `Achtung! Nur ${buffer}% Puffer zur Note 5!`;
+        description = `Die Note ist akut gefährdet. Jede kleine Verschlechterung zieht den Schnitt unter 50% und führt zu einem Nicht genügend (5).`;
+      } else {
+        type = 'stable';
+        message = `Glatte Note 4`;
+        description = `Stabiler Vierer. ${distToBetter}% fehlen zu Note 3, ${buffer}% Puffer zu Note 5.`;
+      }
+    } else if (G === 5) {
+      const distToBetter = 50 - P;
+      if (distToBetter <= 5) {
+        type = 'up';
+        difference = distToBetter;
+        targetGrade = 4;
+        message = `Rettung greifbar! Nur ${distToBetter}% fehlen zur Note 4!`;
+        description = `Ein kleines Puzzelstück (z. B. eine aktive Mitarbeit-Verbesserung oder eine positive Leistung) reicht aus, um auf ein Genügend (4) aufzusteigen.`;
+      } else {
+        type = 'stable';
+        message = `Aktuell Note 5`;
+        description = `Nicht genügend. Es fehlen ${distToBetter}% auf ein Genügend (4).`;
+      }
+    }
+
+    // Concrete suggestions ("Puzzelstücke")
+    const suggestions: string[] = [];
+    if (totalWeight > 0) {
+      const collabCol = activeCols.find(c => c.type === 'collaborationSum');
+      if (collabCol) {
+        const factorPercent = Math.round(((collabCol.calcFactor || 0) / 100) / totalWeight * 100);
+        if (factorPercent > 0) {
+          const grade = grades[student.id]?.[collabCol.id];
+          const entriesCount = grade?.entries?.length || 0;
+          if (entriesCount > 0) {
+            const currentPoints = grade.entries.reduce((sum, entry) => {
+              if (entry.value === '+') return sum + 1;
+              if (entry.value === '~') return sum + 0.5;
+              return sum;
+            }, 0);
+            const currentCollabPercent = Math.round((currentPoints / entriesCount) * 100);
+            
+            // Adding a single '+'
+            const newCollabPercent = Math.round(((currentPoints + 1) / (entriesCount + 1)) * 100);
+            const collabIncrease = newCollabPercent - currentCollabPercent;
+            const overallIncrease = collabIncrease * ((collabCol.calcFactor || 0) / 100) / totalWeight;
+            if (overallIncrease > 0) {
+              suggestions.push(`Ein zusätzliches "+" in der Mitarbeit steigert die Gesamtnote um ca. +${overallIncrease.toFixed(1)}% (Mitarbeit-Gewichtung: ${factorPercent}%).`);
+            }
+          } else {
+            const overallIncrease = 100 * ((collabCol.calcFactor || 0) / 100) / totalWeight;
+            suggestions.push(`Die erste positive Mitarbeit-Meldung (+) steigert die Gesamtnote um ca. +${overallIncrease.toFixed(1)}% (Mitarbeit-Gewichtung: ${factorPercent}%).`);
+          }
+        }
+      }
+
+      const evalCols = activeCols.filter(c => c.type === 'evaluation' || c.type === 'manual');
+      if (evalCols.length > 0) {
+        const largestCol = [...evalCols].sort((a, b) => (b.calcFactor || 0) - (a.calcFactor || 0))[0];
+        const largestPercent = Math.round(((largestCol.calcFactor || 0) / 100) / totalWeight * 100);
+        if (largestPercent > 0) {
+          const testIncrease = 10 * ((largestCol.calcFactor || 0) / 100) / totalWeight;
+          suggestions.push(`10% mehr Punkte bei "${largestCol.title}" bringen ca. +${testIncrease.toFixed(1)}% im Gesamtschnitt (Gewichtung: ${largestPercent}%).`);
+        }
+      }
+    }
+
+    return {
+      type,
+      difference,
+      targetGrade,
+      message,
+      description,
+      suggestions
+    };
+  }, [liveSummary, course.columns, grades, student.id]);
 
   // Attendance stats
   const attendanceStats = useMemo(() => {
@@ -109,13 +281,15 @@ export const StudentPerformanceDashboard = ({
       displayValue: string;
       note?: string;
       subEntries?: any[];
+      calc?: boolean;
+      calcFactor?: number;
     }[] = [];
 
     visibleColumns.forEach(col => {
       let grade = grades[student.id]?.[col.id];
       
       if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-        const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+        const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
         grade = { 
           value: calculated.grade || undefined,
           date: new Date().toISOString()
@@ -125,14 +299,41 @@ export const StudentPerformanceDashboard = ({
       if (!grade) return;
 
       let displayValue = '';
-      if (grade.value !== undefined && grade.value !== '') {
-        displayValue = String(grade.value);
-      } else if (col.type === 'collaborationSum') {
+      if (col.type === 'collaborationSum') {
         const p = getCollaborationPercentage(grade.entries);
-        displayValue = p !== null ? `${p}%` : '-';
+        if (p !== null) {
+          const g = p >= 90 ? 1 : p >= 80 ? 2 : p >= 65 ? 3 : p >= 50 ? 4 : 5;
+          displayValue = `Note ${g} (${p}%)`;
+        } else {
+          displayValue = '-';
+        }
       } else if (col.type === 'presenceSum') {
         const p = getPresencePercentage(grade.entries);
         displayValue = p !== null ? `${p}%` : '-';
+      } else if (grade.value !== undefined && grade.value !== '') {
+        if (col.type === 'calculated' || col.type === 'evaluation') {
+          displayValue = `Note ${grade.value}`;
+        } else if (col.type === 'manual') {
+          if (col.calcType === 'grade') {
+            displayValue = `Note ${grade.value}`;
+          } else if (col.calcType === 'percent') {
+            const p = Number(grade.value);
+            if (!isNaN(p)) {
+              const g = p >= 90 ? 1 : p >= 80 ? 2 : p >= 65 ? 3 : p >= 50 ? 4 : 5;
+              displayValue = `Note ${g} (${p}%)`;
+            } else {
+              displayValue = `${grade.value}%`;
+            }
+          } else if (col.calcType === 'sign') {
+            const s = grade.value;
+            const g = s === '+' ? 1 : s === '~' ? 4 : 5;
+            displayValue = `Note ${g} (${s})`;
+          } else {
+            displayValue = String(grade.value);
+          }
+        } else {
+          displayValue = String(grade.value);
+        }
       } else {
         displayValue = '-';
       }
@@ -148,7 +349,9 @@ export const StudentPerformanceDashboard = ({
         type: col.type,
         displayValue,
         note: grade.note,
-        subEntries: grade.entries
+        subEntries: grade.entries,
+        calc: !!col.calc,
+        calcFactor: col.calcFactor ?? 0
       });
     });
 
@@ -192,7 +395,7 @@ export const StudentPerformanceDashboard = ({
     // 2. Gather individual collaboration entries
     const collabCol = course.columns.find(col => col.type === 'collaborationSum');
     const collabEvents: { date: string; title: string }[] = [];
-    const isCollabLinear = !course.collaborationCalcMode || course.collaborationCalcMode === 'linear';
+    const isCollabLinear = course.collaborationCalcMode === 'linear';
     if (collabCol && isCollabLinear) {
       const grade = grades[student.id]?.[collabCol.id];
       if (grade?.entries) {
@@ -207,13 +410,39 @@ export const StudentPerformanceDashboard = ({
       }
     }
 
+    // 2.5 Gather snapshots/milestones (calculated columns)
+    const snapshotEvents: { date: string; title: string; isSnapshot: boolean; snapshotGrade: number }[] = [];
+    course.columns.forEach(col => {
+      if (col.type === 'calculated') {
+        let grade = grades[student.id]?.[col.id];
+        if (!grade || !grade.isOverridden) {
+          const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+          if (calculated.grade) {
+            grade = { value: calculated.grade };
+          }
+        }
+        if (grade?.value) {
+          const val = Number(grade.value);
+          if (!isNaN(val)) {
+            snapshotEvents.push({
+              date: col.cutoffDate || col.date,
+              title: col.title,
+              isSnapshot: true,
+              snapshotGrade: val
+            });
+          }
+        }
+      }
+    });
+
     // 3. Combine and sort events
-    const allEvents = [...normalEvents, ...collabEvents]
+    const allEvents = [...normalEvents, ...collabEvents, ...snapshotEvents]
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // Deduplicate by day (YYYY-MM-DD) to avoid multiple points on the same day
     const uniqueDates: string[] = [];
     const dateToEvents: Record<string, string[]> = {};
+    const dateToSnapshot: Record<string, number> = {};
 
     allEvents.forEach(e => {
       const d = e.date.split('T')[0];
@@ -221,41 +450,73 @@ export const StudentPerformanceDashboard = ({
         dateToEvents[d] = [];
         uniqueDates.push(e.date);
       }
+      if ('isSnapshot' in e && e.isSnapshot && e.snapshotGrade !== undefined) {
+        dateToSnapshot[d] = e.snapshotGrade;
+      }
       dateToEvents[d].push(e.title);
     });
 
-    // 4. Calculate live average at each date point
+    // 4. Calculate live average or use snapshot grade at each date point
     uniqueDates.forEach(dateStr => {
       const d = dateStr.split('T')[0];
       const titles = dateToEvents[d];
       const title = titles.join(', ');
       
-      const avg = calculateAverage(student.id, course.columns, grades, dateStr, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
-      if (avg.percent !== null && avg.grade !== null) {
+      if (dateToSnapshot[d] !== undefined) {
+        let percent = 0;
+        switch (dateToSnapshot[d]) {
+          case 1: percent = 100; break;
+          case 2: percent = 89; break;
+          case 3: percent = 79; break;
+          case 4: percent = 64; break;
+          case 5: percent = 49; break;
+        }
         points.push({
           date: dateStr,
           title,
-          percent: avg.percent,
-          grade: avg.grade
+          percent,
+          grade: dateToSnapshot[d]
         });
+      } else {
+        const avg = calculateAverage(student.id, course.columns, grades, dateStr, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+        if (avg.percent !== null && avg.grade !== null) {
+          points.push({
+            date: dateStr,
+            title,
+            percent: avg.percent,
+            grade: avg.grade
+          });
+        }
       }
     });
+
+    // 5. Add current live trend point at the very end
+    const liveAvg = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+    if (liveAvg.percent !== null && liveAvg.grade !== null) {
+      points.push({
+        date: new Date().toISOString(),
+        title: 'Trend',
+        percent: liveAvg.percent,
+        grade: liveAvg.grade
+      });
+    }
 
     return points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [student.id, course.columns, grades, course.roundingRule, course.collaborationCalcMode]);
 
   // SVG dimensions & coordinate mapping for Line Chart
-  const svgWidth = 600;
-  const svgHeight = 320;
-  const paddingX = 60;
-  const paddingY = 30;
+  const svgWidth = 800;
+  const svgHeight = 450;
+  const paddingX = 65; // Wegen nur Ziffern auf Y-Achse verringert (mehr Platz fürs Diagramm)
+  const paddingY = 40;
+  const chartBottomGap = 75; // vergrößert für lesbarere X-Achsen-Beschriftungen
 
   const linePath = useMemo(() => {
     if (chartPoints.length < 2) return '';
     
     return chartPoints.map((p, i) => {
       const x = paddingX + (i * (svgWidth - paddingX - 20)) / (chartPoints.length - 1);
-      const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - 40)) / 4;
+      const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - chartBottomGap)) / 4;
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
     }).join(' ');
   }, [chartPoints]);
@@ -264,15 +525,15 @@ export const StudentPerformanceDashboard = ({
     if (chartPoints.length < 2) return '';
     const firstX = paddingX;
     const lastX = paddingX + (svgWidth - paddingX - 20);
-    const bottomY = svgHeight - 30;
+    const bottomY = svgHeight - chartBottomGap + 10;
     
     const lines = chartPoints.map((p, i) => {
       const x = paddingX + (i * (svgWidth - paddingX - 20)) / (chartPoints.length - 1);
-      const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - 40)) / 4;
+      const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - chartBottomGap)) / 4;
       return `L ${x} ${y}`;
     }).join(' ');
 
-    const initialY = paddingY + ((chartPoints[0].grade - 1) * (svgHeight - paddingY - 40)) / 4;
+    const initialY = paddingY + ((chartPoints[0].grade - 1) * (svgHeight - paddingY - chartBottomGap)) / 4;
 
     return `M ${firstX} ${bottomY} L ${firstX} ${initialY} ${lines} L ${lastX} ${bottomY} Z`;
   }, [chartPoints]);
@@ -370,25 +631,73 @@ export const StudentPerformanceDashboard = ({
 
         {/* Dashboard Body */}
         <div className="dashboard-body">
-          
           {/* Summaries Row (Top) */}
           <div className="dashboard-summaries-row">
             
             {/* Live Trend Card */}
-            <div className="dashboard-card live-trend-card">
-              <h2 className="dashboard-card-title">
+            <div className="dashboard-card live-trend-card" style={{ padding: '10px 16px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
                 <TrendingUp size={18} />
                 <span>Gesamttrend (Live)</span>
               </h2>
               <div className="live-trend-content">
                 {liveSummary.grade ? (
                   <>
-                    <div className="live-trend-grade-display" data-grade={liveSummary.grade}>
+                    <div className="live-trend-grade-display" data-grade={liveSummary.grade} style={{ height: '48px', width: '48px', fontSize: '24px' }}>
                       {liveSummary.grade}
                     </div>
-                    <div className="live-trend-details">
-                      <span className="live-trend-label">{getHungarianGradeLabel(liveSummary.grade)}</span>
-                      <span className="live-trend-percent">{liveSummary.percent}% Schnitt</span>
+                    <div className="live-trend-details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span className="live-trend-label" style={{ fontSize: '13px' }}>{getHungarianGradeLabel(liveSummary.grade)}</span>
+                        <span className="live-trend-percent" style={{ fontSize: '11px' }}>{liveSummary.percent}% Schnitt</span>
+                      </div>
+                      
+                      {/* Notenstrahl (Grade Scale) */}
+                      {tendencyDetails && (
+                        <div 
+                          className="relative group" 
+                          style={{ marginTop: '6px', cursor: 'help', width: '100%' }}
+                          onMouseEnter={handleMouseEnter}
+                          onMouseLeave={handleMouseLeave}
+                        >
+                          {/* Scale Bar */}
+                          <div 
+                            style={{
+                              height: '6px',
+                              borderRadius: '3px',
+                              background: 'linear-gradient(to right, #ef4444 0%, #ef4444 50%, #f59e0b 50%, #f59e0b 65%, #3b82f6 65%, #3b82f6 80%, #10b981 80%, #10b981 90%, #15803d 90%, #15803d 100%)',
+                              width: '100%',
+                              position: 'relative'
+                            }}
+                          />
+                          
+                          {/* Scale Markers (Faint Grade numbers) */}
+                          <div style={{ display: 'flex', position: 'relative', width: '100%', height: '12px', fontSize: '8px', fontWeight: 'bold', color: '#64748b', marginTop: '1px' }}>
+                            <span style={{ position: 'absolute', left: '25%', transform: 'translateX(-50%)' }}>5</span>
+                            <span style={{ position: 'absolute', left: '57.5%', transform: 'translateX(-50%)' }}>4</span>
+                            <span style={{ position: 'absolute', left: '72.5%', transform: 'translateX(-50%)' }}>3</span>
+                            <span style={{ position: 'absolute', left: '85%', transform: 'translateX(-50%)' }}>2</span>
+                            <span style={{ position: 'absolute', left: '95%', transform: 'translateX(-50%)' }}>1</span>
+                          </div>
+                          
+                          {/* Current Position Pin */}
+                          <div 
+                            style={{
+                              position: 'absolute',
+                              left: `${liveSummary.percent}%`,
+                              top: '-3px',
+                              transform: 'translateX(-50%)',
+                              width: '12px',
+                              height: '12px',
+                              borderRadius: '50%',
+                              backgroundColor: 'white',
+                              border: `3px solid ${getGradeColor(liveSummary.grade)}`,
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              transition: 'left 0.3s ease-out'
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -399,21 +708,21 @@ export const StudentPerformanceDashboard = ({
                 )}
               </div>
             </div>
-
+ 
             {/* Attendance Quote Card */}
-            <div className="dashboard-card">
-              <h2 className="dashboard-card-title">
+            <div className="dashboard-card" style={{ padding: '10px 16px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
                 <Activity size={18} />
                 <span>Anwesenheit</span>
               </h2>
               <div className="stat-card-content">
                 {attendanceStats.hasPresenceData ? (
-                  <div className="attendance-quote-display">
-                    <div className="attendance-percentage" data-quote={attendanceStats.percent}>
+                  <div className="attendance-quote-display" style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                    <div className="attendance-percentage" data-quote={attendanceStats.percent} style={{ fontSize: '22px', lineHeight: 1 }}>
                       {attendanceStats.percent}%
                     </div>
-                    <p className="stat-card-subtitle">
-                      {attendanceStats.presentHours}/{attendanceStats.totalHours} Std. anwesend
+                    <p className="stat-card-subtitle" style={{ margin: 0, fontSize: '11px' }}>
+                      ({attendanceStats.presentHours}/{attendanceStats.totalHours} Std.)
                     </p>
                   </div>
                 ) : (
@@ -421,27 +730,27 @@ export const StudentPerformanceDashboard = ({
                 )}
               </div>
             </div>
-
+ 
             {/* Collaboration Distribution Card */}
-            <div className="dashboard-card">
-              <h2 className="dashboard-card-title">
+            <div className="dashboard-card" style={{ padding: '10px 16px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
                 <Award size={18} />
                 <span>Mitarbeit</span>
               </h2>
               <div className="stat-card-content">
                 {collaborationStats.totalCollabEntries > 0 ? (
-                  <div className="collab-stats-distribution">
-                    <div className="collab-dist-item plus">
-                      <span className="collab-dist-symbol">+</span>
-                      <span className="collab-dist-count">{collaborationStats.plusCount}</span>
+                  <div className="collab-stats-distribution" style={{ gap: '4px', marginTop: '2px' }}>
+                    <div className="collab-dist-item plus" style={{ padding: '3px 2px', borderRadius: '6px' }}>
+                      <span className="collab-dist-symbol" style={{ fontSize: '12px' }}>+</span>
+                      <span className="collab-dist-count" style={{ fontSize: '11px', margin: 0 }}>{collaborationStats.plusCount}</span>
                     </div>
-                    <div className="collab-dist-item neutral">
-                      <span className="collab-dist-symbol">~</span>
-                      <span className="collab-dist-count">{collaborationStats.neutralCount}</span>
+                    <div className="collab-dist-item neutral" style={{ padding: '3px 2px', borderRadius: '6px' }}>
+                      <span className="collab-dist-symbol" style={{ fontSize: '12px' }}>~</span>
+                      <span className="collab-dist-count" style={{ fontSize: '11px', margin: 0 }}>{collaborationStats.neutralCount}</span>
                     </div>
-                    <div className="collab-dist-item minus">
-                      <span className="collab-dist-symbol">-</span>
-                      <span className="collab-dist-count">{collaborationStats.minusCount}</span>
+                    <div className="collab-dist-item minus" style={{ padding: '3px 2px', borderRadius: '6px' }}>
+                      <span className="collab-dist-symbol" style={{ fontSize: '12px' }}>-</span>
+                      <span className="collab-dist-count" style={{ fontSize: '11px', margin: 0 }}>{collaborationStats.minusCount}</span>
                     </div>
                   </div>
                 ) : (
@@ -449,39 +758,39 @@ export const StudentPerformanceDashboard = ({
                 )}
               </div>
             </div>
-
+ 
             {/* Milestones Card */}
-            <div className="dashboard-card">
-              <h2 className="dashboard-card-title">
+            <div className="dashboard-card" style={{ padding: '10px 16px' }}>
+              <h2 className="dashboard-card-title" style={{ marginBottom: '6px', paddingBottom: '4px' }}>
                 <Award size={18} />
                 <span>Meilensteine</span>
               </h2>
-              <div className="milestones-list">
+              <div className="milestones-list" style={{ gap: '4px' }}>
                 {visibleColumns.filter(c => c.type === 'calculated').length > 0 ? (
                   visibleColumns.filter(c => c.type === 'calculated').slice(0, 2).map(ms => {
                     let grade = grades[student.id]?.[ms.id];
                     if (!grade || !grade.isOverridden) {
-                      const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+                      const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
                       grade = { value: calculated.grade || undefined };
                     }
                     return (
-                      <div key={ms.id} className="milestone-item" style={{ padding: '4px 8px' }}>
+                      <div key={ms.id} className="milestone-item" style={{ padding: '2px 8px', borderRadius: '6px' }}>
                         <span className="milestone-name" style={{ fontSize: '11px' }}>{ms.title}</span>
-                        <div className="milestone-badge" data-grade={grade?.value} style={{ width: '20px', height: '20px', fontSize: '11px' }}>
+                        <div className="milestone-badge" data-grade={grade?.value} style={{ width: '18px', height: '18px', fontSize: '10px' }}>
                           {grade?.value || '-'}
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <p className="no-data-text">Keine Meilensteine</p>
+                  <p className="no-data-text" style={{ marginTop: '4px' }}>Keine Meilensteine</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Workspace (Bottom: Chart Left, History Right) */}
-          <div className="dashboard-workspace">
+          <div className="dashboard-workspace" style={{ gridTemplateColumns: '1.6fr 1fr' }}>
             
             {/* Chart Container (Left Column) */}
             <div className="dashboard-chart-container">
@@ -508,7 +817,7 @@ export const StudentPerformanceDashboard = ({
 
                         {/* Threshold grid lines */}
                         {[1, 2, 3, 4, 5].map(grade => {
-                          const y = paddingY + ((grade - 1) * (svgHeight - paddingY - 40)) / 4;
+                          const y = paddingY + ((grade - 1) * (svgHeight - paddingY - chartBottomGap)) / 4;
                           return (
                             <g key={grade} className="grid-group">
                               <line 
@@ -520,12 +829,17 @@ export const StudentPerformanceDashboard = ({
                                 strokeDasharray="4 4"
                               />
                               <text 
-                                x={paddingX - 8} 
-                                y={y + 4} 
+                                x={paddingX - 10} 
+                                y={y + 5} 
                                 textAnchor="end" 
-                                className="grid-text"
+                                style={{
+                                  fontSize: '14px',
+                                  fontWeight: '800',
+                                  fill: '#475569',
+                                  fontFamily: 'sans-serif'
+                                }}
                               >
-                                Note {grade}
+                                {grade}
                               </text>
                             </g>
                           );
@@ -534,10 +848,11 @@ export const StudentPerformanceDashboard = ({
                         {/* Bottom axis line */}
                         <line 
                           x1={paddingX} 
-                          y1={svgHeight - 30} 
+                          y1={svgHeight - chartBottomGap + 10} 
                           x2={svgWidth - 20} 
-                          y2={svgHeight - 30} 
+                          y2={svgHeight - chartBottomGap + 10} 
                           stroke="#cbd5e1"
+                          strokeWidth="2"
                         />
 
                         {/* Fill area beneath line */}
@@ -548,7 +863,7 @@ export const StudentPerformanceDashboard = ({
                           d={linePath} 
                           fill="none" 
                           stroke="#2563eb" 
-                          strokeWidth="3"
+                          strokeWidth="4"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
@@ -556,29 +871,29 @@ export const StudentPerformanceDashboard = ({
                         {/* Data point circles & hover triggers */}
                         {chartPoints.map((p, i) => {
                           const x = paddingX + (i * (svgWidth - paddingX - 20)) / (chartPoints.length - 1);
-                          const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - 40)) / 4;
+                          const y = paddingY + ((p.grade - 1) * (svgHeight - paddingY - chartBottomGap)) / 4;
                           return (
                             <g key={i}>
                               {/* Axis tick mark */}
                               <line 
                                 x1={x} 
-                                y1={svgHeight - 30} 
+                                y1={svgHeight - chartBottomGap + 10} 
                                 x2={x} 
-                                y2={svgHeight - 24} 
+                                y2={svgHeight - chartBottomGap + 18} 
                                 stroke="#cbd5e1" 
-                                strokeWidth="1"
+                                strokeWidth="2"
                               />
 
                               {/* Rotated Axis Title Label */}
                               <text
                                 x={x}
-                                y={svgHeight - 12}
-                                textAnchor="end"
-                                transform={`rotate(-35, ${x}, ${svgHeight - 12})`}
+                                y={p.title === 'Trend' ? svgHeight - 16 : svgHeight - 20}
+                                textAnchor={p.title === 'Trend' ? 'middle' : 'end'}
+                                transform={p.title === 'Trend' ? '' : `rotate(-35, ${x}, ${svgHeight - 20})`}
                                 style={{
-                                  fontSize: '8px',
-                                  fontWeight: '600',
-                                  fill: '#64748b',
+                                  fontSize: p.title === 'Trend' ? '18px' : '13px',
+                                  fontWeight: '800',
+                                  fill: p.title === 'Trend' ? '#2563eb' : '#1e293b', // darker text for beamer readability
                                   fontFamily: 'sans-serif'
                                 }}
                               >
@@ -588,11 +903,11 @@ export const StudentPerformanceDashboard = ({
                               {/* Grade Label above the dot */}
                               <text
                                 x={x}
-                                y={y - 12}
+                                y={y - 15}
                                 textAnchor="middle"
                                 style={{
-                                  fontSize: '11px',
-                                  fontWeight: '800',
+                                  fontSize: '15px',
+                                  fontWeight: '900',
                                   fill: getGradeColor(p.grade),
                                   fontFamily: 'sans-serif'
                                 }}
@@ -604,10 +919,10 @@ export const StudentPerformanceDashboard = ({
                               <circle 
                                 cx={x} 
                                 cy={y} 
-                                r="6" 
+                                r="8" 
                                 fill={getGradeColor(p.grade)} 
                                 stroke="#ffffff" 
-                                strokeWidth="2" 
+                                strokeWidth="3" 
                                 className="chart-dot"
                                 style={{ filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.15))' }}
                               />
@@ -615,7 +930,7 @@ export const StudentPerformanceDashboard = ({
                               <circle 
                                 cx={x} 
                                 cy={y} 
-                                r="15" 
+                                r="24" 
                                 fill="transparent" 
                                 style={{ cursor: 'pointer' }}
                                 onMouseEnter={() => {
@@ -688,13 +1003,20 @@ export const StudentPerformanceDashboard = ({
                           
                           {/* Details content */}
                           <div className="timeline-content-card">
-                            <div className="timeline-card-header">
+                             <div className="timeline-card-header">
                               <div>
                                 <h3 className="timeline-item-title">{item.title}</h3>
                                 <span className="timeline-item-date">{formatDate(item.date)}</span>
                               </div>
-                              <div className="timeline-item-result-badge" data-type={item.type}>
-                                {item.displayValue}
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                <div className="timeline-item-result-badge" data-type={item.type}>
+                                  {item.displayValue}
+                                </div>
+                                {item.type !== 'calculated' && item.type !== 'presenceSum' && item.type !== 'groupAssignment' && (
+                                  <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '500' }}>
+                                    {item.calc ? `Einrechnungsfaktor: ${item.calcFactor}%` : 'Nicht gewertet'}
+                                  </span>
+                                )}
                               </div>
                             </div>
 
@@ -751,6 +1073,68 @@ export const StudentPerformanceDashboard = ({
           </div>
         </div>
       </div>
+      
+      {/* React Portal hover tooltip rendered outside main overlay to floating z-index overlay modal level */}
+      {hoverPosition && tendencyDetails && createPortal(
+        <div 
+          className="tendency-portal-tooltip"
+          style={{
+            position: 'fixed',
+            left: `${hoverPosition.x}px`,
+            top: `${hoverPosition.y - 8}px`,
+            transform: 'translate(-50%, -100%)',
+            width: '320px',
+            backgroundColor: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+            padding: '16px',
+            color: '#1e293b',
+            zIndex: 99999, // Float on top of everything!
+            pointerEvents: 'none' // Avoid flickering on scroll/mouse move
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Puzzle size={16} style={{ color: tendencyDetails.type === 'up' ? '#16a34a' : tendencyDetails.type === 'down' ? '#dc2626' : '#2563eb' }} />
+            <span style={{ fontWeight: '700', fontSize: '13px', color: '#1e293b' }}>
+              {tendencyDetails.message}
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.4', marginBottom: tendencyDetails.suggestions.length > 0 ? '8px' : '0', textAlign: 'left' }}>
+            {tendencyDetails.description}
+          </p>
+          
+          {tendencyDetails.suggestions.length > 0 && (
+            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '8px', textAlign: 'left' }}>
+              <span style={{ display: 'block', fontWeight: '700', fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                Mögliche Puzzelstücke zur Verbesserung:
+              </span>
+              {tendencyDetails.suggestions.map((sug, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '11px', color: '#475569', lineHeight: '1.3', marginBottom: '4px' }}>
+                  <span style={{ color: tendencyDetails.type === 'up' ? '#16a34a' : tendencyDetails.type === 'down' ? '#dc2626' : '#2563eb', fontWeight: 'bold' }}>•</span>
+                  <span>{sug}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Arrow */}
+          <div 
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: '50%',
+              transform: 'translateX(-50%) translateY(-6px) rotate(45deg)',
+              width: '12px',
+              height: '12px',
+              backgroundColor: 'white',
+              borderRight: '1px solid #e2e8f0',
+              borderBottom: '1px solid #e2e8f0'
+            }}
+          />
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

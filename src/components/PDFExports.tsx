@@ -50,7 +50,7 @@ const calculateAverage = (
   grades: Record<string, Record<string, Grade>>,
   cutoffDate?: string,
   roundingRule: 'commercial' | 'studentFriendly' = 'commercial',
-  collaborationCalcMode: 'linear' | 'weighted' = 'linear'
+  collaborationCalcMode: 'linear' | 'weighted' = 'weighted'
 ): { percent: number | null; grade: number | null } => {
   const activeCols = columns.filter(c => {
     if (!c.calc || c.type === 'calculated' || c.type === 'presenceSum' || c.type === 'groupAssignment') return false;
@@ -228,7 +228,7 @@ export const MatrixPDFDocument = ({
 
           {/* Student Rows */}
           {students.map((student, index) => {
-            const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+            const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
             
             return (
               <View 
@@ -245,7 +245,7 @@ export const MatrixPDFDocument = ({
                   let grade = grades[student.id]?.[col.id];
                   
                   if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                    const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+                    const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
                     grade = { 
                       value: calculated.grade || undefined
                     };
@@ -300,7 +300,7 @@ export const StudentReportPDFDocument = ({
   grades: Record<string, Record<string, Grade>>;
   visibleColumns: CourseEntry[];
 }) => {
-  const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+  const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
   
   // 1. Gather all active columns for grade calculation
   const activeCols = visibleColumns.filter(c => {
@@ -367,7 +367,7 @@ export const StudentReportPDFDocument = ({
     let grade = grades[student.id]?.[col.id];
     
     if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
       grade = { 
         value: calculated.grade || undefined,
         date: new Date().toISOString()
@@ -422,7 +422,7 @@ export const StudentReportPDFDocument = ({
           {visibleColumns.filter(c => c.type === 'calculated').map(ms => {
             let grade = grades[student.id]?.[ms.id];
             if (!grade || !grade.isOverridden) {
-              const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'linear');
+              const calculated = calculateAverage(student.id, course.columns, grades, ms.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
               grade = { value: calculated.grade || undefined };
             }
             return (

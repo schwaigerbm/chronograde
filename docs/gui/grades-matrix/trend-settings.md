@@ -52,8 +52,8 @@ Das Modal ist für eine hohe Informationsdichte und optimale Bildschirmausnutzun
 ### 2.5 Mitarbeits-Berechnungsmodus
 * Ermöglicht die Auswahl, wie die Mitarbeit (Typ `collaborationSum`) berechnet und in den Trend einbezogen wird.
 * **Option:** Ein Dropdown-Auswahlfeld "Mitarbeits-Berechnung" in der rechten Spalte des Modals mit folgenden Optionen:
-  * **Linear mit der Zeit:** Die Mitarbeits-Einzelnoten fließen chronologisch gefiltert bis zum jeweiligen Berechnungsstichtag in den Trend ein. Jeder einzelne Mitarbeits-Eintrag erzeugt einen eigenen zeitlichen Datenpunkt auf der Verlaufskurve.
-  * **Als gesamt mit Gewichtung:** Die Mitarbeit wird als statische Gesamtnote/Gesamtwert mit der entsprechenden Gewichtung in die Durchschnittsberechnung einbezogen. Die Einzeleinträge erzeugen keine eigenen Punkte auf der Verlaufskurve. Bei zeitabhängigen Trendberechnungen wird der aktuelle Gesamtprozentsatz der Mitarbeit (ohne zeitliche Filterung) herangezogen.
+  * **Als gesamte Mitarbeitsnote am Schluss einrechnen (Standard):** Die Mitarbeit wird als statische Gesamtnote/Gesamtwert mit der entsprechenden Gewichtung in die Durchschnittsberechnung einbezogen. Die Einzeleinträge erzeugen keine eigenen Punkte auf der Verlaufskurve. Bei zeitabhängigen Trendberechnungen wird der aktuelle Gesamtprozentsatz der Mitarbeit (ohne zeitliche Filterung) herangezogen.
+  * **Linear mit der Zeit in den Trend einrechnen (nur bei Bedarf):** Die Mitarbeits-Einzelnoten fließen chronologisch gefiltert bis zum jeweiligen Berechnungsstichtag in den Trend ein. Jeder einzelne Mitarbeits-Eintrag erzeugt einen eigenen zeitlichen Datenpunkt auf der Verlaufskurve.
 
 ## 3. Komponentenschnittstelle (TypeScript-Props)
 
