@@ -3119,8 +3119,18 @@ input:checked + .slider:before {
   gap: 4px;
   user-select: none;
   text-align: left;
-  flex: 1 1 180px;
-  max-width: 240px;
+  box-sizing: border-box;
+}
+
+.timetable-slot-content .timetable-course-card {
+  width: calc(25% - 6px);
+  flex: 0 0 calc(25% - 6px);
+}
+
+.unassigned-pool-dropzone .timetable-course-card {
+  width: auto;
+  min-width: 180px;
+  flex: 0 0 auto;
 }
 
 .timetable-course-card:active {
