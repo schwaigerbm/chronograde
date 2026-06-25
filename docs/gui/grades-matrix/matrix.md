@@ -6,9 +6,11 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 * **Hauptüberschrift (H1):** `Leistungsbeurteilung`
 * **Unterüberschrift (H2):** `[Name der Gruppe / Course]`
 * **Gruppen-Schnellauswahl:** (Entfernt) Die Gruppen-Schnellauswahl wurde entfernt. Der Wechsel von Gruppen/Kursen erfolgt ausschließlich über die Sidebar/Hauptnavigation.
-* **Aktions-Buttons:** Direkt rechts neben der Unterüberschrift platziert.
-    * **Button 1:** `Ansicht konfigurieren` (Stil: Sekundär, Icon: `Settings`).
-    * **Button 2:** `Beurteilungsspalte hinzufügen` (Stil: Primär, Icon: `Plus`).
+* **Aktions-Menü (Dropdown):** In der Kopfzeile platziert (Label: `Aktionen`, Icon: `ChevronDown`). Bietet folgende Aktionen:
+    * `Beurteilungsspalte hinzufügen` (Icon: `Plus`) - Öffnet das Multi-Step-Modal zum Hinzufügen einer Beurteilungsspalte.
+    * `Ansicht konfigurieren` (Icon: `Settings`) - Öffnet das Modal zur Spaltenkonfiguration.
+    * `Gruppe ändern` (Icon: `Users`) - Öffnet das `EnrollmentModal` zur Schüler-Zuweisung, um Schüler der Gruppe hinzuzufügen, zu entfernen oder neu zu reihen.
+    * `PDF Export` (Icon: `FileDown`) - Öffnet das Modal zur Spaltenauswahl für den PDF-Export der Gesamtmatrix.
 
 ## 2. Datenanbindung & Architektur
 * **Backend:** Firebase Firestore (Collections: `courses`, `students`, `course_entries`, `grades`).
@@ -284,10 +286,15 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
 * **Aktion:** Ein Klick auf ein Analyse-Icon (TrendingUp/LineChart-Symbol, Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`) öffnet eine große, zentrierte Overlay-Ansicht (Modal) mit den detaillierten Leistungen des Schülers.
 * **Layout:** Großes modales Fenster (Breite: 95vw, Höhe: 90vh, abgerundete Ecken) mit einem abgedunkelten Backdrop, so dass die Notenmatrix im Hintergrund dezent sichtbar bleibt. Das Fenster gliedert sich in:
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr und Steuerelemente (PDF-Export, Schließen).
-    * **Zusammenfassungen (Oben):** Horizontal angeordnet über die gesamte Breite des Dashboards (Live-Trend, Anwesenheitsquote, Mitarbeit, Meilensteine als Cards nebeneinander).
-    * **Hauptbereich (Unten):** Zweispaltiges Layout:
-        * **Linke Spalte (Diagramm):** Interaktives SVG-basiertes Liniendiagramm zur Visualisierung des Noten-Trends, permanent sichtbar.
-        * **Rechte Spalte (History):** Chronologische Verlaufsliste der Leistungsdetails, unabhängig scrollbar.
+    * **Zweispaltiges Layout im Body (dashboard-body ohne Scrollbalken, Diagramm permanent sichtbar):**
+        * **Linke Spalte (ca. 2/3 Breite):** Interaktives SVG-basiertes Liniendiagramm zur Visualisierung des Noten-Trends, permanent und vollständig sichtbar (kein Scrollen links).
+        * **Rechte Spalte (ca. 1/3 Breite):** Vertikal scrollbare Leiste (`overflow-y: auto`), die alle Informationskarten untereinander stapelt:
+            1. **Gesamttrend (Live):** Aktuelle Note mit einem umgekehrten, farbsegmentierten Notenstrahl (von links 1 bis rechts 5) und einer floating Prozent-Nadel (Markerl), die bei Mouse-Hover die Tendenzdetails und "Puzzelstücke" (Verbesserungsvorschläge) als Modal-Overlay einblendet.
+            2. **Mitarbeit-Zusammenfassung:** Verteilung der Mitarbeitseinträge (+, ~, -).
+            3. **Anwesenheits-Zusammenfassung:** Prozentuale Anwesenheitsquote und Stundenanzahl.
+            4. **Meilensteine:** Berechnete Noten für definierte Zwischenstände.
+            5. **Detaillierter Verlauf (Timeline Card):** Eine Karte ganz unten in der Scrollliste, in der alle erfassten Einzelleistungen chronologisch aufgeschlüsselt sind, mit Angabe des Ergebnisses, Kommentaren/Einzelleistungen und des jeweiligen Einrechnungsfaktors.
+    * **Scrollverhalten:** Der Hauptbereich (`dashboard-body`) selbst ist nicht scrollbar (`overflow: hidden`), während die rechte Spalte eine eigene vertikale Scrollleiste besitzt. So bleibt das große Diagramm links immer vollflächig sichtbar.
 * **Inhalt:**
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr. Ein Button zum Generieren des PDF-Einzelberichts (Datenblatt) ist im Header platziert.
     * **Zusammenfassung (Summary):** Anzeige des aktuellen berechneten Live-Trends (Note und Prozentwert), der Meilensteine (berechnete Noten) sowie Statistiken. **Wichtig:** Die Anwesenheitsquote ist eine rein informative Statistik und darf zu keinem Zeitpunkt in die Notenberechnung einfließen.

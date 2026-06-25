@@ -16,7 +16,8 @@ import {
   Pencil,
   TrendingUp,
   FileDown,
-  ChevronDown
+  ChevronDown,
+  Users
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
@@ -34,6 +35,7 @@ import { TrendSettingsModal } from './TrendSettingsModal';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
 import { EvaluationEntryModal } from './EvaluationEntryModal';
 import { ManualEntryModal } from './ManualEntryModal';
+import { EnrollmentModal } from './EnrollmentModal';
 
 interface GradesMatrixProps {
   course: Course;
@@ -80,6 +82,10 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   // Student Dashboard Overlay State
   const [selectedStudentForDashboard, setSelectedStudentForDashboard] = useState<Student | null>(null);
 
+  // Enrollment Modal States
+  const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+
   // Custom Dialog State
   const [dialogConfig, setDialogConfig] = useState<{
     isOpen: boolean;
@@ -104,6 +110,47 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     setHoveredCell(null);
     setActiveManualCell(null);
   }, [course]);
+
+  // Load all students for enrollment search
+  useEffect(() => {
+    firebaseService.getStudents().then(setAllStudents).catch(err => {
+      console.error("Error loading students:", err);
+    });
+  }, []);
+
+  // Enrollment Actions
+  const handleEnroll = async (studentId: string) => {
+    const enrolled = course.enrolledStudents || [];
+    if (enrolled.includes(studentId)) return;
+    const updatedCourse = {
+      ...course,
+      enrolledStudents: [...enrolled, studentId]
+    };
+    await firebaseService.saveCourse(updatedCourse);
+  };
+
+  const handleUnenroll = async (studentId: string) => {
+    const enrolled = course.enrolledStudents || [];
+    const updatedCourse = {
+      ...course,
+      enrolledStudents: enrolled.filter(id => id !== studentId)
+    };
+    await firebaseService.saveCourse(updatedCourse);
+  };
+
+  const handleReorder = async (index: number, direction: 'up' | 'down') => {
+    const enrolled = course.enrolledStudents || [];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= enrolled.length) return;
+    const newList = [...enrolled];
+    const [movedItem] = newList.splice(index, 1);
+    newList.splice(targetIndex, 0, movedItem);
+    const updatedCourse = {
+      ...course,
+      enrolledStudents: newList
+    };
+    await firebaseService.saveCourse(updatedCourse);
+  };
 
   // Global keydown listener for cell quick entry on hover
   useEffect(() => {
@@ -464,6 +511,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     >
                       <Settings size={16} />
                       <span>Ansicht konfigurieren</span>
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        setIsActionsDropdownOpen(false);
+                        setIsEnrollmentModalOpen(true);
+                      }}
+                    >
+                      <Users size={16} />
+                      <span>Gruppe ändern</span>
                     </button>
                     <button
                       className="dropdown-item"
@@ -872,6 +929,18 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           grades={grades}
           visibleColumns={visibleColumns}
           onClose={() => setSelectedStudentForDashboard(null)}
+        />
+      )}
+
+      {isEnrollmentModalOpen && (
+        <EnrollmentModal
+          isOpen={isEnrollmentModalOpen}
+          onClose={() => setIsEnrollmentModalOpen(false)}
+          course={course}
+          students={allStudents}
+          onEnroll={handleEnroll}
+          onUnenroll={handleUnenroll}
+          onReorder={handleReorder}
         />
       )}
     </div>

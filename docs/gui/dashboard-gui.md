@@ -30,6 +30,7 @@ Jeder Menüpunkt besteht aus einem Icon und einem Tooltip (oder Label bei Hover)
 * **Aktiv-Status:** Der aktuell gewählte Menüpunkt wird optisch hervorgehoben (z. B. durch einen farbigen Balken am Rand oder eine Hintergrundänderung).
 * **Hover-Effekt:** Dezente Aufhellung des Icons beim Drüberfahren.
 * **Fixierung:** Die Sidebar bleibt beim Scrollen im Content-Bereich fest am linken Rand stehen.
+* **Navigation bei Klick auf "Beurteilungen":** Beim Klick auf den Menüpunkt **Beurteilungen** im Hauptmenü (Sidebar) wird die Ansicht *immer* auf die Gruppen-Schnellauswahl zurückgesetzt (Auswahl des aktuellen Kurses/der Gruppe wird aufgehoben), so dass alle verfügbaren Gruppen/Kurse zur Auswahl angezeigt werden.
 
 ## 3. Dynamischer Content-Bereich
 In diesem Bereich wird das jeweilige Dokument (Spezifikation) gerendert.

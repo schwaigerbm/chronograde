@@ -265,7 +265,10 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
             icon={<Star size={20} />} 
             label="Beurteilungen" 
             active={activeTab === 'beurteilungen'} 
-            onClick={() => setActiveTab('beurteilungen')}
+            onClick={() => {
+              setActiveTab('beurteilungen');
+              setSelectedCourse(null);
+            }}
           />
           <SidebarItem 
             icon={<Folder size={20} />} 
