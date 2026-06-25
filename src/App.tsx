@@ -192,6 +192,9 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
   const handleDragLeave = (e: React.DragEvent, cellId: string) => {
     e.preventDefault();
+    if (e.currentTarget && e.relatedTarget && e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
     setDragOverCell(prev => prev === cellId ? null : prev);
   };
 

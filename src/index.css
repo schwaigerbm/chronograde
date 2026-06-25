@@ -3075,6 +3075,9 @@ input:checked + .slider:before {
   vertical-align: top;
   transition: all 0.2s ease-in-out;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .timetable-slot-cell.drag-over {

@@ -11,7 +11,7 @@ Diese Ansicht dient der strukturierten Auswahl einer Beurteilungsgruppe (Kurs) a
 *   **Spalten:** **Vormittag** (Morning) und **Nachmittag** (Afternoon) (2 Spalten).
 *   **Zeilen:** Wochentage von **Montag bis Samstag** (6 Zeilen).
 *   **Wochentag-Hervorhebung:** Die Zeile des aktuellen Wochentags (basierend auf dem Systemdatum) wird farblich anders hinterlegt (z. B. ein weicher, leicht bläulicher oder grauer Hintergrund mit deutlicher Rahmenmarkierung), um dem Nutzer sofortige Orientierung zu bieten. Samstag wird ebenfalls unterstützt.
-*   **Zellen-Verhalten:** Jede Zelle stellt eine Kombination aus Wochentag und Tageszeit dar (z. B. Montag-Vormittag). Sie fungiert als Dropzone für die Gruppenkarten.
+*   **Zellen-Verhalten:** Jede Zelle stellt eine Kombination aus Wochentag und Tageszeit dar (z. B. Montag-Vormittag). Sie fungiert als Dropzone für die Gruppenkarten. Es können pro Halbtag mehrere Gruppenkarten zugewiesen werden; diese werden innerhalb der Zelle vertikal untereinander gestapelt dargestellt.
 
 ### B. Pool nicht zugeordneter Gruppen (Unassigned Pool)
 *   **Position:** Unterhalb oder neben dem Stundenplan platziert.
