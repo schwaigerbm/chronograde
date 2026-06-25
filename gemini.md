@@ -59,5 +59,5 @@ Bei der Arbeit mit Firestore und Jest müssen zwingend `beforeAll` und `afterAll
 - [x] **Phase 0:** Projekt-Initialisierung (Vite, Tailwind, Packages installiert).
 - [x] **Phase 1:** Spezifikation der Datenmodelle erstellen (`schema.ts`).
 - [x] **Phase 2:** Firebase Configuration & Service Layer (Auth + Firestore).
-- [ ] **Phase 3:** Core-UI: Noten-Matrix (Grid) mit Echtzeit-Sync.
+- [x] **Phase 3:** Core-UI: Noten-Matrix (Grid) mit Echtzeit-Sync.
 - [ ] **Phase 4:** Erweiterte Features (Hover-Kommentare).
