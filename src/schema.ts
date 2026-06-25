@@ -57,6 +57,8 @@ export interface Course {
   collaborationCalcMode?: 'linear' | 'weighted'; // Berechnungsmodus für die Mitarbeit
   columns: CourseEntry[]; 
   enrolledStudents: string[]; // Liste der Schüler-IDs (Enrollment)
+  timetableDay?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | null;
+  timetableSlot?: 'morning' | 'afternoon' | null;
 }
  
 

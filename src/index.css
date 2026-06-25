@@ -3025,4 +3025,174 @@ input:checked + .slider:before {
   font-style: italic;
   font-size: 13px;
 }
+
+/* --- TIMETABLE GRID --- */
+.timetable-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.timetable-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 12px;
+  margin-top: 12px;
+}
+
+.timetable-table th {
+  padding: 12px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-main);
+  background: transparent;
+  border: none;
+}
+
+.timetable-row {
+  transition: background-color 0.2s;
+}
+
+.timetable-day-cell {
+  width: 140px;
+  padding: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-main);
+  vertical-align: middle;
+  text-align: right;
+  border: none;
+}
+
+.timetable-slot-cell {
+  background: #f8fafc;
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  min-height: 120px;
+  padding: 12px;
+  vertical-align: top;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+.timetable-slot-cell.drag-over {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.05);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.timetable-row.current-day .timetable-day-cell {
+  color: var(--primary-color);
+}
+
+.timetable-row.current-day .timetable-slot-cell {
+  background: #f0f7ff;
+  border-color: #cbd5e1;
+}
+
+.timetable-row.current-day .timetable-slot-cell.drag-over {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.timetable-course-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: grab;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  user-select: none;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.timetable-course-card:last-child {
+  margin-bottom: 0;
+}
+
+.timetable-course-card:active {
+  cursor: grabbing;
+}
+
+.timetable-course-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+.timetable-course-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.timetable-course-card:hover .timetable-course-card-title {
+  color: var(--primary-color);
+}
+
+.timetable-course-card-year {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.timetable-course-card-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.unassigned-pool-container {
+  margin-top: 32px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.unassigned-pool-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: var(--text-main);
+}
+
+.unassigned-pool-dropzone {
+  min-height: 120px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  align-items: center;
+  justify-content: flex-start;
+  transition: all 0.2s;
+  background: white;
+}
+
+.unassigned-pool-dropzone.drag-over {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.unassigned-pool-placeholder {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-style: italic;
+  width: 100%;
+  text-align: center;
+}
+
 

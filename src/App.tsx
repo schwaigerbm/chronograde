@@ -174,6 +174,53 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     return () => unsubscribe();
   }, []);
 
+  const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, courseId: string) => {
+    e.dataTransfer.setData('text/plain', courseId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDragEnter = (e: React.DragEvent, cellId: string) => {
+    e.preventDefault();
+    setDragOverCell(cellId);
+  };
+
+  const handleDragLeave = (e: React.DragEvent, cellId: string) => {
+    e.preventDefault();
+    setDragOverCell(prev => prev === cellId ? null : prev);
+  };
+
+  const handleDrop = async (
+    e: React.DragEvent, 
+    day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | null, 
+    slot: 'morning' | 'afternoon' | null
+  ) => {
+    e.preventDefault();
+    setDragOverCell(null);
+    const courseId = e.dataTransfer.getData('text/plain');
+    if (!courseId) return;
+
+    const courseToUpdate = courses.find(c => c.id === courseId);
+    if (!courseToUpdate) return;
+
+    const updatedCourse: Course = {
+      ...courseToUpdate,
+      timetableDay: day,
+      timetableSlot: slot
+    };
+
+    try {
+      await firebaseService.saveCourse(updatedCourse);
+    } catch (err) {
+      console.error("Error saving course timetable position:", err);
+    }
+  };
+
   const handleOpenMatrix = (course: Course) => {
     setSelectedCourse(course);
     setActiveTab('beurteilungen');
@@ -187,29 +234,142 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
         return <CourseManager onOpenMatrix={handleOpenMatrix} />;
       case 'beurteilungen':
         if (!selectedCourse) {
+          const DAYS = [
+            { id: 'monday', label: 'Montag', value: 1 },
+            { id: 'tuesday', label: 'Dienstag', value: 2 },
+            { id: 'wednesday', label: 'Mittwoch', value: 3 },
+            { id: 'thursday', label: 'Donnerstag', value: 4 },
+            { id: 'friday', label: 'Freitag', value: 5 },
+            { id: 'saturday', label: 'Samstag', value: 6 },
+          ] as const;
+
+          const SLOTS = [
+            { id: 'morning', label: 'Vormittag' },
+            { id: 'afternoon', label: 'Nachmittag' },
+          ] as const;
+
+          const currentDayValue = new Date().getDay();
+
+          const getCoursesForCell = (dayId: typeof DAYS[number]['id'], slotId: typeof SLOTS[number]['id']) => {
+            return courses.filter(c => c.timetableDay === dayId && c.timetableSlot === slotId);
+          };
+
+          const unassignedCourses = courses.filter(c => !c.timetableDay || !c.timetableSlot);
+
           return (
             <div className="view-container">
               <div className="view-header">
                 <div className="title-group">
                   <h1 className="main-title">Beurteilungen</h1>
-                  <h2 className="sub-title">Bitte wählen Sie eine Gruppe aus</h2>
+                  <h2 className="sub-title">Wählen Sie eine Gruppe aus oder ziehen Sie sie per Drag & Drop in den Wochenplan</h2>
                 </div>
               </div>
-              <div className="content-area p-8">
-                <div className="course-grid">
-                  {courses.map(course => (
-                    <button 
-                      key={course.id} 
-                      className="course-card"
-                      onClick={() => setSelectedCourse(course)}
+              
+              <div className="content-area p-8" style={{ overflowY: 'auto' }}>
+                <div className="timetable-container">
+                  <table className="timetable-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '140px' }}></th>
+                        {SLOTS.map(slot => (
+                          <th key={slot.id}>{slot.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DAYS.map(day => {
+                        const isCurrentDay = day.value === currentDayValue;
+                        return (
+                          <tr 
+                            key={day.id} 
+                            className={`timetable-row ${isCurrentDay ? 'current-day' : ''}`}
+                          >
+                            <td className="timetable-day-cell">
+                              {day.label}
+                              {isCurrentDay && (
+                                <span style={{ 
+                                  display: 'block', 
+                                  fontSize: '10px', 
+                                  fontWeight: '700', 
+                                  color: 'var(--primary-color)',
+                                  textTransform: 'uppercase',
+                                  marginTop: '2px'
+                                }}>
+                                  Heute
+                                </span>
+                              )}
+                            </td>
+                            {SLOTS.map(slot => {
+                              const cellId = `${day.id}-${slot.id}`;
+                              const cellCourses = getCoursesForCell(day.id, slot.id);
+                              const isDragOver = dragOverCell === cellId;
+                              
+                              return (
+                                <td 
+                                  key={slot.id}
+                                  className={`timetable-slot-cell ${isDragOver ? 'drag-over' : ''}`}
+                                  onDragOver={handleDragOver}
+                                  onDragEnter={(e) => handleDragEnter(e, cellId)}
+                                  onDragLeave={(e) => handleDragLeave(e, cellId)}
+                                  onDrop={(e) => handleDrop(e, day.id, slot.id)}
+                                >
+                                  {cellCourses.map(course => (
+                                    <div 
+                                      key={course.id}
+                                      className="timetable-course-card"
+                                      draggable
+                                      onDragStart={(e) => handleDragStart(e, course.id)}
+                                      onClick={() => setSelectedCourse(course)}
+                                    >
+                                      <h3 className="timetable-course-card-title">{course.name}</h3>
+                                      <p className="timetable-course-card-year">{course.year}</p>
+                                      <div className="timetable-course-card-link">
+                                        Matrix öffnen <ChevronRight size={11} />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  <div className="unassigned-pool-container">
+                    <h3 className="unassigned-pool-title">Unzugeordnete Gruppen</h3>
+                    <div 
+                      className={`unassigned-pool-dropzone ${dragOverCell === 'pool' ? 'drag-over' : ''}`}
+                      onDragOver={handleDragOver}
+                      onDragEnter={(e) => handleDragEnter(e, 'pool')}
+                      onDragLeave={(e) => handleDragLeave(e, 'pool')}
+                      onDrop={(e) => handleDrop(e, null, null)}
                     >
-                      <h3 className="course-card-title">{course.name}</h3>
-                      <p className="course-card-year">{course.year}</p>
-                      <div className="course-card-link">
-                        Matrix öffnen <ChevronRight size={14} />
-                      </div>
-                    </button>
-                  ))}
+                      {unassignedCourses.length === 0 ? (
+                        <div className="unassigned-pool-placeholder">
+                          Keine unzugeordneten Gruppen. Ziehen Sie Gruppen hierher, um die Zuweisung aufzuheben.
+                        </div>
+                      ) : (
+                        unassignedCourses.map(course => (
+                          <div 
+                            key={course.id}
+                            className="timetable-course-card"
+                            style={{ minWidth: '180px' }}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, course.id)}
+                            onClick={() => setSelectedCourse(course)}
+                          >
+                            <h3 className="timetable-course-card-title">{course.name}</h3>
+                            <p className="timetable-course-card-year">{course.year}</p>
+                            <div className="timetable-course-card-link">
+                              Matrix öffnen <ChevronRight size={11} />
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
