@@ -41,3 +41,6 @@ Das Modal wird als zentriertes Overlay über der Noten-Matrix angezeigt:
 * Die **`ESC`-Taste** schließt das Modal jederzeit ohne zu speichern.
 * Klick auf **„Abbrechen“** schließt das Modal ohne zu speichern.
 * Klick auf **„Speichern“** speichert die Punkte und schließt das Modal für den aktuellen Schüler.
+
+### 3.4 Zusatzpunkte & Bonuspunkte
+* Eingabefelder für Teilaufgaben erlauben optional die Eingabe von Werten, die über die maximalen Punkte der jeweiligen Aufgabe hinausgehen (z. B. 12 von 10 Punkten). Dies ermöglicht die einfache Erfassung von Bonuspunkten und Zusatzleistungen.

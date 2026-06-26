@@ -88,12 +88,12 @@ export const EvaluationEntryModal = ({
 
   if (!isOpen) return null;
 
-  const handlePointChange = (taskId: string, maxPoints: number, valueStr: string) => {
+  const handlePointChange = (taskId: string, valueStr: string) => {
     let val = parseFloat(valueStr);
     if (isNaN(val)) val = 0;
     
-    // Clamp between 0 and maxPoints
-    val = Math.max(0, Math.min(val, maxPoints));
+    // Allow bonus points (only clamp below 0, no upper limit)
+    val = Math.max(0, val);
 
     setReachedPoints(prev => ({
       ...prev,
@@ -168,10 +168,9 @@ export const EvaluationEntryModal = ({
                         className="form-input text-center"
                         style={{ width: '80px', padding: '6px' }}
                         min="0"
-                        max={max}
                         step="0.5"
                         value={reachedPoints[task.id] ?? ''}
-                        onChange={e => handlePointChange(task.id, max, e.target.value)}
+                        onChange={e => handlePointChange(task.id, e.target.value)}
                         onFocus={e => e.target.select()}
                         onKeyDown={(e) => {
                           if (e.key === 'Tab') {

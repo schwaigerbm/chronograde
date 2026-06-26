@@ -104,7 +104,7 @@ Beim Klick auf eine Auswertungszelle öffnet sich ein großes, eigenständiges M
 * **Header:** Titel der Auswertung und Name des Schülers.
 * **Body (Zweispaltig / übersichtlich):**
   * **Linke Seite (Punkteingabe):** Eine Liste aller konfigurierten Teilaufgaben. Jede Teilaufgabe hat ein Eingabefeld (Nummer) für die erreichten Punkte.
-    * Eingabe-Validierung: $0 \le erreichte Punkte \le maximale Punkte$. Schrittweite 0.5.
+    * Eingabe-Validierung: $0 \le erreichte Punkte$ (kein oberes Limit, um Bonuspunkte/Zusatzpunkte zuzulassen). Schrittweite 0.5.
   * **Rechte Seite (Auswertung & Vorschau):**
     * Live-Berechnung der Gesamtpunkte: *Erreicht: X / Y Punkte*.
     * Live-Berechnung des Prozentwertes: *Z%*.

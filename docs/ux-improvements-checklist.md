@@ -70,7 +70,7 @@ Bitte markiere die gewünschten Änderungen, indem du das Leerzeichen in `[ ]` d
   - *Beschreibung:* Wenn der Cursor im ersten Eingabefeld steht, führt `Shift+Tab` zum *vorherigen* Schüler in der Liste (Autofokus auf dessen letzte Aufgabe).
   - *Vorteil:* Schnelle Fehlerkorrektur rückwärts komplett ohne Maus.
 
-- [ ] **Zusatzpunkte / Bonuspunkte zulassen**
+- [x] **Zusatzpunkte / Bonuspunkte zulassen**
   - *Beschreibung:* Eingabefelder erlauben optional Werte, die über die maximalen Punkte einer Aufgabe hinausgehen.
   - *Vorteil:* Abbildung von Bonusaufgaben und Extrapunkten.
 
