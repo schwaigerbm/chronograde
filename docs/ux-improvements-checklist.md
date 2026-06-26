@@ -50,7 +50,7 @@ Bitte markiere die gewünschten Änderungen, indem du das Leerzeichen in `[ ]` d
   - *Beschreibung:* Mit den Tasten `ArrowUp` und `ArrowDown` (oder `Enter`) kann in der Spalte "Gruppe" (1-9) direkt von Zeile zu Zeile gesprungen werden.
   - *Vorteil:* Erspart das manuelle Anklicken jedes einzelnen Feldes.
 
-- [ ] **Numerisches Eingabefeld für Prozent-Schieberegler**
+- [x] **Numerisches Eingabefeld für Prozent-Schieberegler**
   - *Beschreibung:* Hinzufügen eines Textfeldes neben dem Slider im Prozent-Eingabemenü für die manuelle Exakt-Eingabe (z. B. "83").
   - *Vorteil:* Präzise und schnelle Eingabe statt fummeligem Schieben mit der Maus.
 

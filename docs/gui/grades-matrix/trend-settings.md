@@ -16,6 +16,7 @@ Das Modal ist für eine hohe Informationsdichte und optimale Bildschirmausnutzun
 
 ### 2.1 Gewichtung & Schloss-Funktion (Locking)
 * **100%-Kopplung:** Die Summe der Gewichtungen aller aktiven Spalten (`calc: true`) muss immer exakt **100%** ergeben.
+* **Synchronisiertes Eingabefeld:** Jeder Schieberegler besitzt direkt daneben ein synchronisiertes numerisches Textfeld (Eingabe 0–100, Schrittweite 1%). Änderungen in diesem Textfeld aktualisieren den Wert sofort und stufen ihn proportional auf die unfixierten Spalten zurück. Das Eingabefeld wird deaktiviert, wenn die Spalte gesperrt ist.
 * **Schloss-Symbol (`Lock` / `Unlock`):** Jede aktive Spalte besitzt ein interaktives Schloss-Symbol.
   * **Offen (`Unlock`):** Der Regler verhält sich dynamisch.
   * **Geschlossen (`Lock`):** Der Regler ist fixiert. Sein Wert ist gesperrt und der Schieberegler wird deaktiviert (`disabled`).

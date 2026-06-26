@@ -413,14 +413,40 @@ export const TrendSettingsModal = ({
                       </div>
                     </div>
                     {col.calc && (
-                      <input 
-                        type="range" 
-                        min="0" max="100" 
-                        value={col.calcFactor} 
-                        onChange={e => handleWeightChange(col.id, parseInt(e.target.value))}
-                        disabled={isLocked}
-                        style={{ width: '100%', cursor: isLocked ? 'not-allowed' : 'pointer' }}
-                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                        <input 
+                          type="range" 
+                          min="0" max="100" 
+                          value={col.calcFactor} 
+                          onChange={e => handleWeightChange(col.id, parseInt(e.target.value) || 0)}
+                          disabled={isLocked}
+                          style={{ flex: 1, cursor: isLocked ? 'not-allowed' : 'pointer', height: '6px' }}
+                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={col.calcFactor}
+                            onChange={e => {
+                              let v = parseInt(e.target.value, 10);
+                              if (isNaN(v)) v = 0;
+                              handleWeightChange(col.id, Math.max(0, Math.min(100, v)));
+                            }}
+                            disabled={isLocked}
+                            className="form-input text-center"
+                            style={{ 
+                              width: '56px', 
+                              padding: '2px 4px', 
+                              fontSize: '11px', 
+                              fontWeight: 'bold', 
+                              height: '24px', 
+                              cursor: isLocked ? 'not-allowed' : 'text' 
+                            }}
+                          />
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>%</span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 );

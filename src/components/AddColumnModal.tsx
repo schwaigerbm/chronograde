@@ -636,17 +636,35 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                         {calc && (
                           <div className="form-group" style={{ margin: 0 }}>
                             <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                              Berechnungseinfluss <span>{calcFactor}%</span>
+                              Berechnungseinfluss
                             </label>
-                            <input 
-                              type="range" 
-                              min="0" 
-                              max="100" 
-                              step="5"
-                              style={{ width: '100%' }}
-                              value={calcFactor}
-                              onChange={e => setCalcFactor(parseInt(e.target.value))}
-                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <input 
+                                type="range" 
+                                min="0" 
+                                max="100" 
+                                step="1"
+                                style={{ flex: 1, cursor: 'pointer', height: '6px' }}
+                                value={calcFactor}
+                                onChange={e => setCalcFactor(parseInt(e.target.value) || 0)}
+                              />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <input 
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={calcFactor}
+                                  onChange={e => {
+                                    let v = parseInt(e.target.value, 10);
+                                    if (isNaN(v)) v = 0;
+                                    setCalcFactor(Math.max(0, Math.min(100, v)));
+                                  }}
+                                  className="form-input text-center"
+                                  style={{ width: '60px', padding: '4px 6px', fontSize: '13px', fontWeight: 'bold' }}
+                                />
+                                <span style={{ fontWeight: 'bold', color: 'var(--text-muted)' }}>%</span>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -726,17 +744,35 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                       {calc && (
                         <div className="form-group">
                           <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            Berechnungseinfluss <span>{calcFactor}%</span>
+                            Berechnungseinfluss
                           </label>
-                          <input 
-                            type="range" 
-                            min="0" 
-                            max="100" 
-                            step="5"
-                            style={{ width: '100%' }}
-                            value={calcFactor}
-                            onChange={e => setCalcFactor(parseInt(e.target.value))}
-                          />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="100" 
+                              step="1"
+                              style={{ flex: 1, cursor: 'pointer', height: '6px' }}
+                              value={calcFactor}
+                              onChange={e => setCalcFactor(parseInt(e.target.value) || 0)}
+                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <input 
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={calcFactor}
+                                onChange={e => {
+                                  let v = parseInt(e.target.value, 10);
+                                  if (isNaN(v)) v = 0;
+                                  setCalcFactor(Math.max(0, Math.min(100, v)));
+                                }}
+                                className="form-input text-center"
+                                style={{ width: '60px', padding: '4px 6px', fontSize: '13px', fontWeight: 'bold' }}
+                              />
+                              <span style={{ fontWeight: 'bold', color: 'var(--text-muted)' }}>%</span>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </>

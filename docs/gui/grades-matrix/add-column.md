@@ -63,7 +63,7 @@ Jeder der 5 Spaltentypen wird als eigenständige Karte (`.type-card`) gerendert:
 * **Datum:** Nur sichtbar für andere Typen. Standardmäßig das heutige Datum.
 * **Bewertungsart:** Auswahl zwischen Note, Prozent oder Zeichen (Radio-Buttons).
 * **In Berechnung aufnehmen (Switch):** Schalter zur Bestimmung, ob die Spalte in den Trend einfließt.
-  * Wenn aktiv, wird ein Schieberegler für den **Berechnungseinfluss** (0-100%, Schrittweite 5%) eingeblendet.
+  * Wenn aktiv, werden ein Schieberegler für den **Berechnungseinfluss** (0-100%, Schrittweite 1%) und direkt daneben ein synchronisiertes numerisches Textfeld (Eingabebereich 0–100) eingeblendet.
 * **Datum im Header anzeigen (Switch):** Schalter zur Steuerung der Header-Sichtbarkeit des Datums.
 
 ---
