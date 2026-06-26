@@ -108,3 +108,16 @@ export interface PredefinedComment {
 export interface PredefinedCommentsSettings {
   comments: PredefinedComment[];
 }
+
+// 8. ERINNERUNGEN / TERMINE (Attendance Clarifications)
+export interface Reminder {
+  id: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  courseName: string;
+  anomalyType: string; // e.g. "Fehlt das zweite Mal in Folge"
+  date: string;        // Due date (YYYY-MM-DD)
+  resolved: boolean;   // Whether the task is completed
+  createdAt: string;
+}

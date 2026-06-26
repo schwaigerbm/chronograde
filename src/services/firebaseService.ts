@@ -14,7 +14,7 @@ import {
   orderBy
 } from "firebase/firestore";
 import CryptoJS from "crypto-js";
-import type { Course, Student, Grade, CourseEntry, AppUser, PredefinedComment } from "../schema";
+import type { Course, Student, Grade, CourseEntry, AppUser, PredefinedComment, Reminder } from "../schema";
 
 export const firebaseService = {
   
@@ -201,5 +201,35 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
   savePredefinedComments: async (comments: PredefinedComment[]) => {
     const docRef = doc(db, "settings", "collaboration");
     return await setDoc(docRef, { comments });
+  },
+
+  // --- 6. ERINNERUNGEN-VERWALTUNG (Reminders) ---
+
+  // Abonniert alle Erinnerungen chronologisch
+  subscribeToReminders: (callback: (reminders: Reminder[]) => void) => {
+    const q = query(collection(db, "reminders"), orderBy("date", "asc"));
+    return onSnapshot(q, (snapshot) => {
+      const reminders = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Reminder));
+      callback(reminders);
+    });
+  },
+
+  // Erstellt eine neue Erinnerung
+  addReminder: async (reminder: Omit<Reminder, 'id'>) => {
+    return await addDoc(collection(db, "reminders"), reminder);
+  },
+
+  // Aktualisiert den Status einer Erinnerung
+  updateReminder: async (id: string, data: Partial<Reminder>) => {
+    const docRef = doc(db, "reminders", id);
+    return await setDoc(docRef, data, { merge: true });
+  },
+
+  // Löscht eine Erinnerung
+  deleteReminder: async (id: string) => {
+    return await deleteDoc(doc(db, "reminders", id));
   }
 };
