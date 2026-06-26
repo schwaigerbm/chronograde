@@ -10,7 +10,7 @@ Bitte markiere die gewünschten Änderungen, indem du das Leerzeichen in `[ ]` d
   - *Beschreibung:* Dropdown-Auswahlmenü direkt neben dem Gruppennamen in der Leistungsbeurteilungs-Matrix (oder ein "Zurück"-Button), um direkt zwischen den Gruppen zu wechseln.
   - *Vorteil:* Erspart den Umweg über den Tab "Gruppen".
 
-- [ ] **Bereinigung von Platzhaltern ("Termine")**
+- [x] **Bereinigung von Platzhaltern ("Termine")**
   - *Beschreibung:* Ausblenden des Menüpunkts "Termine" oder Ersetzen durch eine ansprechende "Coming Soon"-Mockup-Ansicht.
   - *Vorteil:* Professionellerer Gesamteindruck.
 

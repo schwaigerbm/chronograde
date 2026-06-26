@@ -23,8 +23,11 @@ Jeder Menüpunkt besteht aus einem Icon und einem Tooltip (oder Label bei Hover)
 | **Gruppen** | `groups` / `folder` | `courses-gui.md` |
 | **Schüler** | `person` / `school` | **`students-gui.md`** |
 | **Einstellungen** | `settings` / `gear` | `settings-gui.md` |
-| **Termine** | `calendar_today` | `appointments-gui.md` |
 | **Logout** | `logout` | (Führt Logout-Routine aus) |
+
+> [!NOTE]
+> Der Menüpunkt **Termine** (calendar_today) ist vorerst ausgeblendet, da für diesen Bereich noch keine Spezifikation oder Funktionalität hinterlegt ist.
+
 
 ### Design & Interaktion:
 * **Aktiv-Status:** Der aktuell gewählte Menüpunkt wird optisch hervorgehoben (z. B. durch einen farbigen Balken am Rand oder eine Hintergrundänderung).

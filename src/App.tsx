@@ -7,7 +7,6 @@ import {
   Home,
   Star,
   Folder,
-  Calendar,
   LogIn,
   ChevronRight,
   Eye,
@@ -501,12 +500,6 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
             label="Schüler" 
             active={activeTab === 'schüler'} 
             onClick={() => setActiveTab('schüler')}
-          />
-          <SidebarItem 
-            icon={<Calendar size={20} />} 
-            label="Termine" 
-            active={activeTab === 'termine'} 
-            onClick={() => setActiveTab('termine')}
           />
           <SidebarItem 
             icon={<Settings size={20} />} 
