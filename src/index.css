@@ -3359,13 +3359,11 @@ input:checked+.slider:before {
   justify-content: flex-start; /* Linksbündig anordnen */
   min-height: 120px;
   width: 100%;
+  max-width: 556px; /* 3 * 180px + 2 * 8px = 556px. Ensures max 3 items per row */
 }
 
 .timetable-slot-content .timetable-course-card {
-  width: calc((100% - 16px) / 3); /* Maximal 3 Beurteilungen pro Zeile */
-  flex: 0 0 calc((100% - 16px) / 3);
-  max-width: none;
-  min-width: 140px;
+  /* Inherits width, max-width, min-width, and flex from .timetable-course-card */
 }
 
 .timetable-slot-cell.drag-over {
@@ -3401,8 +3399,10 @@ input:checked+.slider:before {
   gap: 4px;
   user-select: none;
   text-align: left;
-  flex: 1 1 180px;
-  max-width: 240px;
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+  flex: 0 0 180px;
 }
 
 .timetable-course-card:active {

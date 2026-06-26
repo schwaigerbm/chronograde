@@ -442,7 +442,6 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                             <div 
                               key={course.id}
                               className={`timetable-course-card ${isHovered ? 'drag-hover-before' : ''}`}
-                              style={{ minWidth: '180px' }}
                               draggable
                               onDragStart={(e) => handleDragStart(e, course.id)}
                               onDragEnd={handleDragEnd}

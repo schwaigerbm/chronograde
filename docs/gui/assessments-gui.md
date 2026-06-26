@@ -18,6 +18,9 @@ Diese Ansicht dient der strukturierten Auswahl einer Beurteilungsgruppe (Kurs) a
 *   **Funktion:** Zeigt alle Gruppenkarten an, die noch keinem Wochentag oder keinem Zeitfenster zugeordnet wurden (`timetableDay` und `timetableSlot` sind nicht definiert).
 *   **Dropzone:** Auch dieser Pool dient als Dropzone, um Gruppen wieder aus dem Stundenplan zu entfernen (Zuweisung aufheben).
 
+### C. Karten-Design & einheitliche Breite
+*   **Breiten-Konsistenz:** Alle Gruppenkarten (sowohl im Stundenplan als auch im Pool nicht zugeordneter Gruppen) besitzen eine einheitliche, feste Breite (z. B. 180px), um ein harmonisches, konsistentes Gesamtbild zu gewährleisten.
+
 ---
 
 ## 3. Drag & Drop Funktionalität
