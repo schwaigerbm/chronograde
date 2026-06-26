@@ -174,10 +174,30 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
   }, []);
 
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+  const [draggedCourseId, setDraggedCourseId] = useState<string | null>(null);
+  const [draggedOverCardId, setDraggedOverCardId] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, courseId: string) => {
     e.dataTransfer.setData('text/plain', courseId);
     e.dataTransfer.effectAllowed = 'move';
+    setDraggedCourseId(courseId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedCourseId(null);
+    setDraggedOverCardId(null);
+  };
+
+  const handleDragEnterCard = (e: React.DragEvent, targetCourseId: string) => {
+    e.preventDefault();
+    if (draggedCourseId && draggedCourseId !== targetCourseId) {
+      setDraggedOverCardId(targetCourseId);
+    }
+  };
+
+  const handleDragLeaveCard = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDraggedOverCardId(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -232,6 +252,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverCell(null);
+    setDraggedOverCardId(null);
+    setDraggedCourseId(null);
     const courseId = e.dataTransfer.getData('text/plain');
     if (!courseId || courseId === targetCourse.id) return;
 
@@ -367,23 +389,29 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                                   onDrop={(e) => handleDrop(e, day.id, slot.id)}
                                 >
                                   <div className="timetable-slot-content">
-                                    {cellCourses.map(course => (
-                                      <div 
-                                        key={course.id}
-                                        className="timetable-course-card"
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, course.id)}
-                                        onDragOver={(e) => e.preventDefault()}
-                                        onDrop={(e) => handleDropOnCard(e, course)}
-                                        onClick={() => setSelectedCourse(course)}
-                                      >
-                                        <h3 className="timetable-course-card-title">{course.name}</h3>
-                                        <p className="timetable-course-card-year">{course.year}</p>
-                                        <div className="timetable-course-card-link">
-                                          Matrix öffnen <ChevronRight size={11} />
+                                    {cellCourses.map(course => {
+                                      const isHovered = draggedOverCardId === course.id;
+                                      return (
+                                        <div 
+                                          key={course.id}
+                                          className={`timetable-course-card ${isHovered ? 'drag-hover-before' : ''}`}
+                                          draggable
+                                          onDragStart={(e) => handleDragStart(e, course.id)}
+                                          onDragEnd={handleDragEnd}
+                                          onDragOver={(e) => e.preventDefault()}
+                                          onDragEnter={(e) => handleDragEnterCard(e, course.id)}
+                                          onDragLeave={handleDragLeaveCard}
+                                          onDrop={(e) => handleDropOnCard(e, course)}
+                                          onClick={() => setSelectedCourse(course)}
+                                        >
+                                          <h3 className="timetable-course-card-title">{course.name}</h3>
+                                          <p className="timetable-course-card-year">{course.year}</p>
+                                          <div className="timetable-course-card-link">
+                                            Matrix öffnen <ChevronRight size={11} />
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </td>
                               );
@@ -408,24 +436,30 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                           Keine unzugeordneten Gruppen. Ziehen Sie Gruppen hierher, um die Zuweisung aufzuheben.
                         </div>
                       ) : (
-                        unassignedCourses.map(course => (
-                          <div 
-                            key={course.id}
-                            className="timetable-course-card"
-                            style={{ minWidth: '180px' }}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, course.id)}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => handleDropOnCard(e, course)}
-                            onClick={() => setSelectedCourse(course)}
-                          >
-                            <h3 className="timetable-course-card-title">{course.name}</h3>
-                            <p className="timetable-course-card-year">{course.year}</p>
-                            <div className="timetable-course-card-link">
-                              Matrix öffnen <ChevronRight size={11} />
+                        unassignedCourses.map(course => {
+                          const isHovered = draggedOverCardId === course.id;
+                          return (
+                            <div 
+                              key={course.id}
+                              className={`timetable-course-card ${isHovered ? 'drag-hover-before' : ''}`}
+                              style={{ minWidth: '180px' }}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, course.id)}
+                              onDragEnd={handleDragEnd}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDragEnter={(e) => handleDragEnterCard(e, course.id)}
+                              onDragLeave={handleDragLeaveCard}
+                              onDrop={(e) => handleDropOnCard(e, course)}
+                              onClick={() => setSelectedCourse(course)}
+                            >
+                              <h3 className="timetable-course-card-title">{course.name}</h3>
+                              <p className="timetable-course-card-year">{course.year}</p>
+                              <div className="timetable-course-card-link">
+                                Matrix öffnen <ChevronRight size={11} />
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
