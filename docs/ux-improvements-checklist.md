@@ -22,7 +22,7 @@ Bitte markiere die gewünschten Änderungen, indem du das Leerzeichen in `[ ]` d
   - *Beschreibung:* Ein kleines, rundes Miniaturbild des Schülers direkt in der Übersichtsliste anzeigen. Dies jedoch mit der Möglichkeit es Ein und Aus zu schalten über die Konfigurationen
   - *Vorteil:* Schnellere visuelle Identifikation im Alltag.
 
-- [ ] **Lazy Loading / Paginierung**
+- [x] **Lazy Loading / Paginierung**
   - *Beschreibung:* Begrenzung der geladenen Schüler in der Tabelle (z. B. 50 Einträge) mit "Mehr laden"-Option.
   - *Vorteil:* Bessere Ladezeit und Performance bei sehr vielen Schülern.
 

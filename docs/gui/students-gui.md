@@ -83,3 +83,10 @@ Der Schüler-Dialog ist als eigenständige, wiederverwendbare React-Komponente (
 * **Buttons:**
     * `Ja` (Farbe: **Grün**): Ruft die Lösch-Funktion in `serviceFirebase` auf.
     * `Nein` (Farbe: **Rot**): Bricht den Vorgang ab.
+
+## 6. Lazy Loading & Paginierung
+* **Standard-Limit:** Die Tabelle rendert initial maximal 50 Schüler, um die Ladezeit im Browser und die Render-Performance gering zu halten.
+* **Mehr laden Button:**
+  * Befinden sich in der gefilterten Liste mehr Schüler als das aktuelle Limit, wird unter der Tabelle ein Button „Mehr laden“ angezeigt.
+  * Klick auf diesen Button erhöht das Limit um jeweils 50 weitere Schüler.
+* **Suche-Zurücksetzung:** Wenn der Benutzer den Suchbegriff ändert, wird das Limit wieder auf den Standardwert (50) zurückgesetzt, um die Render-Performance während des Tippens zu optimieren.

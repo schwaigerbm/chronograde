@@ -12,6 +12,7 @@ export const StudentsView = () => {
     const saved = localStorage.getItem("chronograde_show_avatars");
     return saved ? JSON.parse(saved) : true;
   });
+  const [visibleLimit, setVisibleLimit] = useState(50);
   
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -28,6 +29,11 @@ export const StudentsView = () => {
     return () => unsubscribe();
   }, []);
 
+  // Reset limit on search term change
+  useEffect(() => {
+    setVisibleLimit(50);
+  }, [searchTerm]);
+
   // Filter students based on search term
   const filteredStudents = useMemo(() => {
     return students.filter(s => 
@@ -35,6 +41,11 @@ export const StudentsView = () => {
       s.lastName.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [students, searchTerm]);
+
+  // Limit displayed students for pagination
+  const visibleStudents = useMemo(() => {
+    return filteredStudents.slice(0, visibleLimit);
+  }, [filteredStudents, visibleLimit]);
 
   const handleOpenAdd = () => {
     setCurrentStudent({ firstName: '', lastName: '', classId: 'General' });
@@ -148,7 +159,7 @@ export const StudentsView = () => {
               <tr><td colSpan={showAvatars ? 4 : 3} className="text-center py-8">Lade Schüler...</td></tr>
             ) : filteredStudents.length === 0 ? (
               <tr><td colSpan={showAvatars ? 4 : 3} className="text-center py-8 text-muted">Keine Schüler gefunden.</td></tr>
-            ) : filteredStudents.map(student => (
+            ) : visibleStudents.map(student => (
               <tr key={student.id}>
                 {showAvatars && (
                   <td>
@@ -178,6 +189,19 @@ export const StudentsView = () => {
           </tbody>
         </table>
       </div>
+
+      {filteredStudents.length > visibleLimit && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', marginBottom: '20px' }}>
+          <button 
+            type="button" 
+            className="btn-secondary" 
+            onClick={() => setVisibleLimit(prev => prev + 50)}
+            style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '8px', height: '36px', padding: '0 16px', fontSize: '13px' }}
+          >
+            Mehr laden
+          </button>
+        </div>
+      )}
 
       {/* Edit/Add Modal */}
       <StudentEditModal 
