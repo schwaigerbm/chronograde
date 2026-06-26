@@ -31,6 +31,11 @@ Das Modal wird als zentriertes Overlay über der Noten-Matrix angezeigt:
   * Das Modal schließt sich **nicht**, sondern lädt direkt den **nächsten Schüler** aus der Kursliste.
   * Der Cursor springt automatisch wieder in das Punkte-Eingabefeld der **ersten Teilaufgabe** des neuen Schülers (wobei vorhandene Werte wieder selektiert werden).
   * Ist der aktuelle Schüler der letzte Schüler in der Liste, führt `Tab` zur normalen Footer-Button-Navigation.
+* Wird auf dem **ersten Teilaufgaben-Eingabefeld** die Tastenkombination **`Shift+Tab`** gedrückt:
+  * Die erfassten Punkte des aktuellen Schülers werden automatisch im Hintergrund gespeichert.
+  * Das Modal bleibt geöffnet und lädt direkt den **vorherigen Schüler** aus der Kursliste.
+  * Der Cursor springt automatisch in das Eingabefeld der **letzten Teilaufgabe** des vorherigen Schülers (wobei vorhandene Werte selektiert werden).
+  * Ist der aktuelle Schüler der erste Schüler in der Liste, führt `Shift+Tab` zur normalen Navigation rückwärts (Fokus wandert auf das Schließen-Symbol im Header).
 
 ### 3.3 Abbrechen / Schließen
 * Die **`ESC`-Taste** schließt das Modal jederzeit ohne zu speichern.

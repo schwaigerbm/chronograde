@@ -66,7 +66,7 @@ Bitte markiere die gewünschten Änderungen, indem du das Leerzeichen in `[ ]` d
 
 ## 5. Punkte-Erfassung für Teilaufgaben (`EvaluationEntryModal`)
 
-- [ ] **Rückwärts-Navigation via Shift+Tab**
+- [x] **Rückwärts-Navigation via Shift+Tab**
   - *Beschreibung:* Wenn der Cursor im ersten Eingabefeld steht, führt `Shift+Tab` zum *vorherigen* Schüler in der Liste (Autofokus auf dessen letzte Aufgabe).
   - *Vorteil:* Schnelle Fehlerkorrektur rückwärts komplett ohne Maus.
 

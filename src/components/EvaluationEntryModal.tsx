@@ -32,10 +32,12 @@ export const EvaluationEntryModal = ({
   onSave
 }: EvaluationEntryModalProps) => {
   const [reachedPoints, setReachedPoints] = useState<Record<string, number>>({});
+  const [focusLastOnLoad, setFocusLastOnLoad] = useState(false);
   const subTasks = column.subTasks || [];
   const totalMaxPoints = subTasks.reduce((sum, t) => sum + (t.maxPoints || 0), 0);
 
   const firstInputRef = useRef<HTMLInputElement>(null);
+  const lastInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state with grade when modal opens or when grade changes
   useEffect(() => {
@@ -50,18 +52,28 @@ export const EvaluationEntryModal = ({
     }
   }, [isOpen, column, grade]);
 
-  // Autofocus the first subtask input and select its content when the modal opens or the student changes
+  // Reset focus direction when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setFocusLastOnLoad(false);
+    }
+  }, [isOpen]);
+
+  // Autofocus the first or last subtask input and select its content when the modal opens or the student changes
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => {
-        if (firstInputRef.current) {
+        if (focusLastOnLoad && lastInputRef.current) {
+          lastInputRef.current.focus();
+          lastInputRef.current.select();
+        } else if (firstInputRef.current) {
           firstInputRef.current.focus();
           firstInputRef.current.select();
         }
       }, 80);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, studentId]);
+  }, [isOpen, studentId, focusLastOnLoad]);
 
   // Global ESC key listener to close modal
   useEffect(() => {
@@ -112,10 +124,13 @@ export const EvaluationEntryModal = ({
     );
   };
 
-  // Find next student in the list for Tab traversal
+  // Find next and previous students in the list for Tab traversal
   const currentIdx = students.findIndex(s => s.id === studentId);
   const nextStudent = currentIdx !== -1 && currentIdx < students.length - 1
     ? students[currentIdx + 1]
+    : null;
+  const prevStudent = currentIdx > 0
+    ? students[currentIdx - 1]
     : null;
 
   return createPortal(
@@ -148,7 +163,7 @@ export const EvaluationEntryModal = ({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input 
-                        ref={isFirst ? firstInputRef : undefined}
+                        ref={isFirst ? firstInputRef : (isLast ? lastInputRef : undefined)}
                         type="number"
                         className="form-input text-center"
                         style={{ width: '80px', padding: '6px' }}
@@ -158,14 +173,23 @@ export const EvaluationEntryModal = ({
                         value={reachedPoints[task.id] ?? ''}
                         onChange={e => handlePointChange(task.id, max, e.target.value)}
                         onFocus={e => e.target.select()}
-                        onKeyDown={isLast ? (e) => {
-                          if (e.key === 'Tab' && !e.shiftKey) {
-                            if (nextStudent) {
-                              e.preventDefault();
-                              handleConfirmSave(nextStudent.id);
+                        onKeyDown={(e) => {
+                          if (e.key === 'Tab') {
+                            if (e.shiftKey && isFirst) {
+                              if (prevStudent) {
+                                e.preventDefault();
+                                setFocusLastOnLoad(true);
+                                handleConfirmSave(prevStudent.id);
+                              }
+                            } else if (!e.shiftKey && isLast) {
+                              if (nextStudent) {
+                                e.preventDefault();
+                                setFocusLastOnLoad(false);
+                                handleConfirmSave(nextStudent.id);
+                              }
                             }
                           }
-                        } : undefined}
+                        }}
                       />
                       <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-muted)' }}>/ {max} Pkt.</span>
                     </div>
