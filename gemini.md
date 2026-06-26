@@ -39,6 +39,7 @@ Der Datenbankzugriff erfolgt ausschließlich über `src/services/firebaseService
 
 ### 4. Workflow für KI-Generierung & Code-Änderungen
 *   **Erst das Pflichtenheft, dann der Code:** Bevor Code geändert oder neu generiert wird, müssen funktionale Änderungen zuerst im entsprechenden Pflichtenheft unter `docs/gui/` beschrieben oder aktualisiert werden. Erst nach Freigabe/Festlegung im Pflichtenheft darf die Code-Implementierung durchgeführt werden.
+*   **Implementierungspläne auf Deutsch:** Alle Planungs- und Implementierungspläne (`implementation_plan.md`) müssen zwingend in deutscher Sprache verfasst sein.
 *   **Datenstruktur-Prüfung:** Bei jeder Code-Änderung muss die Datenstruktur (in `src/types/schema.ts` sowie die Firestore-Pfade) geprüft werden.
 *   **Ganzheitlicher Blick (Keine Seiteneffekte):** Bei Änderungen an Datenstrukturen, Services oder Schnittstellen muss immer das gesamte Projekt im Blick behalten werden. Es ist zwingend sicherzustellen, dass andere Module, bestehende GUI-Komponenten oder Services dadurch nicht beeinträchtigt oder außer Kraft gesetzt werden.
 
