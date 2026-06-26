@@ -28,7 +28,10 @@ import { CollaborationBulkModal } from './CollaborationBulkModal';
 import { ConfigureViewModal } from './ConfigureViewModal';
 import { DialogModal } from './DialogModal';
 import { formatDate } from '../lib/utils';
-import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment } from '../schema';
+import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment, Reminder } from '../schema';
+import { checkAttendanceAnomalies } from '../lib/anomalyDetector';
+import { AttendanceAnomaliesModal } from './AttendanceAnomaliesModal';
+import type { AnomalyResult } from './AttendanceAnomaliesModal';
 import { exportMatrixPDF } from './PDFExports';
 import { StudentPerformanceDashboard } from './StudentPerformanceDashboard';
 import { TrendSettingsModal } from './TrendSettingsModal';
@@ -100,6 +103,10 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     title: '',
     message: '',
   });
+
+  // Anomalies Modal States
+  const [anomaliesQueue, setAnomaliesQueue] = useState<AnomalyResult[]>([]);
+  const [isAnomaliesModalOpen, setIsAnomaliesModalOpen] = useState(false);
 
   const showDialog = (config: Omit<typeof dialogConfig, 'isOpen'>) => {
     setDialogConfig({ ...config, isOpen: true });
@@ -302,6 +309,85 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     setIsCollaborationModalOpen(true);
   };
 
+  const runAttendanceAnomalyCheck = (
+    date: string,
+    columnId: string,
+    updates: { studentId: string; value: 'check' | 'x'; hours: number }[]
+  ) => {
+    const queue: AnomalyResult[] = [];
+
+    updates.forEach(u => {
+      const student = students.find(s => s.id === u.studentId);
+      if (!student) return;
+
+      const currentGrade = grades[u.studentId]?.[columnId] || { entries: [] };
+      const mockEntry: GradeEntry = {
+        id: 'temp-id',
+        value: u.value,
+        date,
+        hours: u.hours
+      };
+      
+      const newEntries = [...(currentGrade.entries || []), mockEntry];
+      const violations = checkAttendanceAnomalies(newEntries);
+      
+      if (violations.length > 0) {
+        queue.push({
+          studentId: u.studentId,
+          studentName: `${student.lastName}, ${student.firstName}`,
+          courseId: course.id,
+          courseName: course.name,
+          violations,
+          date
+        });
+      }
+    });
+
+    if (queue.length > 0) {
+      setAnomaliesQueue(queue);
+      setIsAnomaliesModalOpen(true);
+    }
+  };
+
+  const handleConfirmAnomaly = async (reminder: Omit<Reminder, 'id'> | null) => {
+    if (reminder) {
+      try {
+        await firebaseService.addReminder(reminder);
+      } catch (err) {
+        console.error("Fehler beim Hinzufügen der Erinnerung:", err);
+      }
+    }
+  };
+
+  const handleEditGradeEntry = async (studentId: string, columnId: string, entry: GradeEntry) => {
+    try {
+      await editGradeEntry(studentId, columnId, entry);
+      
+      if (entry.value === 'check' || entry.value === 'x') {
+        const student = students.find(s => s.id === studentId);
+        if (student) {
+          const currentGrade = grades[studentId]?.[columnId] || { entries: [] };
+          const newEntries = (currentGrade.entries || []).map(e => e.id === entry.id ? entry : e);
+          const violations = checkAttendanceAnomalies(newEntries);
+          
+          if (violations.length > 0) {
+            setAnomaliesQueue([{
+              studentId,
+              studentName: `${student.lastName}, ${student.firstName}`,
+              courseId: course.id,
+              courseName: course.name,
+              violations,
+              date: entry.date
+            }]);
+            setIsAnomaliesModalOpen(true);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Fehler beim Bearbeiten des Eintrags:", err);
+    }
+  };
+
   const handleSaveAttendance = async (date: string, hours: number, attendanceData: Record<string, 'check' | 'x'>) => {
     if (!activeAttendanceColumnId) return;
 
@@ -320,6 +406,15 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     try {
       await bulkAddEntries(activeAttendanceColumnId, updates);
       setIsAttendanceModalOpen(false);
+      
+      // Check for anomalies
+      const anomalyUpdates = Object.entries(attendanceData).map(([studentId, value]) => ({
+        studentId,
+        value,
+        hours
+      }));
+      runAttendanceAnomalyCheck(date, activeAttendanceColumnId, anomalyUpdates);
+      
       setActiveAttendanceColumnId(null);
     } catch (err) {
       console.error("Fehler beim Speichern der Anwesenheit:", err);
@@ -727,7 +822,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           grade={grade}
                           onUpdateGrade={(g) => updateGrade(student.id, col.id, g)}
                           onAddEntry={(e) => addGradeEntry(student.id, col.id, e)}
-                          onEditEntry={(e) => editGradeEntry(student.id, col.id, e)}
+                          onEditEntry={(e) => handleEditGradeEntry(student.id, col.id, e)}
                           onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
                           isHidden={isHidden}
                           heatmapStyle={heatmapStyle}
@@ -805,6 +900,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsAttendanceModalOpen(false)}
         students={students}
         onSave={handleSaveAttendance}
+      />
+
+      <AttendanceAnomaliesModal
+        isOpen={isAnomaliesModalOpen}
+        onClose={() => {
+          setIsAnomaliesModalOpen(false);
+          setAnomaliesQueue([]);
+        }}
+        anomaliesQueue={anomaliesQueue}
+        onConfirm={handleConfirmAnomaly}
       />
 
       <CollaborationBulkModal 

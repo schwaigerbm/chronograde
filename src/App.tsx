@@ -17,6 +17,7 @@ import { StudentsView } from './components/StudentsView';
 import { CourseManager } from './components/CourseManager';
 import { GradesMatrix } from './components/GradesMatrix';
 import { SettingsView } from './components/SettingsView';
+import { RemindersWidget } from './components/RemindersWidget';
 import { firebaseService } from './services/firebaseService';
 import type { Course } from './schema';
 
@@ -470,11 +471,20 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
         return <GradesMatrix course={selectedCourse} />;
       case 'start':
         return (
-          <div className="content-area" style={{ padding: '40px', justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-              <GraduationCap size={80} color="#2563eb" style={{ marginBottom: '24px' }} />
-              <h2 className="content-title">Willkommen bei Chronograde</h2>
-              <p className="content-subtitle">Wählen Sie ein Modul in der Sidebar aus, um zu beginnen.</p>
+          <div className="view-container">
+            <div className="view-header" style={{ marginBottom: '24px' }}>
+              <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary-color)', padding: '12px', borderRadius: '12px' }}>
+                  <GraduationCap size={32} />
+                </div>
+                <div>
+                  <h1 className="main-title">Willkommen bei Chronograde</h1>
+                  <h2 className="sub-title">Ihr intelligenter Noten- und Anwesenheitsmanager</h2>
+                </div>
+              </div>
+            </div>
+            <div className="content-area" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '0 4px' }}>
+              <RemindersWidget />
             </div>
           </div>
         );
