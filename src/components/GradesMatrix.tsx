@@ -360,10 +360,54 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   };
 
   const handleEditGradeEntry = async (studentId: string, columnId: string, entry: GradeEntry) => {
+    const column = course.columns.find(c => c.id === columnId);
+    const isPresence = column?.type === 'presenceSum';
+
     try {
-      await editGradeEntry(studentId, columnId, entry);
+      if (isPresence) {
+        // Construct bulk updates for ALL students who have an entry on this date in this column
+        const bulkUpdates: { studentId: string, columnId: string, grade: Grade }[] = [];
+        
+        students.forEach(student => {
+          const studentGrade = grades[student.id]?.[columnId] || { entries: [] };
+          let hasChanges = false;
+          
+          const updatedEntries = (studentGrade.entries || []).map(e => {
+            // For the active student, replace the edited entry
+            if (student.id === studentId && e.id === entry.id) {
+              hasChanges = true;
+              return entry;
+            }
+            // For other students, if they have an entry on the same date, update the hours to match the edited entry
+            if (e.date === entry.date && e.hours !== entry.hours) {
+              hasChanges = true;
+              return { ...e, hours: entry.hours };
+            }
+            return e;
+          });
+          
+          if (hasChanges) {
+            bulkUpdates.push({
+              studentId: student.id,
+              columnId,
+              grade: {
+                ...studentGrade,
+                entries: updatedEntries
+              }
+            });
+          }
+        });
+
+        if (bulkUpdates.length > 0) {
+          await firebaseService.bulkUpdateGrades(course.id, bulkUpdates);
+        }
+      } else {
+        // Standard edit for non-attendance columns
+        await editGradeEntry(studentId, columnId, entry);
+      }
       
-      if (entry.value === 'check' || entry.value === 'x') {
+      // Perform anomaly check
+      if (isPresence && (entry.value === 'check' || entry.value === 'x')) {
         const student = students.find(s => s.id === studentId);
         if (student) {
           const currentGrade = grades[studentId]?.[columnId] || { entries: [] };
