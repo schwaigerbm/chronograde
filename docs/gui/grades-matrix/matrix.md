@@ -188,7 +188,9 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
         * `Summe der Stunden (Anwesend) / Summe der Stunden (Gesamt erfasst) * 100`.
         * Beispiel: 1x anwesend (2 Std) und 1x abwesend (1 Std) = `2 / 3 ≈ 67%`.
 * **Zustand "Details eingeblendet" (Detailansicht):**
-    * Alle Einträge werden chronologisch als Icons (`Check` oder `X`) angezeigt. Die Symbole sind leicht vergrößert (16px) dargestellt, um die Lesbarkeit und Interaktivität zu verbessern.
+    * Alle Einträge werden chronologisch als Icons (`Check` oder `X`) angezeigt. Die Symbole sind vergrößert (20px) dargestellt, um die Lesbarkeit und Klickbarkeit zu maximieren.
+    * **Layout & Ausrichtung:** Die Symbole sind linksbündig ausgerichtet. Es werden maximal 5 Einträge in einer Reihe angezeigt; weitere Einträge werden in der nächsten Zeile (ebenfalls linksbündig) fortgesetzt.
+    * **Stundenanzeige:** Die Anzahl der Stunden wird vergrößert in einem Kreis-Badge am Symbol dargestellt.
     * **Zusatzinfo:** Wenn ein Eintrag mehr als 1 Stunde umfasst, wird die Zahl klein am Icon oder via Badge angezeigt.
     * **Klick auf Icon:** Öffnet einen Dialog zum **Bearbeiten** des Eintrags (Status, Datum, Stundenanzahl ändern).
     * **Automatisches Stunden-Update bei gleichem Datum:** Wenn bei der Bearbeitung eines Eintrags die Anzahl der Stunden (z.B. von 2 auf 4) geändert wird, wird diese Stundenanzahl automatisch für **alle** Anwesenheitseinträge des Kurses an genau diesem Datum übernommen. Der Anwesenheitsstatus (Anwesend/Abwesend) der anderen Schüler bleibt unverändert.
