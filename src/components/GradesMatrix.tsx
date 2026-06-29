@@ -108,6 +108,9 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [anomaliesQueue, setAnomaliesQueue] = useState<AnomalyResult[]>([]);
   const [isAnomaliesModalOpen, setIsAnomaliesModalOpen] = useState(false);
 
+  // Hover tracking for attendance date synchronization
+  const [hoveredAttendanceDate, setHoveredAttendanceDate] = useState<string | null>(null);
+
   const showDialog = (config: Omit<typeof dialogConfig, 'isOpen'>) => {
     setDialogConfig({ ...config, isOpen: true });
   };
@@ -869,6 +872,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           onEditEntry={(e) => handleEditGradeEntry(student.id, col.id, e)}
                           onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
                           isHidden={isHidden}
+                          hoveredAttendanceDate={hoveredAttendanceDate}
+                          onHoverAttendanceDate={setHoveredAttendanceDate}
                           heatmapStyle={heatmapStyle}
                           onOpenEvaluation={() => {
                             setActiveEvaluationColumn(col);
@@ -1166,6 +1171,8 @@ interface GradeCellProps {
   heatmapStyle?: React.CSSProperties;
   onOpenEvaluation?: () => void;
   onOpenManualEdit: (studentId: string, column: CourseEntry, grade?: Grade) => void;
+  hoveredAttendanceDate?: string | null;
+  onHoverAttendanceDate?: (date: string | null) => void;
 }
 
 const GradeCell = ({ 
@@ -1179,7 +1186,9 @@ const GradeCell = ({
   isHidden, 
   heatmapStyle, 
   onOpenEvaluation, 
-  onOpenManualEdit 
+  onOpenManualEdit,
+  hoveredAttendanceDate,
+  onHoverAttendanceDate
 }: GradeCellProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -1365,7 +1374,9 @@ const GradeCell = ({
               {grade?.entries?.map(entry => (
                 <div 
                   key={entry.id} 
-                  className="presence-entry"
+                  className={`presence-entry ${hoveredAttendanceDate === entry.date ? 'highlight-same-date' : ''}`}
+                  onMouseEnter={() => onHoverAttendanceDate?.(entry.date)}
+                  onMouseLeave={() => onHoverAttendanceDate?.(null)}
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditingEntry(entry);
@@ -1373,8 +1384,8 @@ const GradeCell = ({
                   }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <div style={{ position: 'relative' }}>
-                    {entry.value === 'check' ? <Check size={12} className="icon-present" /> : <XIcon size={12} className="icon-absent" />}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {entry.value === 'check' ? <Check size={16} className="icon-present" /> : <XIcon size={16} className="icon-absent" />}
                     {(entry.hours || 1) > 1 && (
                       <span style={{ 
                         position: 'absolute', 
