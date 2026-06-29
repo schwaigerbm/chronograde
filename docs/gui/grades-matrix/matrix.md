@@ -192,6 +192,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * **Zusatzinfo:** Wenn ein Eintrag mehr als 1 Stunde umfasst, wird die Zahl klein am Icon oder via Badge angezeigt.
     * **Klick auf Icon:** Öffnet einen Dialog zum **Bearbeiten** des Eintrags (Status, Datum, Stundenanzahl ändern).
     * **Automatisches Stunden-Update bei gleichem Datum:** Wenn bei der Bearbeitung eines Eintrags die Anzahl der Stunden (z.B. von 2 auf 4) geändert wird, wird diese Stundenanzahl automatisch für **alle** Anwesenheitseinträge des Kurses an genau diesem Datum übernommen. Der Anwesenheitsstatus (Anwesend/Abwesend) der anderen Schüler bleibt unverändert.
+    * **Automatisches Löschen bei gleichem Datum:** Wird ein Anwesenheitseintrag für einen Schüler an einem bestimmten Datum gelöscht, so wird dieser Eintrag (das Datum) automatisch für **alle** Schüler des Kurses gelöscht.
     * **Interaktives Hover-Verhalten:** Bei einem Maushover über eine Anwesenheitskarte (Eintrag) eines Schülers werden alle Anwesenheitseinträge **aller** Schüler am exakt selben Datum mit einem kleinen, feinen und schwachen Rahmen hervorgehoben. Ein Klick bearbeitet weiterhin nur den jeweiligen Einzeleintrag.
     * **Hover (Tooltip):** Zeigt das Datum und die Stundenanzahl an.
 
