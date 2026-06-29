@@ -232,7 +232,7 @@ export const EvaluationStatisticsModal = ({
     const rows: string[][] = [];
     let currentRow: string[] = [];
     let currentRowLength = 0;
-    const MAX_ROW_CHARS = 18;
+    const MAX_ROW_CHARS = 28;
 
     for (const name of names) {
       const additionalLength = currentRow.length > 0 ? name.length + 2 : name.length;
