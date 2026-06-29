@@ -24,13 +24,13 @@ Beim Klick auf den Button öffnet sich eine eigenständige, interaktive Analyse-
 * **Header-Bereich:**
   * Titel der Auswertungsspalte (z.B. "1. Schularbeit").
   * Zusätzliche Details: Erstellungsdatum, Gesamtpunktzahl, Anzahl der Aufgaben.
-* **Analyse-Dashboard (Grid-Layout):**
+* **Analyse-Dashboard (Reihen- & Grid-Layout):**
   1. **Kennzahlen-Karten (Top Metrics):**
      * **Teilnehmerquote:** Anzahl abgegebener Arbeiten / Gesamtklasse (mit Prozentwert).
      * **Notenschnitt:** Der arithmetische Durchschnitt aller Noten (1-5).
      * **Erfolgsquote (Positiv-Rate):** Prozentualer Anteil der Schüler mit den Noten 1 bis 4.
      * **Punktedurchschnitt:** Durchschnittlich erreichte Punkte und Prozentwert.
-  2. **Notenverteilung (Notenspiegel):**
+  2. **Notenverteilung (Notenspiegel) - Eigener Zeilenabschnitt (volle Breite):**
      * Ein visuelles Balkendiagramm der Noten 1 bis 5.
      * Die Balken nutzen die App-weit definierten Notenfarben (Sehr gut = Dunkelgrün, Nicht genügend = Dunkelrot).
      * Anzeige der absoluten Schülerzahl und des Prozentanteils pro Note.
@@ -38,7 +38,7 @@ Beim Klick auf den Button öffnet sich eine eigenständige, interaktive Analyse-
      * Liste aller Teilaufgaben mit maximal erreichbaren Punkten.
      * Für jede Teilaufgabe wird die durchschnittlich erreichte Punktzahl und der prozentuale Erfolg berechnet.
      * **Visuelle Warnungen:** Teilaufgaben, bei denen der durchschnittliche Erfolg unter 60% liegt, werden farblich hervorgehoben (Warnhinweis für schwierige Aufgaben).
-  4. **Podium / Die besten 3 (Trophy):**
+  4. **Podium / Die besten 3 (Trophy) - Eigener Zeilenabschnitt (volle Breite):**
      * Spezielle Visualisierung der Top 3 Schüler (nach Gesamtpunkten geordnet) mit Gold-, Silber- und Bronze-Auszeichnung.
      * Unterstützt exakte Gleichstände (Ties).
   5. **Detaillierte Ergebnisliste (Leaderboard/Tabelle):**
