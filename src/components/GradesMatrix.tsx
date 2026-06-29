@@ -435,6 +435,53 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     }
   };
 
+  const handleDeleteGradeEntry = async (studentId: string, columnId: string, entryId: string) => {
+    const column = course.columns.find(c => c.id === columnId);
+    const isPresence = column?.type === 'presenceSum';
+
+    try {
+      if (isPresence) {
+        // Find the date of the entry to be deleted
+        const studentGrade = grades[studentId]?.[columnId];
+        const targetEntry = studentGrade?.entries?.find(e => e.id === entryId);
+        if (!targetEntry) return;
+
+        const targetDate = targetEntry.date;
+
+        // Construct bulk updates for ALL students, filtering out any entry on this date
+        const bulkUpdates: { studentId: string, columnId: string, grade: Grade }[] = [];
+
+        students.forEach(student => {
+          const sg = grades[student.id]?.[columnId];
+          if (!sg || !sg.entries) return;
+
+          const updatedEntries = sg.entries.filter(e => e.date !== targetDate);
+          
+          // Only update if there was actually an entry on that date for this student
+          if (updatedEntries.length !== sg.entries.length) {
+            bulkUpdates.push({
+              studentId: student.id,
+              columnId,
+              grade: {
+                ...sg,
+                entries: updatedEntries
+              }
+            });
+          }
+        });
+
+        if (bulkUpdates.length > 0) {
+          await firebaseService.bulkUpdateGrades(course.id, bulkUpdates);
+        }
+      } else {
+        // Standard delete for non-attendance columns
+        await deleteGradeEntry(studentId, columnId, entryId);
+      }
+    } catch (err) {
+      console.error("Fehler beim Löschen des Eintrags:", err);
+    }
+  };
+
   const handleSaveAttendance = async (date: string, hours: number, attendanceData: Record<string, 'check' | 'x'>) => {
     if (!activeAttendanceColumnId) return;
 
@@ -870,7 +917,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           onUpdateGrade={(g) => updateGrade(student.id, col.id, g)}
                           onAddEntry={(e) => addGradeEntry(student.id, col.id, e)}
                           onEditEntry={(e) => handleEditGradeEntry(student.id, col.id, e)}
-                          onDeleteEntry={(entryId) => deleteGradeEntry(student.id, col.id, entryId)}
+                          onDeleteEntry={(entryId) => handleDeleteGradeEntry(student.id, col.id, entryId)}
                           isHidden={isHidden}
                           hoveredAttendanceDate={hoveredAttendanceDate}
                           onHoverAttendanceDate={setHoveredAttendanceDate}
