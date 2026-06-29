@@ -940,7 +940,7 @@ input:checked+.slider:before {
 .presence-cell .entries-list {
   justify-content: flex-start;
   gap: 4px;
-  max-width: 160px;
+  max-width: 192px;
 }
 
 .entry-dot {
@@ -1475,7 +1475,7 @@ input:checked+.slider:before {
 }
 
 .summary-grade {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--primary-color);
 }
