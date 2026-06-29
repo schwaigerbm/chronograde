@@ -73,5 +73,8 @@ Die Statistik berechnet alle Werte im Speicher (Client-seitig) auf Basis der üb
 
 ## 3. UI/UX Design & Styling
 * **Premium & Clean:** Hochwertiges Dark/Light-Interface mit weichem Hintergrund, Karten-Schatten und sanften Hover-Übergängen.
+* **Optimierung für Beamer & Präsentationen (Lichtschwache Beamer):**
+  * Alle Beschriftungen, Texte und Zahlen in der Vollbild-Statistik-Ansicht (`EvaluationStatisticsModal`) besitzen eine Schriftgröße von **mindestens 12pt** (bzw. 16px).
+  * Kleinere Notizen, Legenden, Tabellenüberschriften oder Sub-Indikatoren, die zuvor kleiner waren (z. B. 10px oder 11px), werden auf mindestens 16px (bzw. 13px/14px für dichte Bereiche wie Diagrammbeschriftungen) vergrößert, damit die Statistik auch aus der letzten Reihe im Klassenraum auf lichtschwachen Beamern problemlos ablesbar ist.
 * **Druck-Optimierung (CSS Print):**
   * Über `@media print` werden Navigationsleisten, Suchfelder und Buttons ausgeblendet, damit die Lehrkraft die Übersicht sauber auf Papier ausdrucken oder als PDF speichern kann.
