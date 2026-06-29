@@ -56,13 +56,16 @@ export const EvaluationStatisticsModal = ({
   const subTasks = column.subTasks || [];
   const totalMaxPoints = subTasks.reduce((sum, t) => sum + (t.maxPoints || 0), 0);
 
+  // Filter out students who wish to be excluded from public statistics
+  const activeStudents = students.filter(s => !s.excludeFromPublicStats);
+
   // Filter students who have a grade/points for this column
-  const gradedList = students.filter(student => {
+  const gradedList = activeStudents.filter(student => {
     const sGrade = grades[student.id]?.[column.id];
     return sGrade !== undefined && sGrade.value !== undefined;
   });
 
-  const totalEnrolled = students.length;
+  const totalEnrolled = activeStudents.length;
   const totalGraded = gradedList.length;
 
   // Render empty state if no grades are available yet

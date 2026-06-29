@@ -24,6 +24,7 @@ export const StudentEditModal = ({
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [photoBase64, setPhotoBase64] = useState('');
+  const [excludeFromPublicStats, setExcludeFromPublicStats] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({
     isOpen: false,
@@ -46,10 +47,12 @@ export const StudentEditModal = ({
         setFirstName(student.firstName || '');
         setLastName(student.lastName || '');
         setPhotoBase64(student.photoBase64 || '');
+        setExcludeFromPublicStats(student.excludeFromPublicStats || false);
       } else {
         setFirstName('');
         setLastName('');
         setPhotoBase64('');
+        setExcludeFromPublicStats(false);
       }
 
       // Auto-focus first name input after modal renders
@@ -119,13 +122,15 @@ export const StudentEditModal = ({
         ...student,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        photoBase64: photoBase64 || ""
+        photoBase64: photoBase64 || "",
+        excludeFromPublicStats
       }, true);
       
       // Clear inputs for the next student
       setFirstName('');
       setLastName('');
       setPhotoBase64('');
+      setExcludeFromPublicStats(false);
     } catch (error) {
       console.error("Error saving student:", error);
     } finally {
@@ -162,7 +167,8 @@ export const StudentEditModal = ({
         ...student,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        photoBase64: photoBase64 || ""
+        photoBase64: photoBase64 || "",
+        excludeFromPublicStats
       }, false);
     } catch (error) {
       console.error("Error saving student:", error);
@@ -261,6 +267,21 @@ export const StudentEditModal = ({
                 required
                 disabled={isSaving}
               />
+            </div>
+            
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <label className="checkbox-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '16px' }}>
+                <input 
+                  type="checkbox" 
+                  checked={excludeFromPublicStats} 
+                  onChange={e => setExcludeFromPublicStats(e.target.checked)} 
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <span>Von Auswertungs-Statistiken ausschließen</span>
+              </label>
+              <p style={{ margin: '4px 0 0 26px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                Der Schüler und seine Leistungen werden vollständig aus den Vollbild-Statistiken, Diagrammen und Ranglisten entfernt, um Rückschlüsse zu verhindern.
+              </p>
             </div>
           </div>
           <div className="modal-footer" style={{ display: 'flex', gap: '12px', width: '100%' }}>

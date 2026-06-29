@@ -70,14 +70,16 @@ export const StudentsView = () => {
         await firebaseService.updateStudent(studentData.id, {
           firstName: studentData.firstName,
           lastName: studentData.lastName,
-          photoBase64: studentData.photoBase64 || ""
+          photoBase64: studentData.photoBase64 || "",
+          excludeFromPublicStats: studentData.excludeFromPublicStats || false
         });
       } else {
         await firebaseService.addStudent({
           firstName: studentData.firstName,
           lastName: studentData.lastName,
           classId: studentData.classId || 'General',
-          photoBase64: studentData.photoBase64 || ""
+          photoBase64: studentData.photoBase64 || "",
+          excludeFromPublicStats: studentData.excludeFromPublicStats || false
         });
       }
       
@@ -175,7 +177,14 @@ export const StudentsView = () => {
                   </td>
                 )}
                 <td>{student.firstName}</td>
-                <td>{student.lastName}</td>
+                <td>
+                  {student.lastName}
+                  {student.excludeFromPublicStats && (
+                    <span style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#fee2e2', color: '#991b1b', marginLeft: '6px', fontWeight: 'bold' }}>
+                      Privat
+                    </span>
+                  )}
+                </td>
                 <td className="text-right actions-cell">
                   <button className="btn-icon" onClick={() => handleOpenEdit(student)} title="Bearbeiten">
                     <Wrench size={18} />

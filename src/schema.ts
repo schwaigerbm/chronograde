@@ -7,6 +7,7 @@ export interface Student {
   lastName: string;    // Nachname
   classId: string;     // Wichtig, um Schüler einer Klasse (z.B. "10A") zuzuordnen
   photoBase64?: string; // Profilbild als komprimierter Base64-String
+  excludeFromPublicStats?: boolean; // Schüler von öffentlichen Statistiken ausschließen
 }
 
 // 2. KURS-SPALTEN (Definition der Prüfungen/Leistungen im Kurs)
