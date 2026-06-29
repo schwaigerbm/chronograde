@@ -196,7 +196,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * **Automatisches Stunden-Update bei gleichem Datum:** Wenn bei der Bearbeitung eines Eintrags die Anzahl der Stunden (z.B. von 2 auf 4) geändert wird, wird diese Stundenanzahl automatisch für **alle** Anwesenheitseinträge des Kurses an genau diesem Datum übernommen. Der Anwesenheitsstatus (Anwesend/Abwesend) der anderen Schüler bleibt unverändert.
     * **Automatisches Löschen bei gleichem Datum:** Wird ein Anwesenheitseintrag für einen Schüler an einem bestimmten Datum gelöscht, so wird dieser Eintrag (das Datum) automatisch für **alle** Schüler des Kurses gelöscht.
     * **Interaktives Hover-Verhalten:** Bei einem Maushover über eine Anwesenheitskarte (Eintrag) eines Schülers werden alle Anwesenheitseinträge **aller** Schüler am exakt selben Datum mit einem kleinen, feinen und schwachen Rahmen hervorgehoben. Ein Klick bearbeitet weiterhin nur den jeweiligen Einzeleintrag.
-    * **Hover (Tooltip):** Zeigt das Datum und die Stundenanzahl an.
+    * **Hover (Tooltip):** Zeigt das Datum und die Stundenanzahl in vergrößerter, gut lesbarer Schrift (12px) an.
 
 ### Verzweigung E: Meilenstein / Berechnete Note (`calculated`)
 * **Konzept:** Diese Spalte dient als "Snapshot" (z.B. Semesternote, Note zum Elternsprechtag). Sie berechnet automatisch einen Vorschlag basierend auf den vorhandenen Noten bis zu einem Stichtag, erlaubt aber ein manuelles Überschreiben durch den Lehrer.
