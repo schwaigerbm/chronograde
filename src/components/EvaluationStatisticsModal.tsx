@@ -656,8 +656,12 @@ export const EvaluationStatisticsModal = ({
               <span style={{ fontSize: '20px', fontWeight: '800', color: '#64748b', marginBottom: '8px' }}>2.</span>
               {podium.find(p => p.rank === 2) ? (
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                  <div style={{ fontSize: '16px', color: '#334155', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {podium.find(p => p.rank === 2)?.students.map(s => s.student.lastName).join(', ')}
+                  <div style={{ fontSize: '16px', color: '#334155', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {podium.find(p => p.rank === 2)?.students.map(s => (
+                      <div key={s.student.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        {s.student.lastName}
+                      </div>
+                    ))}
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
                     {podium.find(p => p.rank === 2)?.score.toFixed(1)} Pkt.
@@ -674,8 +678,12 @@ export const EvaluationStatisticsModal = ({
               <span style={{ fontSize: '24px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>1.</span>
               {podium.find(p => p.rank === 1) ? (
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                  <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {podium.find(p => p.rank === 1)?.students.map(s => s.student.lastName).join(', ')}
+                  <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {podium.find(p => p.rank === 1)?.students.map(s => (
+                      <div key={s.student.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        {s.student.lastName}
+                      </div>
+                    ))}
                   </div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#451a03', marginTop: '6px' }}>
                     {podium.find(p => p.rank === 1)?.score.toFixed(1)} Pkt.
@@ -691,8 +699,12 @@ export const EvaluationStatisticsModal = ({
               <span style={{ fontSize: '18px', fontWeight: '800', color: '#c2410c', marginBottom: '8px' }}>3.</span>
               {podium.find(p => p.rank === 3) ? (
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                  <div style={{ fontSize: '16px', color: '#431407', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {podium.find(p => p.rank === 3)?.students.map(s => s.student.lastName).join(', ')}
+                  <div style={{ fontSize: '16px', color: '#431407', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {podium.find(p => p.rank === 3)?.students.map(s => (
+                      <div key={s.student.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        {s.student.lastName}
+                      </div>
+                    ))}
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#431407', marginTop: '4px' }}>
                     {podium.find(p => p.rank === 3)?.score.toFixed(1)} Pkt.
