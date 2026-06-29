@@ -21,7 +21,7 @@ Die Kopfzeile dient der Identifikation der Ansicht und bietet die primäre Aktio
 ## 3. Suche & Filterung
 * **Typ:** Live-Suche (Echtzeit-Filterung während der Eingabe).
 * **Verhalten:** Die Tabelle filtert die über `serviceFirebase` bereitgestellten Daten sofort basierend auf den Übereinstimmungen im Vor- oder Nachnamen.
-* **Avatar-Sichtbarkeit:** Ein Toggle-Schalter/eine Checkbox im Suchbereich ermöglicht es, die Anzeige der Profilbilder in der Tabelle ein- oder auszuschalten (Sichtbarkeitsstatus wird im LocalStorage als Benutzerpräferenz persistiert).
+* **Avatar-Sichtbarkeit:** Die Anzeige der Profilbilder (Avatare) richtet sich nach der globalen Benutzerpräferenz im LocalStorage (`showAvatars`). Ein lokaler Toggle im Suchbereich entfällt.
 
 ## 4. Daten-Tabelle
 Anzeige der Schülerdatensätze aus der `students` Collection via `serviceFirebase`.

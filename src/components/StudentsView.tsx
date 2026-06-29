@@ -9,9 +9,19 @@ export const StudentsView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [showAvatars, setShowAvatars] = useState<boolean>(() => {
-    const saved = localStorage.getItem("chronograde_show_avatars");
-    return saved ? JSON.parse(saved) : true;
+    const saved = localStorage.getItem("showAvatars");
+    return saved !== 'false';
   });
+
+  useEffect(() => {
+    const handleAvatarChange = () => {
+      const saved = localStorage.getItem("showAvatars");
+      setShowAvatars(saved !== 'false');
+    };
+    window.addEventListener('storage_showAvatars', handleAvatarChange);
+    return () => window.removeEventListener('storage_showAvatars', handleAvatarChange);
+  }, []);
+
   const [visibleLimit, setVisibleLimit] = useState(50);
   
   // Modals state
@@ -128,22 +138,6 @@ export const StudentsView = () => {
             className="form-input"
           />
         </div>
-        <label className="switch-container" style={{ margin: 0 }}>
-          <span className={`switch-label ${!showAvatars ? 'active' : ''}`}>Bilder aus</span>
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={showAvatars} 
-              onChange={() => {
-                const newVal = !showAvatars;
-                setShowAvatars(newVal);
-                localStorage.setItem("chronograde_show_avatars", JSON.stringify(newVal));
-              }} 
-            />
-            <span className="slider"></span>
-          </label>
-          <span className={`switch-label ${showAvatars ? 'active' : ''}`}>Bilder ein</span>
-        </label>
       </div>
 
       <div className="table-wrapper">

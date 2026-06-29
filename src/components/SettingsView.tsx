@@ -7,15 +7,29 @@ import {
   ArrowDown, 
   Check, 
   X,
-  MessageSquare
+  MessageSquare,
+  Users
 } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import type { PredefinedComment } from '../schema';
 import { DialogModal } from './DialogModal';
 
 export const SettingsView = () => {
+  const [activeTab, setActiveTab] = useState<'evaluation' | 'preferences'>('evaluation');
+  const [showAvatars, setShowAvatars] = useState<boolean>(() => {
+    const stored = localStorage.getItem('showAvatars');
+    return stored !== 'false'; // Default to true
+  });
+  
   const [comments, setComments] = useState<PredefinedComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleToggleAvatars = (checked: boolean) => {
+    setShowAvatars(checked);
+    localStorage.setItem('showAvatars', String(checked));
+    // Dispatch event to notify other components instantly
+    window.dispatchEvent(new Event('storage_showAvatars'));
+  };
 
   // Form states
   const [newText, setNewText] = useState('');
@@ -223,66 +237,135 @@ export const SettingsView = () => {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="tab-navigation-container">
+        <nav role="tablist" aria-label="Einstellungsebenen" className="custom-tablist">
+          <button
+            id="tab-evaluation"
+            role="tab"
+            type="button"
+            aria-selected={activeTab === 'evaluation'}
+            aria-controls="panel-evaluation"
+            className="custom-tab-button"
+            onClick={() => setActiveTab('evaluation')}
+          >
+            Bewertungsvorgaben
+          </button>
+          <button
+            id="tab-preferences"
+            role="tab"
+            type="button"
+            aria-selected={activeTab === 'preferences'}
+            aria-controls="panel-preferences"
+            className="custom-tab-button"
+            onClick={() => setActiveTab('preferences')}
+          >
+            Benutzerpräferenzen
+          </button>
+        </nav>
+      </div>
+
       <div className="settings-content-area">
-        {/* Section: Mitarbeit */}
-        <div className="settings-section-card">
-          <div className="settings-section-header">
-            <MessageSquare size={22} className="text-primary" />
-            <div>
-              <h3>Mitarbeitskommentare</h3>
-              <p className="section-desc">Verwalte vorgefertigte Notizen für die Leistungsbeurteilung (+, ~, -) in der Notenmatrix.</p>
+        {activeTab === 'evaluation' ? (
+          /* Section: Mitarbeit */
+          <section 
+            id="panel-evaluation"
+            role="tabpanel"
+            aria-labelledby="tab-evaluation"
+            className="settings-section-card"
+          >
+            <div className="settings-section-header">
+              <MessageSquare size={22} className="text-indigo-600" />
+              <div>
+                <h3 className="text-lg font-bold">Mitarbeitskommentare</h3>
+                <p className="section-desc text-base">Verwalte vorgefertigte Notizen für die Leistungsbeurteilung (+, ~, -) in der Notenmatrix.</p>
+              </div>
             </div>
-          </div>
 
-          {/* Add Form */}
-          <form onSubmit={handleAddComment} className="settings-add-form">
-            <div className="settings-form-row">
-              <div className="form-group min-w-120">
-                <label className="form-label text-xs">Zeichen</label>
-                <div className="settings-type-buttons">
-                  {(['+', '~', '-'] as const).map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      className={`btn-type-toggle ${t === '+' ? 'plus' : t === '-' ? 'minus' : 'neutral'} ${newType === t ? 'active' : ''}`}
-                      onClick={() => setNewType(t)}
-                    >
-                      {t}
+            {/* Add Form */}
+            <form onSubmit={handleAddComment} className="settings-add-form">
+              <div className="settings-form-row">
+                <div className="form-group min-w-120">
+                  <label className="form-label text-base font-semibold">Zeichen</label>
+                  <div className="settings-type-buttons">
+                    {(['+', '~', '-'] as const).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`btn-type-toggle ${t === '+' ? 'plus' : t === '-' ? 'minus' : 'neutral'} ${newType === t ? 'active' : ''}`}
+                        onClick={() => setNewType(t)}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-group flex-1">
+                  <label className="form-label text-base font-semibold">Vorgefertigter Kommentartext</label>
+                  <div className="input-with-btn">
+                    <input
+                      type="text"
+                      placeholder="z.B. Sehr gute Mitarbeit im Unterricht"
+                      value={newText}
+                      onChange={e => setNewText(e.target.value)}
+                      className="form-input text-base"
+                      required
+                    />
+                    <button type="submit" className="btn-primary bg-indigo-600 hover:bg-indigo-700 text-base" disabled={!newText.trim()}>
+                      <Plus size={16} /> Hinzufügen
                     </button>
-                  ))}
+                  </div>
                 </div>
               </div>
+            </form>
 
-              <div className="form-group flex-1">
-                <label className="form-label text-xs">Vorgefertigter Kommentartext</label>
-                <div className="input-with-btn">
+            {/* Grid for grouped comments */}
+            {isLoading ? (
+              <div className="text-center py-8 text-base text-muted">Lade Kommentare...</div>
+            ) : (
+              <div className="settings-columns-grid">
+                {renderCommentList(plusComments, '+ (Positiv)', 'success')}
+                {renderCommentList(neutralComments, '~ (Neutral)', 'warning')}
+                {renderCommentList(minusComments, '- (Negativ)', 'danger')}
+              </div>
+            )}
+          </section>
+        ) : (
+          /* Section: Benutzerpräferenzen */
+          <section 
+            id="panel-preferences"
+            role="tabpanel"
+            aria-labelledby="tab-preferences"
+            className="settings-section-card"
+          >
+            <div className="settings-section-header">
+              <Users size={22} className="text-indigo-600" />
+              <div>
+                <h3 className="text-lg font-bold">Benutzerpräferenzen</h3>
+                <p className="section-desc text-base">Passe die Benutzeroberfläche an deine persönlichen Vorlieben an.</p>
+              </div>
+            </div>
+
+            <div className="py-4">
+              <div className="switch-container">
+                <div className="switch-label-group">
+                  <label htmlFor="avatar-toggle" className="switch-title">Schüler-Avatare anzeigen</label>
+                  <span className="switch-description">Blendet die Profilbilder der Schüler in Tabellen und Listen ein oder aus.</span>
+                </div>
+                <label className="custom-switch">
                   <input
-                    type="text"
-                    placeholder="z.B. Sehr gute Mitarbeit im Unterricht"
-                    value={newText}
-                    onChange={e => setNewText(e.target.value)}
-                    className="form-input"
-                    required
+                    id="avatar-toggle"
+                    type="checkbox"
+                    checked={showAvatars}
+                    onChange={(e) => handleToggleAvatars(e.target.checked)}
                   />
-                  <button type="submit" className="btn-primary" disabled={!newText.trim()}>
-                    <Plus size={16} /> Hinzufügen
-                  </button>
-                </div>
+                  <span className="custom-switch-slider"></span>
+                </label>
               </div>
             </div>
-          </form>
-
-          {/* Grid for grouped comments */}
-          {isLoading ? (
-            <div className="text-center py-8 text-muted">Lade Kommentare...</div>
-          ) : (
-            <div className="settings-columns-grid">
-              {renderCommentList(plusComments, '+ (Positiv)', 'success')}
-              {renderCommentList(neutralComments, '~ (Neutral)', 'warning')}
-              {renderCommentList(minusComments, '- (Negativ)', 'danger')}
-            </div>
-          )}
-        </div>
+          </section>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

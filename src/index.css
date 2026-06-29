@@ -3554,3 +3554,132 @@ input:checked+.slider:before {
   width: 100%;
   text-align: center;
 }
+
+/* --- MATRIX CELLS INTERACTIVITY (FOCUSED & FLASH) --- */
+.matrix-table td.focused-cell {
+  outline: 2px solid #4f46e5 !important; /* Indigo outline */
+  outline-offset: -2px;
+  background-color: rgba(79, 70, 229, 0.05) !important;
+}
+
+@keyframes flash-green {
+  0% { background-color: rgba(34, 197, 94, 0.4); }
+  100% { background-color: transparent; }
+}
+
+.animate-flash-green {
+  animation: flash-green 0.3s ease-out;
+}
+
+/* --- SEMANTIC MODERN TABS (SEGMENTED CONTROL STYLE) --- */
+.tab-navigation-container {
+  margin-bottom: 24px;
+}
+
+.custom-tablist {
+  display: inline-flex;
+  padding: 4px;
+  background-color: #f1f5f9; /* Slate 100 */
+  border-radius: 12px;
+  border: 1px solid #e2e8f0; /* Slate 200 */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.custom-tab-button {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px; /* 12pt */
+  border: none;
+  background: transparent;
+  color: #475569; /* Slate 600 */
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.custom-tab-button:hover {
+  color: #4f46e5; /* Indigo 600 */
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.custom-tab-button[aria-selected="true"] {
+  background-color: #ffffff;
+  color: #4f46e5; /* Indigo 600 */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- MODERN TOGGLE SWITCH --- */
+.switch-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.switch-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.switch-title {
+  font-weight: 600;
+  color: #1e293b; /* Slate 800 */
+  font-size: 16px;
+}
+
+.switch-description {
+  color: #64748b; /* Slate 500 */
+  font-size: 14px;
+}
+
+.custom-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.custom-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.custom-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1; /* Slate 300 */
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.custom-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.custom-switch input:checked + .custom-switch-slider {
+  background-color: #4f46e5; /* Indigo 600 */
+}
+
+.custom-switch input:focus + .custom-switch-slider {
+  box-shadow: 0 0 1px #4f46e5;
+}
+
+.custom-switch input:checked + .custom-switch-slider:before {
+  transform: translateX(22px);
+}

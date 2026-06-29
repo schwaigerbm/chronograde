@@ -2,15 +2,17 @@
 
 Dieses Dokument spezifiziert die Benutzeroberfläche und Funktionsweise der eigenständigen React-Komponente `TrendSettingsModal` für die Trend-Konfiguration der Leistungsbeurteilungs-Matrix.
 
-## 1. Benutzeroberfläche & Layout
+## 1. Benutzeroberfläche & Layout (Kurs-Konfigurationszentrum)
 
-Das Modal ist für eine hohe Informationsdichte und optimale Bildschirmausnutzung konzipiert.
+Das Modal ist als zentrales Einstellungsfenster für den Kurs konzipiert und bietet eine Tab-Struktur, um alle Einstellungen übersichtlich zu bündeln.
 
-* **Modal-Größe:** Großformat (`maxWidth: 900px`, `width: 90%`), um auch bei vielen Beurteilungen genügend Platz zu bieten.
-* **Layout:** Zweigeteilter, kompakter Aufbau mit kleinerer Schriftgröße (`fontSize: 13px`) und geringeren Abständen, um den Bildschirm optimal auszunutzen:
-  * **Linke Spalte:** Alle Regler mit ihren Beschriftungen, Schloss-Symbolen und Schaltern untereinander angeordnet (Vertikales Gewichtungs-Grid).
-  * **Rechte Spalte:** Alle anderen Einstellungen (globale Rundungsregel sowie Snapshot-Erstellung) untereinander angeordnet.
-* **Strukturierung:** Die linke Spalte zeigt die Koppelungs-Regler mit Locks untereinander. Die rechte Spalte enthält die globale Rundungsregel und die Snapshot-Optionen, optisch abgetrennt durch eine vertikale Linie oder Spalten-Struktur.
+* **Modal-Größe:** Großformat (`maxWidth: 900px`, `width: 90%`), um genügend Platz für Spaltenlisten und Schieberegler zu bieten.
+* **Tab-Navigation:** Am oberen Rand des Modals befinden sich zwei Reiter (Tabs):
+  1. **Spalten & Layout:** Ermöglicht die Steuerung der Sichtbarkeit (`isVisible`) und Reihenfolge der Spalten (Pfeil-Oben/Pfeil-Unten Buttons).
+  2. **Gewichtung & Trend:** Bietet den zweigeteilten, kompakten Gewichtungs-Aufbau:
+     * **Linke Spalte:** Vertikales Grid aller Gewichtungs-Regler (Schieberegler, synchrone Textfelder, Schlösser, Gleichgewichtungs-Buttons).
+     * **Rechte Spalte:** Globale Rundungsregel, Snapshot-Erstellung, Trend-Heatmap-Schalter, Mitarbeits-Berechnungsmodus.
+* **Strukturierung:** Die Tabs sind klar voneinander getrennt. Tab 2 verwendet die zweispaltige Aufteilung für hohe Informationsdichte.
 
 ## 2. Funktionalität
 

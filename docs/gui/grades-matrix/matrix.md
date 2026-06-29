@@ -105,13 +105,22 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
         * **Sofortiges Speichern und Schließen:**
             * Bei Auswahl einer Note oder eines Zeichens wird der Wert sofort gespeichert und das Modal schließt sich.
             * Bei Prozenten wird das Modal geschlossen und der Wert gespeichert, sobald der Schieberegler losgelassen wird (MouseUp/TouchEnd) oder die Eingabe im Textfeld bestätigt wird (durch Drücken der Enter-Taste oder Klick auf ein Bestätigungssymbol neben der Eingabe).
-* **Schnelleingabe über Tastatur (Hover):**
-    * Wenn der Mauszeiger über einer Zelle vom Typ `manual` (bzw. `calculated` bei Noten) schwebt und keine anderen Eingabefelder aktiv sind:
-        * **Bei Typ `grade`:** Durch Drücken einer der Tasten `1` bis `5` wird die entsprechende Note (`1` bis `5`) direkt in der Zelle eingetragen und gespeichert (ohne das Modal zu öffnen).
-        * **Bei Typ `sign`:**
-            * Drücken der Taste `1` trägt das Zeichen `+` ein.
-            * Drücken der Taste `2` trägt das Zeichen `~` ein.
-            * Drücken der Taste `3` trägt das Zeichen `-` ein.
+* **Keyboard-Navigation (Vollständige Matrix-Navigation):**
+    * Mit den Pfeiltasten (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`) kann der Fokus frei durch alle Zellen der Tabelle navigiert werden.
+    * Drücken von **`Tab`** oder **`Enter`** in einer aktiven Zelle speichert den Wert und springt **vertikal nach unten zum nächsten Schüler in derselben Spalte** (nächste Zeile).
+    * Drücken von **`Shift + Tab`** oder **`Shift + Enter`** speichert den Wert und springt **vertikal nach oben zum vorherigen Schüler in derselben Spalte** (vorherige Zeile).
+    * Dies dient der schnellen, blockweisen Erfassung einer Leistungsspalte über die Tastatur.
+
+* **Schnelleingabe über Tastatur (Hover-Direkteingabe):**
+    * Wenn der Mauszeiger über einer Zelle vom Typ `manual` (bzw. `calculated` bei Noten) schwebt und keine anderen Eingabefelder oder Modals aktiv sind, wird ein temporärer Hotkey-Listener gebunden (ohne vorherigen Klick).
+    * Drücken einer zulässigen Taste trägt den Wert sofort ein und speichert ihn geräuschlos im Backend:
+        * **Bei Typ `grade`:** Durch Drücken einer der Tasten `1` bis `5` wird die entsprechende Note (`1` bis `5`) direkt in der Zelle eingetragen.
+        * **Bei Typ `sign` oder `collaborationSum` (Mitarbeit):**
+            * Drücken der Tasten `1` oder `+` trägt das Zeichen `+` ein.
+            * Drücken der Tasten `2` oder `~` trägt das Zeichen `~` ein.
+            * Drücken der Tasten `3` oder `-` trägt das Zeichen `-` ein.
+        * **Löschen:** Drücken von `Backspace` oder `Delete` löscht den Wert in der gehoverten Zelle sofort.
+    * **Visuelles Feedback:** Bei erfolgreicher Direkteingabe blinkt der Zellenhintergrund kurz (ca. 300ms) dezent grün auf.
 
 
 ### Verzweigung C: Mitarbeit (`collaborationSum`)
@@ -195,7 +204,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * **Trend-Spalte:** Die berechnete Trend-Note wird größer (20px) dargestellt als der darunterliegende Prozentwert (16px), um die Note visuell hervorzuheben.
     * **Klick auf Icon:** Öffnet einen Dialog zum **Bearbeiten** des Eintrags (Status, Datum, Stundenanzahl ändern).
     * **Automatisches Stunden-Update bei gleichem Datum:** Wenn bei der Bearbeitung eines Eintrags die Anzahl der Stunden (z.B. von 2 auf 4) geändert wird, wird diese Stundenanzahl automatisch für **alle** Anwesenheitseinträge des Kurses an genau diesem Datum übernommen. Der Anwesenheitsstatus (Anwesend/Abwesend) der anderen Schüler bleibt unverändert.
-    * **Automatisches Löschen bei gleichem Datum:** Wird ein Anwesenheitseintrag für einen Schüler an einem bestimmten Datum gelöscht, so wird dieser Eintrag (das Datum) automatisch für **alle** Schüler des Kurses gelöscht.
+    * **Automatisches Löschen bei gleichem Datum:** Wird ein Anwesenheitseintrag für einen Schüler an einem bestimmten Datum gelöscht, so wird dieser Eintrag (das Datum) automatisch für **alle** Schüler des Kurses gelöscht. *WICHTIG:* Im Bestätigungs-Dialog muss hierbei zwingend ein auffälliger Warnhinweis eingeblendet werden, um versehentlichen Datenverlust zu verhindern.
     * **Interaktives Hover-Verhalten:** Bei einem Maushover über eine Anwesenheitskarte (Eintrag) eines Schülers werden alle Anwesenheitseinträge **aller** Schüler am exakt selben Datum mit einem kleinen, feinen und schwachen Rahmen hervorgehoben. Ein Klick bearbeitet weiterhin nur den jeweiligen Einzeleintrag.
     * **Hover (Tooltip):** Zeigt das Datum und die Stundenanzahl in vergrößerter, gut lesbarer Schrift (12px) an.
 

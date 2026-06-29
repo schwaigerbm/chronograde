@@ -25,7 +25,6 @@ import { AddColumnModal } from './AddColumnModal';
 import { EditColumnModal } from './EditColumnModal';
 import { AttendanceModal } from './AttendanceModal';
 import { CollaborationBulkModal } from './CollaborationBulkModal';
-import { ConfigureViewModal } from './ConfigureViewModal';
 import { DialogModal } from './DialogModal';
 import { formatDate } from '../lib/utils';
 import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment, Reminder } from '../schema';
@@ -58,7 +57,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
-  const [isConfigureModalOpen, setIsConfigureModalOpen] = useState(false);
+  const [trendSettingsInitialTab, setTrendSettingsInitialTab] = useState<'layout' | 'trend'>('layout');
   const [isTrendSettingsModalOpen, setIsTrendSettingsModalOpen] = useState(false);
   const [isPDFColumnSelectModalOpen, setIsPDFColumnSelectModalOpen] = useState(false);
   const [isActionsDropdownOpen, setIsActionsDropdownOpen] = useState(false);
@@ -69,6 +68,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [activeCollaborationColumnId, setActiveCollaborationColumnId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
   const [hoveredColId, setHoveredColId] = useState<string | null>(null);
+  const [focusedCell, setFocusedCell] = useState<{ studentId: string; columnId: string } | null>(null);
+  const [flashedCell, setFlashedCell] = useState<{ studentId: string; columnId: string } | null>(null);
   const [breakdownData, setBreakdownData] = useState<{ studentName: string, data: any } | null>(null);
 
   // Evaluation Point Entry States
@@ -162,7 +163,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     await firebaseService.saveCourse(updatedCourse);
   };
 
-  // Global keydown listener for cell quick entry on hover
+  // Global keydown listener for cell quick entry and grid navigation
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -177,7 +178,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       if (
         isAddColumnModalOpen ||
         isEditColumnModalOpen ||
-        isConfigureModalOpen ||
         isTrendSettingsModalOpen ||
         isAttendanceModalOpen ||
         isCollaborationModalOpen ||
@@ -188,9 +188,59 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         return;
       }
 
-      if (!hoveredCell) return;
-      const { studentId, column } = hoveredCell;
+      // Bestimmen, welche Zelle aktiv ist (Priorität: focusedCell, dann hoveredCell)
+      const activeCell = focusedCell || (hoveredCell ? { studentId: hoveredCell.studentId, columnId: hoveredCell.column.id } : null);
+      if (!activeCell) return;
 
+      const { studentId, columnId } = activeCell;
+      const column = course.columns.find(c => c.id === columnId);
+      if (!column) return;
+
+      const studentIndex = students.findIndex(s => s.id === studentId);
+      const visibleCols = course.columns.filter(c => c.isVisible !== false);
+      const columnIndex = visibleCols.findIndex(c => c.id === columnId);
+
+      // --- Pfeiltasten & Tab/Enter Navigation ---
+      if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)) {
+        e.preventDefault();
+        
+        let nextStudentIndex = studentIndex;
+        let nextColumnIndex = columnIndex;
+
+        if (e.key === 'ArrowDown') {
+          nextStudentIndex = Math.min(students.length - 1, studentIndex + 1);
+        } else if (e.key === 'ArrowUp') {
+          nextStudentIndex = Math.max(0, studentIndex - 1);
+        } else if (e.key === 'ArrowRight') {
+          nextColumnIndex = Math.min(visibleCols.length - 1, columnIndex + 1);
+        } else if (e.key === 'ArrowLeft') {
+          nextColumnIndex = Math.max(0, columnIndex - 1);
+        } else if (e.key === 'Tab' || e.key === 'Enter') {
+          if (e.shiftKey) {
+            // Shift + Tab / Shift + Enter: Nach oben
+            nextStudentIndex = Math.max(0, studentIndex - 1);
+          } else {
+            // Tab / Enter: Nach unten zum nächsten Schüler in der Spalte
+            nextStudentIndex = Math.min(students.length - 1, studentIndex + 1);
+          }
+        }
+
+        const nextStudent = students[nextStudentIndex];
+        const nextCol = visibleCols[nextColumnIndex];
+
+        if (nextStudent && nextCol) {
+          setFocusedCell({ studentId: nextStudent.id, columnId: nextCol.id });
+        }
+        return;
+      }
+
+      // Hilfsfunktion für visuelles Feedback (Flash)
+      const flash = () => {
+        setFlashedCell({ studentId, columnId });
+        setTimeout(() => setFlashedCell(null), 300);
+      };
+
+      // --- Direkteingabe (Noten / Zeichen / Löschen) ---
       if (column.type === 'manual' || column.type === 'calculated') {
         if (column.calcType === 'grade') {
           if (e.key >= '1' && e.key <= '5') {
@@ -201,20 +251,63 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
               date: new Date().toISOString(),
               ...(column.type === 'calculated' ? { isOverridden: true } : {})
             });
+            flash();
+          } else if (e.key === 'Backspace' || e.key === 'Delete') {
+            e.preventDefault();
+            updateGrade(studentId, column.id, {
+              value: '',
+              date: new Date().toISOString(),
+              ...(column.type === 'calculated' ? { isOverridden: false } : {})
+            });
+            flash();
           }
         } else if (column.calcType === 'sign') {
-          if (e.key === '1' || e.key === '2' || e.key === '3') {
+          if (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '+' || e.key === '~' || e.key === '-') {
             e.preventDefault();
             let val = '';
-            if (e.key === '1') val = '+';
-            else if (e.key === '2') val = '~';
-            else if (e.key === '3') val = '-';
+            if (e.key === '1' || e.key === '+') val = '+';
+            else if (e.key === '2' || e.key === '~') val = '~';
+            else if (e.key === '3' || e.key === '-') val = '-';
             
             updateGrade(studentId, column.id, {
               value: val,
               date: new Date().toISOString()
             });
+            flash();
+          } else if (e.key === 'Backspace' || e.key === 'Delete') {
+            e.preventDefault();
+            updateGrade(studentId, column.id, {
+              value: '',
+              date: new Date().toISOString()
+            });
+            flash();
           }
+        }
+      } else if (column.type === 'collaborationSum') {
+        if (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '+' || e.key === '~' || e.key === '-') {
+          e.preventDefault();
+          let val: '+' | '~' | '-' = '+';
+          if (e.key === '1' || e.key === '+') val = '+';
+          else if (e.key === '2' || e.key === '~') val = '~';
+          else if (e.key === '3' || e.key === '-') val = '-';
+
+          const entryId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+            ? crypto.randomUUID() 
+            : Date.now().toString(36) + Math.random().toString(36).substring(2);
+
+          addGradeEntry(studentId, column.id, {
+            id: entryId,
+            value: val,
+            date: new Date().toISOString().split('T')[0],
+            note: ''
+          });
+          flash();
+        } else if (e.key === 'Backspace' || e.key === 'Delete') {
+          e.preventDefault();
+          updateGrade(studentId, column.id, {
+            entries: []
+          });
+          flash();
         }
       }
     };
@@ -223,16 +316,19 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [
     hoveredCell,
+    focusedCell,
     isAddColumnModalOpen,
     isEditColumnModalOpen,
-    isConfigureModalOpen,
     isTrendSettingsModalOpen,
     isAttendanceModalOpen,
     isCollaborationModalOpen,
     isEvaluationModalOpen,
     activeManualCell,
     dialogConfig.isOpen,
-    updateGrade
+    updateGrade,
+    addGradeEntry,
+    students,
+    course
   ]);
 
   const handleAddColumn = async (columnData: Omit<CourseEntry, 'id'>) => {
@@ -254,10 +350,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     setEditingColumn(null);
   };
 
-  const handleConfigureColumns = async (updatedColumns: CourseEntry[], showTrend: boolean) => {
-    await firebaseService.updateCourse(course.id, { columns: updatedColumns, showTrend });
-    setIsConfigureModalOpen(false);
-  };
+
 
   const handleUpdateCourseSettings = async (data: Partial<Course>) => {
     await firebaseService.updateCourse(course.id, data);
@@ -448,33 +541,41 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
         const targetDate = targetEntry.date;
 
-        // Construct bulk updates for ALL students, filtering out any entry on this date
-        const bulkUpdates: { studentId: string, columnId: string, grade: Grade }[] = [];
+        showDialog({
+          title: 'Anwesenheitstermin löschen?',
+          message: `Achtung: Das Löschen dieses Eintrags entfernt diesen Termin (${targetDate}) für ALLE Schüler des Kurses! Möchten Sie diesen Termin wirklich unwiderruflich löschen?`,
+          type: 'danger',
+          confirmLabel: 'Termin für alle löschen',
+          onConfirm: async () => {
+            // Construct bulk updates for ALL students, filtering out any entry on this date
+            const bulkUpdates: { studentId: string, columnId: string, grade: Grade }[] = [];
 
-        students.forEach(student => {
-          const sg = grades[student.id]?.[columnId];
-          if (!sg || !sg.entries) return;
+            students.forEach(student => {
+              const sg = grades[student.id]?.[columnId];
+              if (!sg || !sg.entries) return;
 
-          const updatedEntries = sg.entries.filter(e => e.date !== targetDate);
-          
-          // Only update if there was actually an entry on that date for this student
-          if (updatedEntries.length !== sg.entries.length) {
-            bulkUpdates.push({
-              studentId: student.id,
-              columnId,
-              grade: {
-                ...sg,
-                entries: updatedEntries
+              const updatedEntries = sg.entries.filter(e => e.date !== targetDate);
+              
+              // Only update if there was actually an entry on that date for this student
+              if (updatedEntries.length !== sg.entries.length) {
+                bulkUpdates.push({
+                  studentId: student.id,
+                  columnId,
+                  grade: {
+                    ...sg,
+                    entries: updatedEntries
+                  }
+                });
               }
             });
+
+            if (bulkUpdates.length > 0) {
+              await firebaseService.bulkUpdateGrades(course.id, bulkUpdates);
+            }
           }
         });
-
-        if (bulkUpdates.length > 0) {
-          await firebaseService.bulkUpdateGrades(course.id, bulkUpdates);
-        }
       } else {
-        // Standard delete for non-attendance columns
+        // Standard delete for non-attendance columns (e.g. collaboration comments)
         await deleteGradeEntry(studentId, columnId, entryId);
       }
     } catch (err) {
@@ -695,7 +796,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                       className="dropdown-item"
                       onClick={() => {
                         setIsActionsDropdownOpen(false);
-                        setIsConfigureModalOpen(true);
+                        setTrendSettingsInitialTab('layout');
+                        setIsTrendSettingsModalOpen(true);
                       }}
                     >
                       <Settings size={16} />
@@ -835,7 +937,10 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     <div className="header-level-2 action-row">
                       <button 
                         className="btn-header-action" 
-                        onClick={() => setIsTrendSettingsModalOpen(true)}
+                        onClick={() => {
+                          setTrendSettingsInitialTab('trend');
+                          setIsTrendSettingsModalOpen(true);
+                        }}
                         title="Trend-Gewichtung konfigurieren"
                         style={{ color: 'var(--primary-color)' }}
                       >
@@ -892,24 +997,29 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     const heatmapStyle = getHeatmapStyle(col, grade);
                     const isHidden = (col.type === 'presenceSum' || col.type === 'collaborationSum' || col.type === 'evaluation') && !showDetails[col.id];
                     
-                    return (
-                      <td 
-                        key={col.id} 
-                        className={`matrix-cell ${isHidden ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${
-                          (col.type === 'collaborationSum' || col.type === 'presenceSum' || col.type === 'evaluation') && showDetails[col.id]
-                            ? (col.type === 'evaluation' ? 'evaluation-col' : 'collaboration-col')
-                            : 'standard-col'
-                        } ${col.type === 'calculated' ? 'milestone-cell' : ''}`}
-                        onMouseEnter={() => {
-                          setHoveredColId(col.id);
-                          setHoveredCell({ studentId: student.id, column: col });
-                        }}
-                        onMouseLeave={() => {
-                          setHoveredColId(null);
-                          setHoveredCell(null);
-                        }}
-                        style={heatmapStyle}
-                      >
+                      return (
+                        <td 
+                          key={col.id} 
+                          className={`matrix-cell ${isHidden ? 'presence-hidden' : ''} ${hoveredColId === col.id ? 'col-hovered' : ''} ${
+                            (col.type === 'collaborationSum' || col.type === 'presenceSum' || col.type === 'evaluation') && showDetails[col.id]
+                              ? (col.type === 'evaluation' ? 'evaluation-col' : 'collaboration-col')
+                              : 'standard-col'
+                          } ${col.type === 'calculated' ? 'milestone-cell' : ''} ${
+                            focusedCell?.studentId === student.id && focusedCell?.columnId === col.id ? 'focused-cell' : ''
+                          } ${
+                            flashedCell?.studentId === student.id && flashedCell?.columnId === col.id ? 'animate-flash-green' : ''
+                          }`}
+                          onClick={() => setFocusedCell({ studentId: student.id, columnId: col.id })}
+                          onMouseEnter={() => {
+                            setHoveredColId(col.id);
+                            setHoveredCell({ studentId: student.id, column: col });
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredColId(null);
+                            setHoveredCell(null);
+                          }}
+                          style={heatmapStyle}
+                        >
                         <GradeCell 
                           studentId={student.id}
                           column={col}
@@ -1015,16 +1125,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onSave={handleSaveCollaborationBulk}
       />
 
-      <ConfigureViewModal 
-        isOpen={isConfigureModalOpen}
-        onClose={() => setIsConfigureModalOpen(false)}
-        columns={course.columns}
-        showTrend={course.showTrend}
-        onSave={handleConfigureColumns}
-      />
-
-
-
       <TrendSettingsModal 
         isOpen={isTrendSettingsModalOpen}
         onClose={() => setIsTrendSettingsModalOpen(false)}
@@ -1035,7 +1135,17 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         roundingRule={course.roundingRule || 'commercial'}
         isTrendColorEnabled={!!course.isTrendColorEnabled}
         collaborationCalcMode={course.collaborationCalcMode || 'weighted'}
-        onSave={(updatedCols, rule, colorEnabled, collabMode) => handleUpdateCourseSettings({ columns: updatedCols, roundingRule: rule, isTrendColorEnabled: colorEnabled, collaborationCalcMode: collabMode })}
+        showTrend={course.showTrend}
+        initialTab={trendSettingsInitialTab}
+        onSave={(updatedCols, rule, colorEnabled, collabMode, showTrendVal) => 
+          handleUpdateCourseSettings({ 
+            columns: updatedCols, 
+            roundingRule: rule, 
+            isTrendColorEnabled: colorEnabled, 
+            collaborationCalcMode: collabMode,
+            showTrend: showTrendVal
+          })
+        }
         showDialog={showDialog}
       />
 
