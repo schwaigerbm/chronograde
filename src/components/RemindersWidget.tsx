@@ -158,7 +158,13 @@ export const RemindersWidget = () => {
                     </div>
 
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      Gruppe: <strong>{reminder.courseName}</strong> &bull; Grund: {reminder.anomalyType}
+                      Gruppe: <strong>{reminder.courseName}</strong>
+                      <div style={{ marginTop: '4px', fontWeight: '600', color: 'var(--text-main)' }}>Auffälligkeiten:</div>
+                      <ul style={{ margin: '2px 0 0 0', paddingLeft: '16px', listStyleType: 'disc' }}>
+                        {reminder.anomalyType.split(', ').map((reason, idx) => (
+                          <li key={idx} style={{ marginTop: '2px' }}>{reason}</li>
+                        ))}
+                      </ul>
                     </div>
 
                     <div style={{ fontSize: '11px', color: isOverdue ? '#dc2626' : 'var(--text-muted)', marginTop: '6px', fontWeight: isOverdue ? '600' : 'normal' }}>
