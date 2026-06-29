@@ -40,7 +40,7 @@ Beim Klick auf den Button öffnet sich eine eigenständige, interaktive Analyse-
      * **Visuelle Warnungen:** Teilaufgaben, bei denen der durchschnittliche Erfolg unter 60% liegt, werden farblich hervorgehoben (Warnhinweis für schwierige Aufgaben).
   4. **Podium / Die besten 3 (Trophy) - Eigener Zeilenabschnitt (volle Breite):**
      * Spezielle Visualisierung der Top 3 Schüler (nach Gesamtpunkten geordnet) mit Gold-, Silber- und Bronze-Auszeichnung.
-     * Unterstützt exakte Gleichstände (Ties).
+     * Unterstützt exakte Gleichstände (Ties; Namen der betroffenen Schüler werden untereinander auf dem jeweiligen Treppchen dargestellt).
   5. **Detaillierte Ergebnisliste (Leaderboard/Tabelle):**
      * Scrollbare Auflistung aller Schüler der Klasse.
      * Zeigt: Name des Schülers, Punkte pro Aufgabe, Gesamtpunkte, Prozentpunkte und die berechnete Note.
