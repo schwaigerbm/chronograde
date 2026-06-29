@@ -227,6 +227,51 @@ export const EvaluationStatisticsModal = ({
     }
   };
 
+  const renderPodiumNames = (students: { student: Student }[], colorClass: string) => {
+    const names = students.map(s => s.student.lastName);
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentRowLength = 0;
+    const MAX_ROW_CHARS = 18;
+
+    for (const name of names) {
+      const additionalLength = currentRow.length > 0 ? name.length + 2 : name.length;
+      if (currentRow.length > 0 && currentRowLength + additionalLength > MAX_ROW_CHARS) {
+        rows.push(currentRow);
+        currentRow = [name];
+        currentRowLength = name.length;
+      } else {
+        currentRow.push(name);
+        currentRowLength += additionalLength;
+      }
+    }
+    if (currentRow.length > 0) {
+      rows.push(currentRow);
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '100%' }}>
+        {rows.map((row, idx) => (
+          <div 
+            key={idx} 
+            style={{ 
+              fontSize: '16px', 
+              color: colorClass, 
+              fontWeight: 'bold',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              maxWidth: '100%',
+              textAlign: 'center'
+            }}
+          >
+            {row.join(', ')}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return createPortal(
     <div className="evaluation-stats-fullscreen-overlay">
       {/* Styles local to print and fullscreen layout */}
@@ -656,13 +701,7 @@ export const EvaluationStatisticsModal = ({
               <span style={{ fontSize: '20px', fontWeight: '800', color: '#64748b', marginBottom: '8px' }}>2.</span>
               {podium.find(p => p.rank === 2) ? (
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                  <div style={{ fontSize: '16px', color: '#334155', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {podium.find(p => p.rank === 2)?.students.map(s => (
-                      <div key={s.student.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        {s.student.lastName}
-                      </div>
-                    ))}
-                  </div>
+                  {renderPodiumNames(podium.find(p => p.rank === 2)?.students || [], '#334155')}
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
                     {podium.find(p => p.rank === 2)?.score.toFixed(1)} Pkt.
                   </div>
@@ -678,13 +717,7 @@ export const EvaluationStatisticsModal = ({
               <span style={{ fontSize: '24px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>1.</span>
               {podium.find(p => p.rank === 1) ? (
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                  <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {podium.find(p => p.rank === 1)?.students.map(s => (
-                      <div key={s.student.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        {s.student.lastName}
-                      </div>
-                    ))}
-                  </div>
+                  {renderPodiumNames(podium.find(p => p.rank === 1)?.students || [], '#78350f')}
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#451a03', marginTop: '6px' }}>
                     {podium.find(p => p.rank === 1)?.score.toFixed(1)} Pkt.
                   </div>
@@ -699,13 +732,7 @@ export const EvaluationStatisticsModal = ({
               <span style={{ fontSize: '18px', fontWeight: '800', color: '#c2410c', marginBottom: '8px' }}>3.</span>
               {podium.find(p => p.rank === 3) ? (
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                  <div style={{ fontSize: '16px', color: '#431407', fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {podium.find(p => p.rank === 3)?.students.map(s => (
-                      <div key={s.student.id} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        {s.student.lastName}
-                      </div>
-                    ))}
-                  </div>
+                  {renderPodiumNames(podium.find(p => p.rank === 3)?.students || [], '#431407')}
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#431407', marginTop: '4px' }}>
                     {podium.find(p => p.rank === 3)?.score.toFixed(1)} Pkt.
                   </div>
