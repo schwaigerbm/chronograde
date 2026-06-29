@@ -91,7 +91,7 @@ export const AttendanceAnomaliesModal = ({
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger-color)' }}>
             <AlertTriangle size={22} /> Fehlzeiten-Auffälligkeit
           </h3>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', background: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: '12px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', background: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: '12px' }}>
             Schüler {currentIndex + 1} von {anomaliesQueue.length}
           </span>
         </div>
@@ -104,11 +104,11 @@ export const AttendanceAnomaliesModal = ({
             </div>
             <div>
               <div style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--text-main)' }}>{current.studentName}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Gruppe: {current.courseName}</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Gruppe: {current.courseName}</div>
             </div>
           </div>
 
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
             Für diesen Schüler wurden bei der heutigen Anwesenheitserfassung ({current.date}) folgende Auffälligkeiten festgestellt:
           </p>
 
@@ -126,7 +126,7 @@ export const AttendanceAnomaliesModal = ({
                   padding: '10px 12px', 
                   borderRadius: '6px',
                   color: '#991b1b',
-                  fontSize: '13px',
+                  fontSize: '15px',
                   fontWeight: '600'
                 }}
               >
@@ -145,14 +145,14 @@ export const AttendanceAnomaliesModal = ({
                 onChange={(e) => setCreateReminder(e.target.checked)}
                 style={{ width: '16px', height: '16px', cursor: 'pointer' }}
               />
-              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)' }}>
+              <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-main)' }}>
                 Abklärungserinnerung für den nächsten Termin erstellen
               </span>
             </label>
 
             {createReminder && (
               <div className="form-group" style={{ marginLeft: '24px', display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Erinnerungsdatum</label>
+                <label className="form-label" style={{ fontSize: '13px' }}>Erinnerungsdatum</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <Calendar size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
                   <input 
@@ -160,7 +160,7 @@ export const AttendanceAnomaliesModal = ({
                     className="form-input" 
                     value={reminderDate}
                     onChange={(e) => setReminderDate(e.target.value)}
-                    style={{ paddingLeft: '34px', fontSize: '13px' }}
+                    style={{ paddingLeft: '34px', fontSize: '14px' }}
                   />
                 </div>
               </div>
@@ -172,7 +172,7 @@ export const AttendanceAnomaliesModal = ({
           <button 
             className="btn-primary" 
             onClick={handleNext}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', padding: '8px 16px', fontSize: '13px', marginLeft: 'auto' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', padding: '8px 16px', fontSize: '14px', marginLeft: 'auto' }}
           >
             {currentIndex + 1 < anomaliesQueue.length ? 'Bestätigen & Weiter' : 'Bestätigen & Schließen'} <Check size={16} />
           </button>

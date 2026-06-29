@@ -55,7 +55,7 @@ export const RemindersWidget = () => {
           <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Calendar size={20} color="var(--primary-color)" /> Terminliste & Abklärungen
           </h3>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
             {unresolvedCount === 0 
               ? 'Keine offenen Abklärungen ausstehend.' 
               : `${unresolvedCount} offene ${unresolvedCount === 1 ? 'Abklärung' : 'Abklärungen'} ausstehend.`
@@ -67,7 +67,7 @@ export const RemindersWidget = () => {
           type="button"
           className="btn-secondary btn-sm"
           onClick={() => setShowResolved(prev => !prev)}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 12px' }}
         >
           {showResolved ? (
             <>
@@ -84,8 +84,8 @@ export const RemindersWidget = () => {
       {filteredReminders.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
           <CheckCircle2 size={48} color="#16a34a" style={{ marginBottom: '12px', opacity: 0.8 }} />
-          <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-main)', margin: '0 0 4px 0' }}>Alles erledigt!</h4>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+          <h4 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-main)', margin: '0 0 4px 0' }}>Alles erledigt!</h4>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
             {showResolved ? 'Es gibt noch keine aufgezeichneten Erinnerungen.' : 'Keine offenen Fehlzeiten-Erinnerungen vorhanden.'}
           </p>
         </div>
@@ -132,7 +132,7 @@ export const RemindersWidget = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ 
                         fontWeight: 'bold', 
-                        fontSize: '14px', 
+                        fontSize: '16px', 
                         color: reminder.resolved ? 'var(--text-muted)' : 'var(--text-main)',
                         textDecoration: reminder.resolved ? 'line-through' : 'none' 
                       }}>
@@ -142,7 +142,7 @@ export const RemindersWidget = () => {
                       {/* Overdue Badge */}
                       {isOverdue && (
                         <span style={{ 
-                          fontSize: '10px', 
+                          fontSize: '11px', 
                           fontWeight: 'bold', 
                           background: '#fee2e2', 
                           color: '#dc2626', 
@@ -157,7 +157,7 @@ export const RemindersWidget = () => {
                       )}
                     </div>
 
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
                       Gruppe: <strong>{reminder.courseName}</strong>
                       <div style={{ marginTop: '4px', fontWeight: '600', color: 'var(--text-main)' }}>Auffälligkeiten:</div>
                       <ul style={{ margin: '2px 0 0 0', paddingLeft: '16px', listStyleType: 'disc' }}>
@@ -167,7 +167,7 @@ export const RemindersWidget = () => {
                       </ul>
                     </div>
 
-                    <div style={{ fontSize: '11px', color: isOverdue ? '#dc2626' : 'var(--text-muted)', marginTop: '6px', fontWeight: isOverdue ? '600' : 'normal' }}>
+                    <div style={{ fontSize: '13px', color: isOverdue ? '#dc2626' : 'var(--text-muted)', marginTop: '6px', fontWeight: isOverdue ? '600' : 'normal' }}>
                       Fällig bis: {formatDate(reminder.date)}
                     </div>
                   </div>
