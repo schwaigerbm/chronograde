@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Check, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Check, Save, ArrowRight, ArrowLeft } from 'lucide-react';
 import type { Student } from '../schema';
 
 interface AttendanceModalProps {
@@ -10,12 +10,24 @@ interface AttendanceModalProps {
 }
 
 export const AttendanceModal = ({ isOpen, onClose, students, onSave }: AttendanceModalProps) => {
+  const [step, setStep] = useState<'setup' | 'entry'>('setup');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [hours, setHours] = useState<number>(1);
+  
   // Use 'unset' as initial state to avoid pre-selection
   const [attendance, setAttendance] = useState<Record<string, 'check' | 'x' | 'unset'>>(
     Object.fromEntries(students.map(s => [s.id, 'unset']))
   );
+
+  // Reset states when the modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setStep('setup');
+      setDate(new Date().toISOString().split('T')[0]);
+      setHours(1);
+      setAttendance(Object.fromEntries(students.map(s => [s.id, 'unset'])));
+    }
+  }, [isOpen, students]);
 
   if (!isOpen) return null;
 
@@ -45,91 +57,135 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
   return (
     <div className="modal-overlay">
       <div className="modal-card" style={{ maxWidth: '600px' }}>
-        <div className="modal-header">
-          <h3>Anwesenheit erfassen</h3>
-          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
-        </div>
-        
-        <div className="modal-body">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-            <div className="form-group">
-              <label className="form-label">Datum</label>
-              <input 
-                type="date" 
-                className="form-input" 
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+        {step === 'setup' ? (
+          <>
+            <div className="modal-header">
+              <h3>Anwesenheit erfassen - Voreinstellungen</h3>
+              <button className="btn-icon" onClick={onClose}><X size={20} /></button>
             </div>
-            <div className="form-group">
-              <label className="form-label">Stunden</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[1, 2, 4].map(h => (
-                  <button 
-                    key={h} 
-                    type="button"
-                    className={`btn-secondary btn-xs ${hours === h ? 'active-btn' : ''}`}
-                    style={hours === h ? { backgroundColor: 'var(--primary-color)', color: 'white', borderColor: 'var(--primary-color)' } : { padding: '4px 12px' }}
-                    onClick={() => setHours(h)}
-                  >
-                    {h} Std.
-                  </button>
-                ))}
-                <input 
-                  type="number" 
-                  className="form-input" 
-                  style={{ width: '60px', padding: '4px 8px' }}
-                  value={hours}
-                  onChange={(e) => setHours(Number(e.target.value))}
-                  min="1"
-                />
+            
+            <div className="modal-body">
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.5' }}>
+                Bitte legen Sie zuerst das Datum und die Anzahl der Unterrichtsstunden für diese Erfassung fest.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div className="form-group">
+                  <label className="form-label">Datum</label>
+                  <input 
+                    type="date" 
+                    className="form-input" 
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Stunden</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[1, 2, 4].map(h => (
+                      <button 
+                        key={h} 
+                        type="button"
+                        className={`btn-secondary btn-xs ${hours === h ? 'active-btn' : ''}`}
+                        style={hours === h ? { backgroundColor: 'var(--primary-color)', color: 'white', borderColor: 'var(--primary-color)' } : { padding: '4px 12px' }}
+                        onClick={() => setHours(h)}
+                      >
+                        {h} Std.
+                      </button>
+                    ))}
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      style={{ width: '60px', padding: '4px 8px' }}
+                      value={hours}
+                      onChange={(e) => setHours(Number(e.target.value))}
+                      min="1"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px' }}>
-            Klicken Sie auf die Symbole, um zwischen Anwesend (Häkchen), Abwesend (X) und Nicht gesetzt zu wechseln.
-          </p>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
+              <button 
+                className="btn-primary" 
+                onClick={() => setStep('entry')} 
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto' }}
+                disabled={!date || hours < 1}
+              >
+                Weiter zur Schülerliste <ArrowRight size={18} />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="modal-header">
+              <h3>Anwesenheit erfassen</h3>
+              <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+            </div>
+            
+            <div className="modal-body">
+              {/* Voreinstellungen Summary */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
+                <div style={{ fontSize: '14px', color: 'var(--text-main)' }}>
+                  Datum: <strong>{date.split('-').reverse().join('.')}</strong> | Unterrichtsstunden: <strong>{hours} Std.</strong>
+                </div>
+                <button 
+                  type="button" 
+                  className="btn-secondary btn-xs" 
+                  onClick={() => setStep('setup')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '12px' }}
+                >
+                  <ArrowLeft size={12} /> Ändern
+                </button>
+              </div>
 
-          <div className="attendance-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '50px' }}>Nr.</th>
-                  <th>Schüler</th>
-                  <th className="text-center">Anwesenheit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((student, index) => (
-                  <tr key={student.id} onClick={() => toggleAttendance(student.id)} style={{ cursor: 'pointer' }}>
-                    <td>{index + 1}</td>
-                    <td>{student.lastName}, {student.firstName}</td>
-                    <td className="text-center" style={{ display: 'flex', justifyContent: 'center' }}>
-                      <div className={`presence-toggle ${attendance[student.id]}`}>
-                        {attendance[student.id] === 'check' && <Check size={20} className="icon-present" />}
-                        {attendance[student.id] === 'x' && <X size={20} className="icon-absent" />}
-                        {attendance[student.id] === 'unset' && <span style={{ fontSize: '12px' }}>-</span>}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                Klicken Sie auf die Zeilen der Schüler, um zwischen Anwesend (Häkchen), Abwesend (X) und Nicht gesetzt zu wechseln.
+              </p>
 
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
-          <button 
-            className="btn-primary" 
-            onClick={handleSave} 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto' }}
-            disabled={Object.values(attendance).every(v => v === 'unset')}
-          >
-            <Save size={18} /> Speichern
-          </button>
-        </div>
+              <div className="attendance-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '50px' }}>Nr.</th>
+                      <th>Schüler</th>
+                      <th className="text-center">Anwesenheit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student, index) => (
+                      <tr key={student.id} onClick={() => toggleAttendance(student.id)} style={{ cursor: 'pointer' }}>
+                        <td>{index + 1}</td>
+                        <td>{student.lastName}, {student.firstName}</td>
+                        <td className="text-center" style={{ display: 'flex', justifyContent: 'center' }}>
+                          <div className={`presence-toggle ${attendance[student.id]}`}>
+                            {attendance[student.id] === 'check' && <Check size={20} className="icon-present" />}
+                            {attendance[student.id] === 'x' && <X size={20} className="icon-absent" />}
+                            {attendance[student.id] === 'unset' && <span style={{ fontSize: '12px' }}>-</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setStep('setup')}>Zurück</button>
+              <button 
+                className="btn-primary" 
+                onClick={handleSave} 
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto' }}
+                disabled={Object.values(attendance).every(v => v === 'unset')}
+              >
+                <Save size={18} /> Speichern
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
