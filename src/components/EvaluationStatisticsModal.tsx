@@ -598,112 +598,109 @@ export const EvaluationStatisticsModal = ({
           </div>
         </div>
 
-        {/* CHARTS ROW (GRID 2-1) */}
-        <div className="stats-grid-2-1">
-          {/* NOTENSPIEGEL (LEFT) */}
-          <div className="stats-card">
-            <span className="stats-section-title">
-              <BarChart3 size={16} /> Notenverteilung (Notenspiegel)
-            </span>
-            
-            <div className="grade-chart-container">
-              {[1, 2, 3, 4, 5].map(gradeNum => {
-                const count = gradeCounts[gradeNum as 1|2|3|4|5];
-                const pct = totalGraded > 0 ? (count / totalGraded) * 100 : 0;
-                const barHeight = (count / maxGradeCount) * 100; // Relative height to highest bar
+        {/* NOTENSPIEGEL */}
+        <div className="stats-card">
+          <span className="stats-section-title">
+            <BarChart3 size={16} /> Notenverteilung (Notenspiegel)
+          </span>
+          
+          <div className="grade-chart-container">
+            {[1, 2, 3, 4, 5].map(gradeNum => {
+              const count = gradeCounts[gradeNum as 1|2|3|4|5];
+              const pct = totalGraded > 0 ? (count / totalGraded) * 100 : 0;
+              const barHeight = (count / maxGradeCount) * 100; // Relative height to highest bar
 
-                return (
-                  <div key={gradeNum} className="grade-chart-bar-col">
-                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
-                      {count > 0 ? `${count}x` : ''}
-                    </span>
-                    <div 
-                      className="grade-chart-bar"
-                      style={{ 
-                        height: `${barHeight}%`, 
-                        backgroundColor: getGradeBgColor(gradeNum),
-                        minHeight: count > 0 ? '20px' : '2px'
-                      }}
-                    >
-                      {count > 0 && barHeight > 15 && (
-                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: getGradeTextColor(gradeNum) }}>
-                          {pct.toFixed(0)}%
-                        </span>
-                      )}
-                    </div>
-                    <span className="grade-chart-label">Note {gradeNum}</span>
+              return (
+                <div key={gradeNum} className="grade-chart-bar-col">
+                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
+                    {count > 0 ? `${count}x` : ''}
+                  </span>
+                  <div 
+                    className="grade-chart-bar"
+                    style={{ 
+                      height: `${barHeight}%`, 
+                      backgroundColor: getGradeBgColor(gradeNum),
+                      minHeight: count > 0 ? '20px' : '2px'
+                    }}
+                  >
+                    {count > 0 && barHeight > 15 && (
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: getGradeTextColor(gradeNum) }}>
+                        {pct.toFixed(0)}%
+                      </span>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '16px', textAlign: 'center' }}>
-              {[1, 2, 3, 4, 5].map(g => (
-                <div key={g} style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
-                  <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '5px', backgroundColor: getGradeBgColor(g), marginRight: '4px' }}></span>
-                  {getGradeName(g)}
+                  <span className="grade-chart-label">Note {gradeNum}</span>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-
-          {/* DIE BESTEN 3 (RIGHT) */}
-          <div className="stats-card">
-            <span className="stats-section-title">
-              <Trophy size={16} style={{ color: '#eab308' }} /> Die besten Leistungen
-            </span>
-
-            <div className="podium-container">
-              {/* RANK 2 */}
-              <div className="podium-step podium-step-2">
-                <span style={{ fontSize: '20px', fontWeight: '800', color: '#64748b', marginBottom: '8px' }}>2.</span>
-                {podium.find(p => p.rank === 2) ? (
-                  <div style={{ textAlign: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '16px', color: '#334155', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      {podium.find(p => p.rank === 2)?.students.map(s => s.student.lastName).join(', ')}
-                    </div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
-                      {podium.find(p => p.rank === 2)?.score.toFixed(1)} Pkt.
-                    </div>
-                  </div>
-                ) : (
-                  <span style={{ fontSize: '16px', color: '#cbd5e1' }}>-</span>
-                )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '16px', textAlign: 'center' }}>
+            {[1, 2, 3, 4, 5].map(g => (
+              <div key={g} style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '5px', backgroundColor: getGradeBgColor(g), marginRight: '4px' }}></span>
+                {getGradeName(g)}
               </div>
+            ))}
+          </div>
+        </div>
 
-              {/* RANK 1 */}
-              <div className="podium-step podium-step-1">
-                <Trophy size={20} style={{ color: '#d97706', marginBottom: '4px' }} />
-                <span style={{ fontSize: '24px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>1.</span>
-                {podium.find(p => p.rank === 1) ? (
-                  <div style={{ textAlign: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      {podium.find(p => p.rank === 1)?.students.map(s => s.student.lastName).join(', ')}
-                    </div>
-                    <div style={{ fontSize: '18px', fontWeight: 800, color: '#451a03', marginTop: '6px' }}>
-                      {podium.find(p => p.rank === 1)?.score.toFixed(1)} Pkt.
-                    </div>
-                  </div>
-                ) : (
-                  <span style={{ fontSize: '16px', color: '#fef3c7' }}>-</span>
-                )}
-              </div>
+        {/* DIE BESTEN 3 */}
+        <div className="stats-card">
+          <span className="stats-section-title">
+            <Trophy size={16} style={{ color: '#eab308' }} /> Die besten Leistungen
+          </span>
 
-              {/* RANK 3 */}
-              <div className="podium-step podium-step-3">
-                <span style={{ fontSize: '18px', fontWeight: '800', color: '#c2410c', marginBottom: '8px' }}>3.</span>
-                {podium.find(p => p.rank === 3) ? (
-                  <div style={{ textAlign: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '16px', color: '#431407', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      {podium.find(p => p.rank === 3)?.students.map(s => s.student.lastName).join(', ')}
-                    </div>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#431407', marginTop: '4px' }}>
-                      {podium.find(p => p.rank === 3)?.score.toFixed(1)} Pkt.
-                    </div>
+          <div className="podium-container">
+            {/* RANK 2 */}
+            <div className="podium-step podium-step-2">
+              <span style={{ fontSize: '20px', fontWeight: '800', color: '#64748b', marginBottom: '8px' }}>2.</span>
+              {podium.find(p => p.rank === 2) ? (
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                  <div style={{ fontSize: '16px', color: '#334155', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {podium.find(p => p.rank === 2)?.students.map(s => s.student.lastName).join(', ')}
                   </div>
-                ) : (
-                  <span style={{ fontSize: '16px', color: '#ffedd5' }}>-</span>
-                )}
-              </div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
+                    {podium.find(p => p.rank === 2)?.score.toFixed(1)} Pkt.
+                  </div>
+                </div>
+              ) : (
+                <span style={{ fontSize: '16px', color: '#cbd5e1' }}>-</span>
+              )}
+            </div>
+
+            {/* RANK 1 */}
+            <div className="podium-step podium-step-1">
+              <Trophy size={20} style={{ color: '#d97706', marginBottom: '4px' }} />
+              <span style={{ fontSize: '24px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>1.</span>
+              {podium.find(p => p.rank === 1) ? (
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                  <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {podium.find(p => p.rank === 1)?.students.map(s => s.student.lastName).join(', ')}
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#451a03', marginTop: '6px' }}>
+                    {podium.find(p => p.rank === 1)?.score.toFixed(1)} Pkt.
+                  </div>
+                </div>
+              ) : (
+                <span style={{ fontSize: '16px', color: '#fef3c7' }}>-</span>
+              )}
+            </div>
+
+            {/* RANK 3 */}
+            <div className="podium-step podium-step-3">
+              <span style={{ fontSize: '18px', fontWeight: '800', color: '#c2410c', marginBottom: '8px' }}>3.</span>
+              {podium.find(p => p.rank === 3) ? (
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                  <div style={{ fontSize: '16px', color: '#431407', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {podium.find(p => p.rank === 3)?.students.map(s => s.student.lastName).join(', ')}
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#431407', marginTop: '4px' }}>
+                    {podium.find(p => p.rank === 3)?.score.toFixed(1)} Pkt.
+                  </div>
+                </div>
+              ) : (
+                <span style={{ fontSize: '16px', color: '#ffedd5' }}>-</span>
+              )}
             </div>
           </div>
         </div>
