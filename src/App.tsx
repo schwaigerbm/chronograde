@@ -26,7 +26,7 @@ interface LoginViewProps {
   onLogin: (username: string, pass: string) => Promise<any>;
 }
 
-const LoginView = ({ onLogin }: LoginViewProps) => {
+export const LoginView = ({ onLogin }: LoginViewProps) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -570,17 +570,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
 // --- MAIN APP COMPONENT ---
 const App = () => {
-  const { user, loading, login, logout } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="login-container">
-        <div className="spinner" style={{ borderColor: 'rgba(37, 99, 235, 0.3)', borderTopColor: '#2563eb' }} />
-      </div>
-    );
-  }
-
-  return user ? <Dashboard onLogout={logout} /> : <LoginView onLogin={login} />;
+  const { logout } = useAuth();
+  return <Dashboard onLogout={logout} />;
 };
 
 export default App;

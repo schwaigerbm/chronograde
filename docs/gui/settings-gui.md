@@ -3,9 +3,11 @@
 ## 1. Übersicht & Struktur
 Die Einstellungsansicht bietet Konfigurationsmöglichkeiten für die Anwendung. Sie ist über den Navigationspunkt "Einstellungen" in der Sidebar erreichbar.
 
-Die Ansicht ist in Sektionen unterteilt. Die primäre Sektion in dieser Phase ist die **Sektion Mitarbeit**.
+Die Ansicht ist in zwei Tabs unterteilt:
+1. **Bewertungsvorgaben:** Verwaltung der vorgefertigten Kommentare für die Mitarbeit.
+2. **Benutzerpräferenzen:** Verwaltung von UI-spezifischen Präferenzen (z. B. Avatar-Sichtbarkeit).
 
-## 2. Sektion: Mitarbeit (Vorgefertigte Kommentare)
+## 2. Tab: Bewertungsvorgaben (Vorgefertigte Kommentare)
 Hier können Lehrer vorgefertigte Kommentare für die drei Bewertungszeichen der Mitarbeit (`+`, `~`, `-`) verwalten.
 
 ### 2.1 Benutzeroberfläche (UI)
@@ -55,3 +57,18 @@ Wenn der Lehrer in der Matrix auf ein Feld der Mitarbeit klickt (Typ `collaborat
   * Klick auf einen vorgefertigten Kommentar übernimmt diesen Text direkt in das Feld "Notiz".
   * Der Lehrer kann den Text danach bei Bedarf immer noch manuell anpassen oder ergänzen.
   * Das Abschicken des Formulars speichert den Eintrag wie gewohnt.
+
+---
+
+## 4. Tab: Benutzerpräferenzen (UI-Präferenzen)
+Hier können Lehrer globale UI-Einstellungen verwalten, die im LocalStorage des Browsers persistiert werden.
+
+### 4.1 Benutzeroberfläche (UI)
+* **Tab/Bereichs-Überschrift:** `Benutzerpräferenzen`
+* **Optionen:**
+  * **Avatar-Sichtbarkeit:** Ein Toggle-Switch (Schalter) mit der Beschriftung `Schüler-Avatare anzeigen`. 
+    * *Standard:* Aktiv (`true`).
+    * *Funktion:* Bestimmt, ob in der Schülerübersicht und in der Matrix die kleinen runden Profilbilder der Schüler angezeigt werden.
+* **Logik:** 
+  * Änderungen an den Toggles werden sofort im `LocalStorage` gespeichert und auf die betroffenen Komponenten angewendet (ohne dass ein Speichern-Button gedrückt werden muss).
+
