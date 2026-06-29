@@ -1432,18 +1432,18 @@ const GradeCell = ({
                   style={{ cursor: 'pointer' }}
                 >
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {entry.value === 'check' ? <Check size={16} className="icon-present" /> : <XIcon size={16} className="icon-absent" />}
+                    {entry.value === 'check' ? <Check size={20} className="icon-present" /> : <XIcon size={20} className="icon-absent" />}
                     {(entry.hours || 1) > 1 && (
                       <span style={{ 
                         position: 'absolute', 
-                        top: '-6px', 
-                        right: '-6px', 
-                        fontSize: '8px', 
+                        top: '-8px', 
+                        right: '-8px', 
+                        fontSize: '9px', 
                         background: 'var(--primary-color)', 
                         color: 'white', 
                         borderRadius: '50%', 
-                        width: '10px', 
-                        height: '10px', 
+                        width: '13px', 
+                        height: '13px', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center',
