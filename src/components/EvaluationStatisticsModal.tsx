@@ -307,13 +307,13 @@ export const EvaluationStatisticsModal = ({
         }
 
         .stats-metric-subtitle {
-          font-size: 12px;
+          font-size: 16px;
           color: #64748b;
           margin-top: 4px;
         }
 
         .stats-section-title {
-          font-size: 15px;
+          font-size: 18px;
           font-weight: 700;
           color: #1e293b;
           margin-bottom: 16px;
@@ -356,7 +356,7 @@ export const EvaluationStatisticsModal = ({
         }
 
         .grade-chart-label {
-          font-size: 12px;
+          font-size: 16px;
           font-weight: bold;
           margin-top: 8px;
           color: #475569;
@@ -440,7 +440,7 @@ export const EvaluationStatisticsModal = ({
 
         .stats-table th {
           padding: 12px 16px;
-          font-size: 12px;
+          font-size: 16px;
           font-weight: 600;
           color: #475569;
           border-bottom: 2px solid #cbd5e1;
@@ -455,7 +455,7 @@ export const EvaluationStatisticsModal = ({
 
         .stats-table td {
           padding: 12px 16px;
-          font-size: 13px;
+          font-size: 16px;
           color: #334155;
           border-bottom: 1px solid #f1f5f9;
         }
@@ -515,10 +515,10 @@ export const EvaluationStatisticsModal = ({
             Zurück zur Spalte
           </button>
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
               Auswertungs-Statistik
             </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+            <p style={{ margin: '4px 0 0 0', fontSize: '16px', color: '#64748b' }}>
               {column.title} &bull; Gesamt: {totalMaxPoints.toFixed(1)} Pkt. &bull; {subTasks.length} Aufgaben
             </p>
           </div>
@@ -550,11 +550,11 @@ export const EvaluationStatisticsModal = ({
         {/* TOP METRICS CARDS */}
         <div className="stats-grid-4">
           <div className="stats-card">
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Users size={14} className="text-primary" /> Beteiligung
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Users size={16} className="text-primary" /> Beteiligung
             </span>
-            <div className="stats-metric-value">
-              {totalGraded} <span style={{ fontSize: '16px', fontWeight: 'normal', color: '#64748b' }}>/ {totalEnrolled}</span>
+            <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+              {totalGraded} <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#64748b' }}>/ {totalEnrolled}</span>
             </div>
             <div className="stats-metric-subtitle">
               {gradedPercentage}% der Schüler bewertet
@@ -562,10 +562,10 @@ export const EvaluationStatisticsModal = ({
           </div>
 
           <div className="stats-card">
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Award size={14} style={{ color: '#0f766e' }} /> Notenschnitt
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Award size={16} style={{ color: '#0f766e' }} /> Notenschnitt
             </span>
-            <div className="stats-metric-value">
+            <div className="stats-metric-value" style={{ fontSize: '32px' }}>
               {averageGrade.toFixed(2)}
             </div>
             <div className="stats-metric-subtitle">
@@ -574,10 +574,10 @@ export const EvaluationStatisticsModal = ({
           </div>
 
           <div className="stats-card">
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Smile size={14} style={{ color: '#16a34a' }} /> Erfolgsquote
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Smile size={16} style={{ color: '#16a34a' }} /> Erfolgsquote
             </span>
-            <div className="stats-metric-value">
+            <div className="stats-metric-value" style={{ fontSize: '32px' }}>
               {successRate.toFixed(1)}%
             </div>
             <div className="stats-metric-subtitle">
@@ -586,11 +586,11 @@ export const EvaluationStatisticsModal = ({
           </div>
 
           <div className="stats-card">
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Percent size={14} style={{ color: 'var(--primary-color)' }} /> Punkteschnitt
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Percent size={16} style={{ color: 'var(--primary-color)' }} /> Punkteschnitt
             </span>
-            <div className="stats-metric-value">
-              {averagePoints.toFixed(1)} <span style={{ fontSize: '16px', fontWeight: 'normal', color: '#64748b' }}>/ {totalMaxPoints}</span>
+            <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+              {averagePoints.toFixed(1)} <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#64748b' }}>/ {totalMaxPoints}</span>
             </div>
             <div className="stats-metric-subtitle">
               Entspricht Ø {averagePercent.toFixed(1)}% der Gesamtpunkte
@@ -614,7 +614,7 @@ export const EvaluationStatisticsModal = ({
 
                 return (
                   <div key={gradeNum} className="grade-chart-bar-col">
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
                       {count > 0 ? `${count}x` : ''}
                     </span>
                     <div 
@@ -622,11 +622,11 @@ export const EvaluationStatisticsModal = ({
                       style={{ 
                         height: `${barHeight}%`, 
                         backgroundColor: getGradeBgColor(gradeNum),
-                        minHeight: count > 0 ? '16px' : '2px'
+                        minHeight: count > 0 ? '20px' : '2px'
                       }}
                     >
                       {count > 0 && barHeight > 15 && (
-                        <span style={{ fontSize: '9px', fontWeight: 'bold', color: getGradeTextColor(gradeNum) }}>
+                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: getGradeTextColor(gradeNum) }}>
                           {pct.toFixed(0)}%
                         </span>
                       )}
@@ -638,8 +638,8 @@ export const EvaluationStatisticsModal = ({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '16px', textAlign: 'center' }}>
               {[1, 2, 3, 4, 5].map(g => (
-                <div key={g} style={{ fontSize: '10px', color: '#64748b' }}>
-                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '4px', backgroundColor: getGradeBgColor(g), marginRight: '4px' }}></span>
+                <div key={g} style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                  <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '5px', backgroundColor: getGradeBgColor(g), marginRight: '4px' }}></span>
                   {getGradeName(g)}
                 </div>
               ))}
@@ -658,15 +658,15 @@ export const EvaluationStatisticsModal = ({
                 <span style={{ fontSize: '20px', fontWeight: '800', color: '#64748b', marginBottom: '8px' }}>2.</span>
                 {podium.find(p => p.rank === 2) ? (
                   <div style={{ textAlign: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '10px', color: '#334155', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '16px', color: '#334155', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                       {podium.find(p => p.rank === 2)?.students.map(s => s.student.lastName).join(', ')}
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
                       {podium.find(p => p.rank === 2)?.score.toFixed(1)} Pkt.
                     </div>
                   </div>
                 ) : (
-                  <span style={{ fontSize: '10px', color: '#cbd5e1' }}>-</span>
+                  <span style={{ fontSize: '16px', color: '#cbd5e1' }}>-</span>
                 )}
               </div>
 
@@ -676,15 +676,15 @@ export const EvaluationStatisticsModal = ({
                 <span style={{ fontSize: '24px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>1.</span>
                 {podium.find(p => p.rank === 1) ? (
                   <div style={{ textAlign: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '11px', color: '#78350f', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                       {podium.find(p => p.rank === 1)?.students.map(s => s.student.lastName).join(', ')}
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#451a03', marginTop: '6px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 800, color: '#451a03', marginTop: '6px' }}>
                       {podium.find(p => p.rank === 1)?.score.toFixed(1)} Pkt.
                     </div>
                   </div>
                 ) : (
-                  <span style={{ fontSize: '10px', color: '#fef3c7' }}>-</span>
+                  <span style={{ fontSize: '16px', color: '#fef3c7' }}>-</span>
                 )}
               </div>
 
@@ -693,15 +693,15 @@ export const EvaluationStatisticsModal = ({
                 <span style={{ fontSize: '18px', fontWeight: '800', color: '#c2410c', marginBottom: '8px' }}>3.</span>
                 {podium.find(p => p.rank === 3) ? (
                   <div style={{ textAlign: 'center', width: '100%' }}>
-                    <div style={{ fontSize: '10px', color: '#431407', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '16px', color: '#431407', fontWeight: 'bold', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                       {podium.find(p => p.rank === 3)?.students.map(s => s.student.lastName).join(', ')}
                     </div>
-                    <div style={{ fontSize: '11px', fontWeight: 800, color: '#431407', marginTop: '4px' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#431407', marginTop: '4px' }}>
                       {podium.find(p => p.rank === 3)?.score.toFixed(1)} Pkt.
                     </div>
                   </div>
                 ) : (
-                  <span style={{ fontSize: '10px', color: '#ffedd5' }}>-</span>
+                  <span style={{ fontSize: '16px', color: '#ffedd5' }}>-</span>
                 )}
               </div>
             </div>
@@ -723,15 +723,15 @@ export const EvaluationStatisticsModal = ({
                 return (
                   <div key={task.id} className={`task-row ${isTooHard ? 'warning-task' : ''}`}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {task.title}
                         {isTooHard && (
-                          <span style={{ fontSize: '10px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', color: '#b45309', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 'normal' }}>
-                            <AlertTriangle size={10} /> Schwierige Aufgabe
+                          <span style={{ fontSize: '13px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', color: '#b45309', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 'normal' }}>
+                            <AlertTriangle size={12} /> Schwierige Aufgabe
                           </span>
                         )}
                       </span>
-                      <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#475569' }}>
                         {task.averagePoints.toFixed(1)} / {task.maxPoints} Pkt. ({task.percentage.toFixed(0)}%)
                       </span>
                     </div>
@@ -758,26 +758,26 @@ export const EvaluationStatisticsModal = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, justifyContent: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>Beste Punkteanzahl</span>
-                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '14px' }}>
+                <span style={{ color: '#64748b', fontSize: '16px' }}>Beste Punkteanzahl</span>
+                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '16px' }}>
                   {rankedStudents.length > 0 ? rankedStudents[0].points.toFixed(1) : '0.0'} Pkt. ({rankedStudents.length > 0 ? rankedStudents[0].percent.toFixed(1) : '0'}%)
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>Schlechteste Punkteanzahl</span>
-                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '14px' }}>
+                <span style={{ color: '#64748b', fontSize: '16px' }}>Schlechteste Punkteanzahl</span>
+                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '16px' }}>
                   {rankedStudents.length > 0 ? rankedStudents[rankedStudents.length - 1].points.toFixed(1) : '0.0'} Pkt. ({rankedStudents.length > 0 ? rankedStudents[rankedStudents.length - 1].percent.toFixed(1) : '0'}%)
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>Genügend-Schwelle (4)</span>
-                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '14px' }}>
+                <span style={{ color: '#64748b', fontSize: '16px' }}>Genügend-Schwelle (4)</span>
+                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '16px' }}>
                   {column.gradingKey?.grade4MinPoints?.toFixed(1) || '0.0'} Pkt. ({totalMaxPoints > 0 && column.gradingKey?.grade4MinPoints ? ((column.gradingKey.grade4MinPoints / totalMaxPoints) * 100).toFixed(0) : 0}%)
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px' }}>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>Sehr Gut-Schwelle (1)</span>
-                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '14px' }}>
+                <span style={{ color: '#64748b', fontSize: '16px' }}>Sehr Gut-Schwelle (1)</span>
+                <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '16px' }}>
                   {column.gradingKey?.grade1MinPoints?.toFixed(1) || '0.0'} Pkt. ({totalMaxPoints > 0 && column.gradingKey?.grade1MinPoints ? ((column.gradingKey.grade1MinPoints / totalMaxPoints) * 100).toFixed(0) : 0}%)
                 </span>
               </div>
@@ -805,7 +805,7 @@ export const EvaluationStatisticsModal = ({
               <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: '#94a3b8' }} />
             </div>
             
-            <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+            <div style={{ fontSize: '16px', color: '#64748b', display: 'flex', alignItems: 'center' }}>
               Angezeigt: {filteredAndSortedList.length} von {totalGraded} Ergebnissen
             </div>
           </div>
@@ -815,19 +815,19 @@ export const EvaluationStatisticsModal = ({
               <thead>
                 <tr>
                   <th onClick={() => handleSort('name')} style={{ width: '30%' }}>
-                    Schülername <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+                    Schülername <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
                   </th>
                   {subTasks.map(t => (
-                    <th key={t.id} style={{ textAlign: 'center', fontSize: '11px' }}>
+                    <th key={t.id} style={{ textAlign: 'center', fontSize: '16px' }}>
                       {t.title} <br />
-                      <span style={{ fontWeight: 'normal', color: '#64748b', fontSize: '9px' }}>max {t.maxPoints} Pkt.</span>
+                      <span style={{ fontWeight: 'normal', color: '#64748b', fontSize: '14px' }}>max {t.maxPoints} Pkt.</span>
                     </th>
                   ))}
                   <th onClick={() => handleSort('points')} style={{ textAlign: 'center', width: '15%' }}>
-                    Gesamtpunkte <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+                    Gesamtpunkte <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
                   </th>
                   <th onClick={() => handleSort('grade')} style={{ textAlign: 'center', width: '15%' }}>
-                    Note <ArrowUpDown size={12} style={{ display: 'inline', marginLeft: '4px' }} />
+                    Note <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
                   </th>
                 </tr>
               </thead>
@@ -851,7 +851,7 @@ export const EvaluationStatisticsModal = ({
                       })}
                       <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
                         <span className="text-primary">{entry.points.toFixed(1)} Pkt.</span>
-                        <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>
+                        <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>
                           ({entry.percent.toFixed(1)}%)
                         </span>
                       </td>
@@ -860,13 +860,13 @@ export const EvaluationStatisticsModal = ({
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '14px',
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '18px',
                           backgroundColor: getGradeBgColor(numericGrade),
                           color: getGradeTextColor(numericGrade),
                           fontWeight: 'bold',
-                          fontSize: '13px'
+                          fontSize: '16px'
                         }}>
                           {entry.grade}
                         </span>
