@@ -174,14 +174,12 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 
 #### Modal zur Anwesenheitserfassung ("+" Button)
-* **Inhalt:** Liste aller Schüler des Kurses.
-* **Datum:** Datum wählbar (Standard: Aktuelles Datum).
-* **Stundenanzahl (Neu):**
-    * Dient zur Festlegung, wie viele Stunden die aktuelle Erfassung umfasst.
-    * **Schnellauswahl:** Buttons für `1 Std`, `2 Std` und `4 Std`.
-    * **Manuelle Eingabe:** Input-Feld für abweichende Werte (z.B. 3 oder 6).
-* **Entscheidung pro Schüler:** Klick toggelt zwischen `Anwesend`, `Abwesend` und `Nicht gesetzt`.
-* **Speichern:** Erstellt für jeden gesetzten Schüler einen Eintrag mit dem gewählten Datum und der **Stundenanzahl**.
+* **Zweistufiger Ablauf (Verpflichtende Voreinstellung):** Vor der Eingabe der Anwesenheiten wird ein vorgeschalteter Dialog eingeblendet, der den Benutzer zwingt, zuerst das Datum und die Anzahl der Unterrichtsstunden festzulegen, um diese nicht zu übersehen.
+    * **Datum:** Datum wählbar (Standard: Aktuelles Datum).
+    * **Stundenanzahl:** Festlegung der Unterrichtsstunden. Schnellauswahl (`1 Std`, `2 Std`, `4 Std`) sowie manuelle Eingabe werden angeboten.
+* **Erfassungs-Schritt:** Nach der Voreinstellung gelangt der Benutzer zur eigentlichen Liste aller Schüler des Kurses.
+    * **Entscheidung pro Schüler:** Klick toggelt zwischen `Anwesend`, `Abwesend` und `Nicht gesetzt`.
+    * **Speichern:** Erstellt für jeden gesetzten Schüler einen Eintrag mit dem zuvor festgelegten Datum und der Stundenanzahl.
 
 #### Zellen-Darstellung & Toggle-Funktion
 * **Zustand "Details ausgeblendet" (Kompaktansicht):**
@@ -193,6 +191,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Alle Einträge werden chronologisch als Icons (`Check` oder `X`) angezeigt.
     * **Zusatzinfo:** Wenn ein Eintrag mehr als 1 Stunde umfasst, wird die Zahl klein am Icon oder via Badge angezeigt.
     * **Klick auf Icon:** Öffnet einen Dialog zum **Bearbeiten** des Eintrags (Status, Datum, Stundenanzahl ändern).
+    * **Automatisches Stunden-Update bei gleichem Datum:** Wenn bei der Bearbeitung eines Eintrags die Anzahl der Stunden (z.B. von 2 auf 4) geändert wird, wird diese Stundenanzahl automatisch für **alle** Anwesenheitseinträge des Kurses an genau diesem Datum übernommen. Der Anwesenheitsstatus (Anwesend/Abwesend) der anderen Schüler bleibt unverändert.
     * **Hover:** Zeigt das Datum und die Stundenanzahl an.
 
 ### Verzweigung E: Meilenstein / Berechnete Note (`calculated`)
