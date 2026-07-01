@@ -874,7 +874,7 @@ export const StudentPerformanceDashboard = ({
                       <div className="live-trend-details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '4px' }}>
                           <span className="live-trend-label" style={{ fontSize: '16px', fontWeight: 'bold' }}>{getHungarianGradeLabel(liveSummary.grade)}</span>
-                          <span className="live-trend-percent" style={{ fontSize: '13px' }}>{liveSummary.percent}% Schnitt</span>
+                          <span className="live-trend-percent" style={{ fontSize: '16px' }}>{liveSummary.percent}% Schnitt</span>
                         </div>
                         
                         {/* Notenstrahl (Grade Scale) */}
@@ -911,7 +911,7 @@ export const StudentPerformanceDashboard = ({
                             </div>
                             
                             {/* Scale Markers (Grade numbers 1 to 5) */}
-                            <div style={{ display: 'flex', position: 'relative', width: '100%', height: '12px', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginTop: '4px' }}>
+                            <div style={{ display: 'flex', position: 'relative', width: '100%', height: '16px', fontSize: '16px', fontWeight: 'bold', color: '#475569', marginTop: '4px' }}>
                               <span style={{ position: 'absolute', left: '10%', transform: 'translateX(-50%)' }}>1</span>
                               <span style={{ position: 'absolute', left: '30%', transform: 'translateX(-50%)' }}>2</span>
                               <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>3</span>
@@ -937,7 +937,7 @@ export const StudentPerformanceDashboard = ({
                                 style={{
                                   backgroundColor: getGradeColor(liveSummary.grade),
                                   color: 'white',
-                                  fontSize: '14px',
+                                  fontSize: '16px',
                                   fontWeight: '900',
                                   padding: '4px 8px',
                                   borderRadius: '6px',
@@ -1005,7 +1005,7 @@ export const StudentPerformanceDashboard = ({
                       </div>
                     </div>
                   ) : (
-                    <p className="no-data-text" style={{ fontSize: '14px' }}>Keine Aufzeichnungen</p>
+                    <p className="no-data-text" style={{ fontSize: '16px' }}>Keine Aufzeichnungen</p>
                   )}
                 </div>
               </div>
@@ -1022,12 +1022,12 @@ export const StudentPerformanceDashboard = ({
                       <div className="attendance-percentage" data-quote={attendanceStats.percent} style={{ fontSize: '32px', fontWeight: '800', lineHeight: 1 }}>
                         {attendanceStats.percent}%
                       </div>
-                      <p className="stat-card-subtitle" style={{ margin: 0, fontSize: '14px', fontWeight: '500' }}>
+                      <p className="stat-card-subtitle" style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>
                         Anwesend: {attendanceStats.presentHours} von {attendanceStats.totalHours} Std.
                       </p>
                     </div>
                   ) : (
-                    <p className="no-data-text" style={{ fontSize: '14px' }}>Keine Aufzeichnungen</p>
+                    <p className="no-data-text" style={{ fontSize: '16px' }}>Keine Aufzeichnungen</p>
                   )}
                 </div>
               </div>
@@ -1048,15 +1048,15 @@ export const StudentPerformanceDashboard = ({
                       }
                       return (
                         <div key={ms.id} className="milestone-item" style={{ padding: '6px 12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span className="milestone-name" style={{ fontSize: '14px', fontWeight: '500' }}>{ms.title}</span>
-                          <div className="milestone-badge" data-grade={grade?.value} style={{ width: '28px', height: '28px', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span className="milestone-name" style={{ fontSize: '16px', fontWeight: '500' }}>{ms.title}</span>
+                          <div className="milestone-badge" data-grade={grade?.value} style={{ width: '28px', height: '28px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {grade?.value || '-'}
                           </div>
                         </div>
                       );
                     })
                   ) : (
-                    <p className="no-data-text" style={{ fontSize: '14px' }}>Keine Meilensteine</p>
+                    <p className="no-data-text" style={{ fontSize: '16px' }}>Keine Meilensteine</p>
                   )}
                 </div>
               </div>
@@ -1074,7 +1074,7 @@ export const StudentPerformanceDashboard = ({
                         <div key={item.id} className="timeline-item">
                           {/* Dot indicator */}
                           <div className="timeline-badge-column">
-                            <span className={`col-type-badge ${getColTypeBadgeClass(item.type)}`} style={{ fontSize: '10px', padding: '4px 8px', fontWeight: 'bold' }}>
+                            <span className={`col-type-badge ${getColTypeBadgeClass(item.type)}`} style={{ fontSize: '16px', padding: '4px 8px', fontWeight: 'bold' }}>
                               {getColTypeLabel(item.type)}
                             </span>
                           </div>
@@ -1084,14 +1084,14 @@ export const StudentPerformanceDashboard = ({
                              <div className="timeline-card-header">
                               <div>
                                 <h3 className="timeline-item-title" style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{item.title}</h3>
-                                <span className="timeline-item-date" style={{ fontSize: '12px', color: '#64748b' }}>{formatDate(item.date)}</span>
+                                <span className="timeline-item-date" style={{ fontSize: '16px', color: '#64748b' }}>{formatDate(item.date)}</span>
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                                 <div className="timeline-item-result-badge" data-type={item.type} style={{ fontSize: '15px', fontWeight: '900', padding: '5px 10px' }}>
                                   {item.displayValue}
                                 </div>
                                 {item.type !== 'calculated' && item.type !== 'presenceSum' && item.type !== 'groupAssignment' && (
-                                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>
+                                  <span style={{ fontSize: '16px', color: '#64748b', fontWeight: '700' }}>
                                     {item.calc ? `Einrechnungsfaktor: ${item.calcFactor}%` : 'Nicht gewertet'}
                                   </span>
                                 )}
@@ -1100,7 +1100,7 @@ export const StudentPerformanceDashboard = ({
 
                             {/* Predefined Comment/Note */}
                             {item.note && (
-                              <div className="timeline-item-note" style={{ fontSize: '14px', padding: '10px 14px', marginTop: '10px' }}>
+                              <div className="timeline-item-note" style={{ fontSize: '16px', padding: '10px 14px', marginTop: '10px' }}>
                                 <MessageSquare size={15} style={{ marginTop: '2px', marginRight: '6px', flexShrink: 0 }} />
                                 <p className="note-text" style={{ margin: 0 }}>{item.note}</p>
                               </div>
@@ -1109,23 +1109,23 @@ export const StudentPerformanceDashboard = ({
                             {/* Subentries (Presence / Collaboration lists) */}
                             {item.subEntries && item.subEntries.length > 0 && (
                               <div className="timeline-sub-entries" style={{ marginTop: '12px', paddingTop: '10px' }}>
-                                <span className="sub-entries-header" style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>Erfasste Einzelleistungen:</span>
+                                <span className="sub-entries-header" style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>Erfasste Einzelleistungen:</span>
                                 <div className="sub-entries-list" style={{ gap: '8px' }}>
                                   {item.subEntries.map(sub => {
                                     let isPositive = sub.value === '+' || sub.value === 'check';
                                     let isNegative = sub.value === '-';
                                     
                                     return (
-                                      <div key={sub.id} className="sub-entry-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '15px', margin: '4px 0' }}>
-                                        <span className="sub-entry-date" style={{ fontSize: '14px', width: '80px', flexShrink: 0 }}>{formatDate(sub.date)}</span>
-                                        <div className={`sub-entry-indicator ${isPositive ? 'positive' : isNegative ? 'negative' : 'neutral'}`} style={{ width: '26px', height: '26px', fontSize: '14px', flexShrink: 0 }}>
+                                      <div key={sub.id} className="sub-entry-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', margin: '4px 0' }}>
+                                        <span className="sub-entry-date" style={{ fontSize: '16px', width: '80px', flexShrink: 0 }}>{formatDate(sub.date)}</span>
+                                        <div className={`sub-entry-indicator ${isPositive ? 'positive' : isNegative ? 'negative' : 'neutral'}`} style={{ width: '26px', height: '26px', fontSize: '16px', flexShrink: 0 }}>
                                           {item.type === 'presenceSum' ? (
                                             isPositive ? <CheckCircle size={18} /> : <XCircle size={18} />
                                           ) : (
-                                            <span className="sub-entry-symbol" style={{ fontSize: '15px', fontWeight: 'bold' }}>{sub.value}</span>
+                                            <span className="sub-entry-symbol" style={{ fontSize: '16px', fontWeight: 'bold' }}>{sub.value}</span>
                                           )}
                                         </div>
-                                        <span className="sub-entry-note" style={{ fontSize: '15px', marginLeft: '8px', fontWeight: '500' }}>
+                                        <span className="sub-entry-note" style={{ fontSize: '16px', marginLeft: '8px', fontWeight: '500' }}>
                                           {sub.note || (item.type === 'presenceSum' ? (isPositive ? 'Anwesend' : 'Abwesend') : 'Kein Kommentar')}
                                           {sub.hours ? ` (${sub.hours} Std.)` : ''}
                                         </span>
@@ -1177,21 +1177,21 @@ export const StudentPerformanceDashboard = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <Puzzle size={16} style={{ color: tendencyDetails.type === 'up' ? '#16a34a' : tendencyDetails.type === 'down' ? '#dc2626' : '#2563eb' }} />
-            <span style={{ fontWeight: '700', fontSize: '13px', color: '#1e293b' }}>
+            <span style={{ fontWeight: '700', fontSize: '16px', color: '#1e293b' }}>
               {tendencyDetails.message}
             </span>
           </div>
-          <p style={{ margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.4', marginBottom: tendencyDetails.suggestions.length > 0 ? '8px' : '0', textAlign: 'left' }}>
+          <p style={{ margin: 0, fontSize: '16px', color: '#64748b', lineHeight: '1.4', marginBottom: tendencyDetails.suggestions.length > 0 ? '8px' : '0', textAlign: 'left' }}>
             {tendencyDetails.description}
           </p>
           
           {tendencyDetails.suggestions.length > 0 && (
             <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '8px', textAlign: 'left' }}>
-              <span style={{ display: 'block', fontWeight: '700', fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              <span style={{ display: 'block', fontWeight: '700', fontSize: '16px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
                 Mögliche Puzzelstücke zur Verbesserung:
               </span>
               {tendencyDetails.suggestions.map((sug, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '11px', color: '#475569', lineHeight: '1.3', marginBottom: '4px' }}>
+                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '16px', color: '#475569', lineHeight: '1.3', marginBottom: '4px' }}>
                   <span style={{ color: tendencyDetails.type === 'up' ? '#16a34a' : tendencyDetails.type === 'down' ? '#dc2626' : '#2563eb', fontWeight: 'bold' }}>•</span>
                   <span>{sug}</span>
                 </div>

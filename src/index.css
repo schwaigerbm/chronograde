@@ -678,7 +678,7 @@ input:checked+.slider:before {
 .matrix-table td {
   padding: 4px 8px;
   /* Noch kompakter */
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .matrix-header-cell {
@@ -742,7 +742,7 @@ input:checked+.slider:before {
   transform: rotate(180deg);
   white-space: nowrap;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -750,7 +750,7 @@ input:checked+.slider:before {
 }
 
 .horizontal-date {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-muted);
   text-align: center;
@@ -794,7 +794,7 @@ input:checked+.slider:before {
 }
 
 .date-label {
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 400;
   color: var(--text-muted);
 }
@@ -1416,14 +1416,14 @@ input:checked+.slider:before {
 }
 
 .course-card-year {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
   margin: 0;
 }
 
 .course-card-link {
   margin-top: 16px;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--primary-color);
   display: flex;
@@ -1536,7 +1536,7 @@ input:checked+.slider:before {
 
 .breakdown-title {
   margin: 0 0 12px 0;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-main);
 }
 
@@ -1547,7 +1547,7 @@ input:checked+.slider:before {
 
 .breakdown-table th {
   text-align: left;
-  font-size: 11px;
+  font-size: 16px;
   color: var(--text-muted);
   padding: 8px;
   border-bottom: 1px solid var(--border-color);
@@ -1555,7 +1555,7 @@ input:checked+.slider:before {
 
 .breakdown-table td {
   padding: 10px 8px;
-  font-size: 14px;
+  font-size: 16px;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -1614,6 +1614,18 @@ input:checked+.slider:before {
 .modal-card.modal-large {
   max-width: 900px;
   width: 92%;
+}
+
+.modal-card.modal-xl {
+  max-width: 1200px;
+  width: 96%;
+}
+
+.evaluation-layout-single-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
 }
 
 .lock-btn,
@@ -2073,7 +2085,7 @@ input:checked+.slider:before {
 
 .student-number {
   font-family: monospace;
-  font-size: 13px;
+  font-size: 16px;
   color: var(--text-muted);
   text-align: right;
 }
@@ -2437,6 +2449,39 @@ input:checked+.slider:before {
     border-top: 1px dashed var(--border-color);
     padding-left: 0;
     padding-top: 24px;
+  }
+}
+
+/* 3-Column Layout for Evaluation Modal */
+.evaluation-layout-grid-3cols {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+}
+
+.evaluation-layout-col-3 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.evaluation-layout-col-3:not(:first-child) {
+  border-left: 1px solid var(--border-color);
+  padding-left: 24px;
+}
+
+@media (max-width: 1024px) {
+  .evaluation-layout-grid-3cols {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .evaluation-layout-col-3:not(:first-child) {
+    border-left: none;
+    border-top: 1px dashed var(--border-color);
+    padding-left: 0;
+    padding-top: 20px;
   }
 }
 
@@ -2833,7 +2878,7 @@ input:checked+.slider:before {
 }
 
 .live-trend-percent {
-  font-size: 12px;
+  font-size: 16px;
   color: #1d4ed8;
   font-weight: 500;
 }
@@ -2843,7 +2888,7 @@ input:checked+.slider:before {
   align-items: center;
   gap: 8px;
   color: #b91c1c;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -2864,13 +2909,13 @@ input:checked+.slider:before {
 }
 
 .stat-card-subtitle {
-  font-size: 12px;
+  font-size: 16px;
   color: var(--text-muted);
   margin: 4px 0 0 0;
 }
 
 .no-data-text {
-  font-size: 12px;
+  font-size: 16px;
   color: var(--text-muted);
   font-style: italic;
   margin: 0;
@@ -2916,13 +2961,13 @@ input:checked+.slider:before {
 }
 
 .collab-dist-count {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
   margin: 2px 0;
 }
 
 .collab-dist-label {
-  font-size: 8px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -2950,13 +2995,13 @@ input:checked+.slider:before {
 }
 
 .milestone-name {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-main);
 }
 
 .milestone-date {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--text-muted);
 }
 
@@ -2968,7 +3013,7 @@ input:checked+.slider:before {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .milestone-badge[data-grade="1"] {
@@ -3205,14 +3250,14 @@ input:checked+.slider:before {
 }
 
 .timeline-item-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-main);
   margin: 0 0 2px 0;
 }
 
 .timeline-item-date {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -3221,7 +3266,7 @@ input:checked+.slider:before {
   padding: 4px 10px;
   border-radius: 6px;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 16px;
   background-color: white;
   border: 1px solid var(--border-color);
   color: var(--primary-color);
@@ -3244,7 +3289,7 @@ input:checked+.slider:before {
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  font-size: 12px;
+  font-size: 16px;
   color: var(--text-main);
 }
 
@@ -3265,7 +3310,7 @@ input:checked+.slider:before {
 }
 
 .sub-entries-header {
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -3283,24 +3328,24 @@ input:checked+.slider:before {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 16px;
 }
 
 .sub-entry-date {
-  font-size: 10px;
+  font-size: 16px;
   color: var(--text-muted);
-  width: 60px;
+  width: 80px;
   flex-shrink: 0;
 }
 
 .sub-entry-indicator {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 16px;
   font-weight: 900;
   color: white;
 }

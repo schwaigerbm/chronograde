@@ -35,7 +35,9 @@ Der Datenbankzugriff erfolgt ausschließlich über `src/services/firebaseService
 *   Verwendung von **Tailwind CSS**.
 *   Dynamische Klassen-Verarbeitung via `cn()`-Helper (`clsx` + `tailwind-merge`).
 *   Icons werden ausschließlich über `lucide-react` eingebunden.
-*   **Schriftgrößen (Typography):** Kleine Schriften sind konsequent zu vermeiden. Alle Textelemente (inklusive Tabelleninhalte, Formularfelder, Badges, Tooltips und Beschreibungen) müssen eine Schriftgröße von **mindestens 12pt** (bzw. 16px) besitzen, es sei denn, der User definiert eine Ausnahme explizit.
+*   **Schriftgrößen (Typography):**
+    *   **Einstellungen & Eingabe-/Änderungsbereiche:** Kleine Schriftgrößen sind zur besseren Platznutzung erlaubt, müssen jedoch **mindestens 8pt (bzw. 11px)** groß sein. Dies gilt für Konfigurations-Dialoge, Formulareingaben und Einstellungsmenüs.
+    *   **Präsentationsansichten (Dashboards, Auswertungen, Statistiken, Notenmatrix, Schüleransichten):** Alle Ansichten, die vor der Klasse präsentiert werden können, müssen eine Schriftgröße von **mindestens 12pt (bzw. 16px)** für alle Textelemente (inklusive Tabelleninhalten, Badges, Diagrammbeschriftungen, Tooltips und Beschreibungen) besitzen.
 *   **WICHTIG:** Keine Verwendung von Browser-nativen Funktionen wie `alert()`, `confirm()` oder `prompt()`. Alle Interaktionen müssen über elegante, App-interne Modals/Dialoge gelöst werden.
 
 ### 4. Workflow für KI-Generierung & Code-Änderungen

@@ -45,40 +45,37 @@ Für die Auswertung wird in Schritt 1 des `AddColumnModal` eine neue Typkarte an
   * Titel: `Auswertung`
   * Beschreibung: `Schriftliche Arbeit mit Teilaufgaben und Punkten`
 
-Bei Auswahl wird in Schritt 2 des Modals die Detailkonfiguration in einem vergrößerten Modal (`modal-large`) mit einem **zweispaltigen Grid-Layout und vier Sektionen** angezeigt:
+Bei Auswahl wird in Schritt 2 des Modals die Detailkonfiguration in einem sauber strukturierten, einspaltigen Layout angezeigt (wobei das Modal die Standard-Größe `modal-large` nutzt), um eine übersichtliche und logische Eingabe von oben nach unten zu gewährleisten. Die einzelnen Sektionen sind durch Karten-Rahmen klar voneinander abgegrenzt:
 
-1. **Linke Spalte:**
-   * **Sektion "Allgemeines":**
-     * **Name (Bezeichnung):** Textfeld für den Namen der Auswertung.
-     * **Datum:** Datumsauswahlfeld.
-   * **Sektion "Darstellung" (darunter):**
-     * **Datum im Header anzeigen:** Schalter für Header-Sichtbarkeit des Datums.
-     * **Farbmodus (Heatmap):** Schalter zur zellbasierten Farbkennzeichnung basierend auf der berechneten Note.
+1. **Sektion "Allgemeines" & "Darstellung":**
+   * **Name (Bezeichnung):** Textfeld für den Namen der Auswertung.
+   * **Datum:** Datumsauswahlfeld.
+   * **Datum im Header anzeigen:** Schalter für Header-Sichtbarkeit des Datums.
+   * **Farbmodus (Heatmap):** Schalter zur zellbasierten Farbkennzeichnung basierend auf der berechneten Note.
 
-2. **Rechte Spalte:**
-   * **Sektion "Teilaufgaben":**
-     * Eine dynamische Liste, in der der Benutzer Teilaufgaben hinzufügen oder löschen kann.
-     * Jede Teilaufgabe besitzt ein Textfeld für den **Namen** (z.B. "A1") und ein Nummernfeld für die **maximale Punkteanzahl** (max. 100 Punkte, Schrittweite 0.5).
-     * **Gesamtpunkte (max. Punkte):** Wird live als Summe aller Teilaufgaben-Punkte angezeigt.
-    * Sektion "Beurteilung" (darunter):
-     * **Notenschlüssel-Konfiguration:**
-       * **Visueller Zeitstrahl:** Ein farbiger Balken direkt über der Noteneingabe visualisiert das Punkteverhältnis der Noten 1-5 (Dunkelgrün links, Hellgrün, Grau/Weiß, Hellrot, Dunkelrot ganz rechts). Die Achsenbeschriftung läuft von links (Gesamtpunkte/100%) nach rechts (0 Pkt/0%).
-          * **Beschriftung:** Jedes Segment ist zweizeilig beschriftet zur besseren Sichtbarkeit (die Note in der ersten Zeile, die exakte Punkteanzahl direkt darunter, z.B. oben `1` und unten `2.5 Pkt.`). Bei Platzmangel wird der Text automatisch gekürzt.
-         * **Stauchung bei 50%-Schwelle:** Wenn die Grenze für ein Genügend (4) exakt bei 50% der Gesamtpunkte liegt, wird der Bereich für Note 5 (Nicht Genügend) auf 15% Breite gestaucht/skizziert und beschriftet, um den positiven Noten mehr Platz zu bieten. Bei anderen Grenzwerten ist die Anzeige voll maßstabsgetreu.
-       * **Linear-Aufteilung (Button):** Ein Schnellbefüllungs-Button erlaubt das automatische lineare Aufteilen der Punkte ab einer 50%-Hürde für ein Genügend.
-       * **Manuelle Eingabefelder:** Der Benutzer editiert die Mindestpunkte für die Noten 1 bis 4. Das jeweilige Intervall wird live daneben angezeigt:
-         * **Sehr Gut (1) ab:** [Eingabefeld] | Vorschau: `von X bis [Gesamtpunkte] Pkt.`
-         * **Gut (2) ab:** [Eingabefeld] | Vorschau: `von Y bis (Sehr Gut ab - 0.5) Pkt.`
-         * **Befriedigend (3) ab:** [Eingabefeld] | Vorschau: `von Z bis (Gut ab - 0.5) Pkt.`
-         * **Genügend (4) ab:** [Eingabefeld] | Vorschau: `von W bis (Befriedigend ab - 0.5) Pkt.`
-         * **Nicht Genügend (5):** (Kein Eingabefeld) | Vorschau: `von 0 bis (Genügend ab - 0.5) Pkt.`
-       * **Live-Validierung:**
-         * Die Prozentwerte der Untergrenzen werden live neben dem Eingabefeld berechnet.
-         * Die Punktwerte müssen logisch absteigend sein: $Sehr Gut \ge Gut \ge Befriedigend \ge Genügend$.
-         * Die Mindestpunkte dürfen die maximale Gesamtpunktezahl nicht überschreiten.
-     * **Bewertungseinfluss:**
-       * **In Berechnung aufnehmen:** Schalter zur Bestimmung, ob die Spalte in den Trend einfließt.
-       * **Berechnungseinfluss:** Schieberegler (0-100%, Schrittweite 5%) für die Gewichtung.
+2. **Sektion "Teilaufgaben":**
+   * Eine dynamische Liste, in der der Benutzer Teilaufgaben hinzufügen oder löschen kann.
+   * Jede Teilaufgabe besitzt ein Textfeld für den **Namen** (z.B. "A1") und ein Nummernfeld für die **maximale Punkteanzahl** (max. 100 Punkte, Schrittweite 0.5).
+   * **Gesamtpunkte (max. Punkte):** Wird live als Summe aller Teilaufgaben-Punkte angezeigt.
+
+3. **Sektion "Beurteilung (Notenschlüssel)":**
+   * **Visueller Zeitstrahl:** Ein farbiger Balken direkt über der Noteneingabe visualisiert das Punkteverhältnis der Noten 1-5 (Dunkelgrün links, Hellgrün, Grau/Weiß, Hellrot, Dunkelrot ganz rechts). Die Achsenbeschriftung läuft von links (Gesamtpunkte/100%) nach rechts (0 Pkt/0%).
+     * **Beschriftung:** Jedes Segment ist zweizeilig beschriftet zur besseren Sichtbarkeit (die Note in der ersten Zeile, die exakte Punkteanzahl direkt darunter).
+     * **Stauchung bei 50%-Schwelle:** Wenn die Grenze für ein Genügend (4) exakt bei 50% der Gesamtpunkte liegt, wird der Bereich für Note 5 (Nicht Genügend) auf 15% Breite gestaucht/skizziert und beschriftet, um den positiven Noten mehr Platz zu bieten.
+   * **Linear-Aufteilung (Button):** Ein Schnellbefüllungs-Button erlaubt das automatische lineare Aufteilen der Punkte ab einer 50%-Hürde für ein Genügend.
+   * **Manuelle Eingabefelder:** Der Benutzer editiert die Mindestpunkte für die Noten 1 bis 4. Das jeweilige Intervall wird live daneben angezeigt:
+     * **Sehr Gut (1) ab:** [Eingabefeld] | Vorschau: `von X bis [Gesamtpunkte] Pkt.`
+     * **Gut (2) ab:** [Eingabefeld] | Vorschau: `von Y bis (Sehr Gut ab - 0.5) Pkt.`
+     * **Befriedigend (3) ab:** [Eingabefeld] | Vorschau: `von Z bis (Gut ab - 0.5) Pkt.`
+     * **Genügend (4) ab:** [Eingabefeld] | Vorschau: `von W bis (Befriedigend ab - 0.5) Pkt.`
+     * **Nicht Genügend (5):** (Kein Eingabefeld) | Vorschau: `von 0 bis (Genügend ab - 0.5) Pkt.`
+   * **Live-Validierung:** Die Prozentwerte der Untergrenzen werden live neben dem Eingabefeld berechnet. Die Punktwerte müssen logisch absteigend sein.
+
+4. **Sektion "Bewertungseinfluss":**
+   * **In Berechnung aufnehmen:** Schalter zur Bestimmung, ob die Spalte in den Trend einfließt.
+   * **Berechnungseinfluss:** Schieberegler (0-100%, Schrittweite 1%) für die Gewichtung.
+
+* **Schriftgrößen (Typography):** Da es sich bei diesem Modal um einen Eingabe- und Änderungsbereich handelt, sind kleine Schriftgrößen zur Platzersparnis erlaubt, müssen jedoch **mindestens 8pt / 11px** groß sein. Haupttexte und wichtige Eingabefelder behalten standardmäßig eine gut lesbare Schriftgröße.
 
 ---
 

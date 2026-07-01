@@ -33,8 +33,22 @@ export const EvaluationStatisticsModal = ({
   grades
 }: EvaluationStatisticsModalProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'points' | 'grade'>('points');
+  const [sortBy, setSortBy] = useState<'name' | 'points' | 'grade' | 'plus' | 'minus' | 'saldo'>('points');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Set default sorting based on column type
+  useEffect(() => {
+    if (column.type === 'collaborationSum') {
+      setSortBy('saldo');
+      setSortOrder('desc');
+    } else if (column.type !== 'evaluation') {
+      setSortBy('grade');
+      setSortOrder('asc'); // lower grade number is better
+    } else {
+      setSortBy('points');
+      setSortOrder('desc');
+    }
+  }, [column.type]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -59,9 +73,12 @@ export const EvaluationStatisticsModal = ({
   // Filter out students who wish to be excluded from public statistics
   const activeStudents = students.filter(s => !s.excludeFromPublicStats);
 
-  // Filter students who have a grade/points for this column
+  // Filter students who have a grade/points/entries for this column
   const gradedList = activeStudents.filter(student => {
     const sGrade = grades[student.id]?.[column.id];
+    if (column.type === 'collaborationSum') {
+      return sGrade !== undefined && (sGrade.value !== undefined || (sGrade.entries && sGrade.entries.length > 0));
+    }
     return sGrade !== undefined && sGrade.value !== undefined;
   });
 
@@ -82,9 +99,9 @@ export const EvaluationStatisticsModal = ({
           <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-main)' }}>
             Keine Statistik verfügbar
           </h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.5', fontSize: '14px' }}>
-            Für diese Beurteilungsspalte wurden noch keine Noten oder Punkte erfasst. 
-            Bitte tragen Sie zuerst die Punkte für mindestens einen Schüler ein, um die Auswertungsstatistik anzuzeigen.
+          <p style={{ color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.5', fontSize: '16px' }}>
+            Für diese Beurteilungsspalte wurden noch keine Leistungen oder Einträge erfasst. 
+            Bitte tragen Sie zuerst eine Bewertung für mindestens einen Schüler ein, um die Statistik anzuzeigen.
           </p>
           <button className="btn-primary" onClick={onClose} style={{ minWidth: '120px' }}>
             Schließen
@@ -98,29 +115,64 @@ export const EvaluationStatisticsModal = ({
   // 1. Calculations
   const gradedPercentage = totalEnrolled > 0 ? Math.round((totalGraded / totalEnrolled) * 100) : 0;
 
-  // Averages
-  const totalGradesSum = gradedList.reduce((sum, s) => {
+  // Filter out collaboration entries for stats
+  const collaborationData = gradedList.map(s => {
+    const entries = grades[s.id]?.[column.id]?.entries || [];
+    const plus = entries.filter(e => e.value === '+').length;
+    const minus = entries.filter(e => e.value === '-').length;
+    const neutral = entries.filter(e => e.value === '~').length;
+    const saldo = plus - minus;
+    const grade = grades[s.id]?.[column.id]?.value;
+    return {
+      student: s,
+      plus,
+      minus,
+      neutral,
+      saldo,
+      grade
+    };
+  });
+
+  const totalPlusClass = collaborationData.reduce((sum, d) => sum + d.plus, 0);
+  const totalMinusClass = collaborationData.reduce((sum, d) => sum + d.minus, 0);
+  const totalNeutralClass = collaborationData.reduce((sum, d) => sum + d.neutral, 0);
+  const totalEntriesClass = totalPlusClass + totalMinusClass + totalNeutralClass;
+  const averageEntriesPerStudent = totalGraded > 0 ? totalEntriesClass / totalGraded : 0;
+
+  // Averages for grades
+  const gradedWithGrades = gradedList.filter(s => {
+    const val = parseFloat(grades[s.id]?.[column.id]?.value?.toString() || '');
+    return !isNaN(val) && val >= 1 && val <= 5;
+  });
+  const totalGradedWithGrades = gradedWithGrades.length;
+
+  const totalGradesSum = gradedWithGrades.reduce((sum, s) => {
     const val = parseFloat(grades[s.id]?.[column.id]?.value?.toString() || '0');
     return sum + (isNaN(val) ? 0 : val);
   }, 0);
-  const averageGrade = totalGradesSum / totalGraded;
+  const averageGrade = totalGradedWithGrades > 0 ? totalGradesSum / totalGradedWithGrades : 0;
 
   const totalPointsSum = gradedList.reduce((sum, s) => {
     return sum + (grades[s.id]?.[column.id]?.evaluationPoints || 0);
   }, 0);
-  const averagePoints = totalPointsSum / totalGraded;
+  const averagePoints = totalGraded > 0 ? totalPointsSum / totalGraded : 0;
   const averagePercent = totalMaxPoints > 0 ? (averagePoints / totalMaxPoints) * 100 : 0;
 
-  // Success rate (positive count / total graded)
-  const positiveStudentsCount = gradedList.filter(s => {
+  // Success rate (positive count / total graded with grades)
+  const positiveStudentsCount = gradedWithGrades.filter(s => {
     const val = parseFloat(grades[s.id]?.[column.id]?.value?.toString() || '0');
     return !isNaN(val) && val >= 1 && val <= 4;
   }).length;
-  const successRate = (positiveStudentsCount / totalGraded) * 100;
+  const successRate = totalGradedWithGrades > 0 ? (positiveStudentsCount / totalGradedWithGrades) * 100 : 0;
+
+  // Best grade
+  const bestGradeVal = gradedWithGrades.length > 0 
+    ? Math.min(...gradedWithGrades.map(s => parseInt(grades[s.id]?.[column.id]?.value?.toString() || '5', 10))) 
+    : 0;
 
   // Grade counts (1 to 5)
   const gradeCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  gradedList.forEach(s => {
+  gradedWithGrades.forEach(s => {
     const val = parseInt(grades[s.id]?.[column.id]?.value?.toString() || '0', 10);
     if (val >= 1 && val <= 5) {
       gradeCounts[val as 1|2|3|4|5]++;
@@ -128,6 +180,7 @@ export const EvaluationStatisticsModal = ({
   });
 
   const maxGradeCount = Math.max(...Object.values(gradeCounts), 1);
+  const maxCollabCount = Math.max(totalPlusClass, totalNeutralClass, totalMinusClass, 1);
 
   // Subtask performance
   const subTaskPerformance = subTasks.map(task => {
@@ -143,23 +196,48 @@ export const EvaluationStatisticsModal = ({
     };
   });
 
-  // Top Performers (Podium) - group students by points
-  const rankedStudents = gradedList.map(s => {
-    const pts = grades[s.id]?.[column.id]?.evaluationPoints || 0;
-    const pct = grades[s.id]?.[column.id]?.evaluationPercent || 0;
-    const grd = grades[s.id]?.[column.id]?.value || 5;
-    return {
-      student: s,
-      points: pts,
-      percent: pct,
-      grade: grd
-    };
-  }).sort((a, b) => b.points - a.points);
+  // Top Performers (Podium) - group students by performance
+  let rankedStudents: { student: Student; scoreVal: number; secondaryScoreVal: number; label: string; grade: string | number }[] = [];
 
-  // Find top distinct points values
-  const uniqueScores = Array.from(new Set(rankedStudents.map(r => r.points))).slice(0, 3);
+  if (column.type === 'collaborationSum') {
+    rankedStudents = collaborationData.map(d => ({
+      student: d.student,
+      scoreVal: d.saldo,
+      secondaryScoreVal: d.plus,
+      label: `${d.saldo >= 0 ? '+' : ''}${d.saldo} Netto (${d.plus}+ / ${d.minus}-)`,
+      grade: d.grade || '-'
+    })).sort((a, b) => b.scoreVal - a.scoreVal || b.secondaryScoreVal - a.secondaryScoreVal);
+  } else if (column.type === 'evaluation') {
+    rankedStudents = gradedList.map(s => {
+      const pts = grades[s.id]?.[column.id]?.evaluationPoints || 0;
+      const pct = grades[s.id]?.[column.id]?.evaluationPercent || 0;
+      const grd = grades[s.id]?.[column.id]?.value || 5;
+      return {
+        student: s,
+        scoreVal: pts,
+        secondaryScoreVal: pct,
+        label: `${pts.toFixed(1)} Pkt. (${Math.round(pct)}%)`,
+        grade: grd
+      };
+    }).sort((a, b) => b.scoreVal - a.scoreVal);
+  } else {
+    // manual or calculated - sort by grade (lowest number = 1 is best)
+    rankedStudents = gradedList.map(s => {
+      const val = parseInt(grades[s.id]?.[column.id]?.value?.toString() || '5', 10);
+      return {
+        student: s,
+        scoreVal: 6 - val, // Invert so 5 = 1 point, 1 = 5 points for ranking calculation
+        secondaryScoreVal: 0,
+        label: `Note ${val}`,
+        grade: val
+      };
+    }).sort((a, b) => b.scoreVal - a.scoreVal);
+  }
+
+  // Find top distinct scores
+  const uniqueScores = Array.from(new Set(rankedStudents.map(r => r.scoreVal))).slice(0, 3);
   const podium = uniqueScores.map((score, index) => {
-    const matching = rankedStudents.filter(r => r.points === score);
+    const matching = rankedStudents.filter(r => r.scoreVal === score);
     return {
       rank: index + 1, // 1st, 2nd, 3rd
       score,
@@ -168,12 +246,12 @@ export const EvaluationStatisticsModal = ({
   });
 
   // Sort & Filter Leaderboard
-  const handleSort = (field: 'name' | 'points' | 'grade') => {
+  const handleSort = (field: 'name' | 'points' | 'grade' | 'plus' | 'minus' | 'saldo') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(field);
-      setSortOrder(field === 'name' ? 'asc' : 'desc');
+      setSortOrder(field === 'name' || field === 'grade' ? 'asc' : 'desc');
     }
   };
 
@@ -187,11 +265,23 @@ export const EvaluationStatisticsModal = ({
       const nameB = `${b.student.lastName} ${b.student.firstName}`.toLowerCase();
       comp = nameA.localeCompare(nameB);
     } else if (sortBy === 'points') {
-      comp = a.points - b.points;
+      comp = a.scoreVal - b.scoreVal;
     } else if (sortBy === 'grade') {
       const gA = parseFloat(a.grade.toString()) || 6;
       const gB = parseFloat(b.grade.toString()) || 6;
       comp = gA - gB;
+    } else if (sortBy === 'plus') {
+      const cA = collaborationData.find(d => d.student.id === a.student.id)?.plus || 0;
+      const cB = collaborationData.find(d => d.student.id === b.student.id)?.plus || 0;
+      comp = cA - cB;
+    } else if (sortBy === 'minus') {
+      const cA = collaborationData.find(d => d.student.id === a.student.id)?.minus || 0;
+      const cB = collaborationData.find(d => d.student.id === b.student.id)?.minus || 0;
+      comp = cA - cB;
+    } else if (sortBy === 'saldo') {
+      const cA = collaborationData.find(d => d.student.id === a.student.id)?.saldo || 0;
+      const cB = collaborationData.find(d => d.student.id === b.student.id)?.saldo || 0;
+      comp = cA - cB;
     }
     return sortOrder === 'asc' ? comp : -comp;
   });
@@ -564,10 +654,13 @@ export const EvaluationStatisticsModal = ({
           </button>
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              Auswertungs-Statistik
+              {column.type === 'evaluation' ? 'Auswertungs-Statistik' : column.type === 'collaborationSum' ? 'Mitarbeits-Statistik' : 'Noten-Statistik'}
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '16px', color: '#64748b' }}>
-              {column.title} &bull; Gesamt: {totalMaxPoints.toFixed(1)} Pkt. &bull; {subTasks.length} Aufgaben
+              {column.title}
+              {column.type === 'evaluation' && ` • Gesamt: ${totalMaxPoints.toFixed(1)} Pkt. • ${subTasks.length} Aufgaben`}
+              {column.type === 'collaborationSum' && ' • Mitarbeitseinträge'}
+              {(column.type === 'manual' || column.type === 'calculated') && ' • Notenbewertung'}
             </p>
           </div>
         </div>
@@ -598,99 +691,198 @@ export const EvaluationStatisticsModal = ({
         {/* TOP METRICS CARDS */}
         <div className="stats-grid-4">
           <div className="stats-card">
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Users size={16} className="text-primary" /> Beteiligung
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Users size={16} className="text-primary" /> {column.type === 'collaborationSum' ? 'Beteiligung' : 'Teilnehmer'}
             </span>
             <div className="stats-metric-value" style={{ fontSize: '32px' }}>
               {totalGraded} <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#64748b' }}>/ {totalEnrolled}</span>
             </div>
             <div className="stats-metric-subtitle">
-              {gradedPercentage}% der Schüler bewertet
+              {gradedPercentage}% der Schüler erfasst
             </div>
           </div>
 
-          <div className="stats-card">
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Award size={16} style={{ color: '#0f766e' }} /> Notenschnitt
-            </span>
-            <div className="stats-metric-value" style={{ fontSize: '32px' }}>
-              {averageGrade.toFixed(2)}
-            </div>
-            <div className="stats-metric-subtitle">
-              Ø Klassennote (1.0 - 5.0)
-            </div>
-          </div>
-
-          <div className="stats-card">
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Smile size={16} style={{ color: '#16a34a' }} /> Erfolgsquote
-            </span>
-            <div className="stats-metric-value" style={{ fontSize: '32px' }}>
-              {successRate.toFixed(1)}%
-            </div>
-            <div className="stats-metric-subtitle">
-              {positiveStudentsCount} positive Beurteilungen (1-4)
-            </div>
-          </div>
-
-          <div className="stats-card">
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Percent size={16} style={{ color: 'var(--primary-color)' }} /> Punkteschnitt
-            </span>
-            <div className="stats-metric-value" style={{ fontSize: '32px' }}>
-              {averagePoints.toFixed(1)} <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#64748b' }}>/ {totalMaxPoints}</span>
-            </div>
-            <div className="stats-metric-subtitle">
-              Entspricht Ø {averagePercent.toFixed(1)}% der Gesamtpunkte
-            </div>
-          </div>
-        </div>
-
-        {/* NOTENSPIEGEL */}
-        <div className="stats-card">
-          <span className="stats-section-title">
-            <BarChart3 size={16} /> Notenverteilung (Notenspiegel)
-          </span>
-          
-          <div className="grade-chart-container">
-            {[1, 2, 3, 4, 5].map(gradeNum => {
-              const count = gradeCounts[gradeNum as 1|2|3|4|5];
-              const pct = totalGraded > 0 ? (count / totalGraded) * 100 : 0;
-              const barHeight = (count / maxGradeCount) * 100; // Relative height to highest bar
-
-              return (
-                <div key={gradeNum} className="grade-chart-bar-col">
-                  <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
-                    {count > 0 ? `${count}x` : ''}
-                  </span>
-                  <div 
-                    className="grade-chart-bar"
-                    style={{ 
-                      height: `${barHeight}%`, 
-                      backgroundColor: getGradeBgColor(gradeNum),
-                      minHeight: count > 0 ? '20px' : '2px'
-                    }}
-                  >
-                    {count > 0 && barHeight > 15 && (
-                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: getGradeTextColor(gradeNum) }}>
-                        {pct.toFixed(0)}%
-                      </span>
-                    )}
-                  </div>
-                  <span className="grade-chart-label">Note {gradeNum}</span>
+          {column.type === 'collaborationSum' ? (
+            <>
+              <div className="stats-card">
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Award size={16} style={{ color: '#0f766e' }} /> Ø Einträge
+                </span>
+                <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+                  {averageEntriesPerStudent.toFixed(1)}
                 </div>
-              );
-            })}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '16px', textAlign: 'center' }}>
-            {[1, 2, 3, 4, 5].map(g => (
-              <div key={g} style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
-                <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '5px', backgroundColor: getGradeBgColor(g), marginRight: '4px' }}></span>
-                {getGradeName(g)}
+                <div className="stats-metric-subtitle">
+                  Einträge im Schnitt pro Schüler
+                </div>
               </div>
-            ))}
-          </div>
+
+              <div className="stats-card">
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Smile size={16} style={{ color: '#16a34a' }} /> Pluseinträge
+                </span>
+                <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+                  {totalPlusClass} <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#64748b' }}>ges.</span>
+                </div>
+                <div className="stats-metric-subtitle">
+                  Positive Mitarbeitseinträge (+)
+                </div>
+              </div>
+
+              <div className="stats-card">
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={16} style={{ color: '#dc2626' }} /> Minuseinträge
+                </span>
+                <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+                  {totalMinusClass} <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#64748b' }}>ges.</span>
+                </div>
+                <div className="stats-metric-subtitle">
+                  Negative Mitarbeitseinträge (-)
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="stats-card">
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Award size={16} style={{ color: '#0f766e' }} /> Notenschnitt
+                </span>
+                <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+                  {totalGradedWithGrades > 0 ? averageGrade.toFixed(2) : '-'}
+                </div>
+                <div className="stats-metric-subtitle">
+                  Ø Klassennote (1.0 - 5.0)
+                </div>
+              </div>
+
+              <div className="stats-card">
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Smile size={16} style={{ color: '#16a34a' }} /> Erfolgsquote
+                </span>
+                <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+                  {totalGradedWithGrades > 0 ? `${successRate.toFixed(1)}%` : '-'}
+                </div>
+                <div className="stats-metric-subtitle">
+                  {totalGradedWithGrades > 0 ? `${positiveStudentsCount} positive Beurteilungen (1-4)` : 'Keine Noten erfasst'}
+                </div>
+              </div>
+
+              <div className="stats-card">
+                {column.type === 'evaluation' ? (
+                  <>
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Percent size={16} style={{ color: 'var(--primary-color)' }} /> Punkteschnitt
+                    </span>
+                    <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+                      {averagePoints.toFixed(1)} <span style={{ fontSize: '20px', fontWeight: 'normal', color: '#64748b' }}>/ {totalMaxPoints}</span>
+                    </div>
+                    <div className="stats-metric-subtitle">
+                      Entspricht Ø {averagePercent.toFixed(1)}% der Gesamtpunkte
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Percent size={16} style={{ color: 'var(--primary-color)' }} /> Beste Note
+                    </span>
+                    <div className="stats-metric-value" style={{ fontSize: '32px' }}>
+                      {bestGradeVal > 0 ? `Note ${bestGradeVal}` : '-'}
+                    </div>
+                    <div className="stats-metric-subtitle">
+                      Bestes Ergebnis der Klasse
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
+
+        {/* DIAGRAMME: NOTENSPIEGEL ODER MITARBEITSSPIEGEL */}
+        {column.type === 'collaborationSum' ? (
+          <div className="stats-card">
+            <span className="stats-section-title">
+              <BarChart3 size={16} /> Eintragsverteilung (Mitarbeitsspiegel)
+            </span>
+            <div className="grade-chart-container">
+              {[
+                { label: 'Plus (+)', count: totalPlusClass, color: '#15803d', textCol: 'white' },
+                { label: 'Neutral (~)', count: totalNeutralClass, color: '#64748b', textCol: 'white' },
+                { label: 'Minus (-)', count: totalMinusClass, color: '#b91c1c', textCol: 'white' }
+              ].map(item => {
+                const pct = totalEntriesClass > 0 ? (item.count / totalEntriesClass) * 100 : 0;
+                const barHeight = (item.count / maxCollabCount) * 100;
+                return (
+                  <div key={item.label} className="grade-chart-bar-col" style={{ width: '25%' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
+                      {item.count > 0 ? `${item.count}x` : ''}
+                    </span>
+                    <div 
+                      className="grade-chart-bar"
+                      style={{ 
+                        height: `${barHeight}%`, 
+                        backgroundColor: item.color,
+                        minHeight: item.count > 0 ? '20px' : '2px',
+                        width: '80%'
+                      }}
+                    >
+                      {item.count > 0 && barHeight > 15 && (
+                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: item.textCol }}>
+                          {pct.toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                    <span className="grade-chart-label" style={{ fontSize: '16px' }}>{item.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="stats-card">
+            <span className="stats-section-title">
+              <BarChart3 size={16} /> Notenverteilung (Notenspiegel)
+            </span>
+            
+            <div className="grade-chart-container">
+              {[1, 2, 3, 4, 5].map(gradeNum => {
+                const count = gradeCounts[gradeNum as 1|2|3|4|5];
+                const pct = totalGradedWithGrades > 0 ? (count / totalGradedWithGrades) * 100 : 0;
+                const barHeight = (count / maxGradeCount) * 100; // Relative height to highest bar
+  
+                return (
+                  <div key={gradeNum} className="grade-chart-bar-col">
+                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>
+                      {count > 0 ? `${count}x` : ''}
+                    </span>
+                    <div 
+                      className="grade-chart-bar"
+                      style={{ 
+                        height: `${barHeight}%`, 
+                        backgroundColor: getGradeBgColor(gradeNum),
+                        minHeight: count > 0 ? '20px' : '2px'
+                      }}
+                    >
+                      {count > 0 && barHeight > 15 && (
+                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: getGradeTextColor(gradeNum) }}>
+                          {pct.toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                    <span className="grade-chart-label" style={{ fontSize: '16px' }}>Note {gradeNum}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '16px', textAlign: 'center' }}>
+              {[1, 2, 3, 4, 5].map(g => (
+                <div key={g} style={{ fontSize: '16px', color: '#64748b', fontWeight: '500' }}>
+                  <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '6px', backgroundColor: getGradeBgColor(g), marginRight: '6px' }}></span>
+                  {getGradeName(g)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* DIE BESTEN 3 */}
         <div className="stats-card">
@@ -706,7 +898,7 @@ export const EvaluationStatisticsModal = ({
                 <div style={{ textAlign: 'center', width: '100%' }}>
                   {renderPodiumNames(podium.find(p => p.rank === 2)?.students || [], '#334155')}
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', marginTop: '4px' }}>
-                    {podium.find(p => p.rank === 2)?.score.toFixed(1)} Pkt.
+                    {podium.find(p => p.rank === 2)?.students[0]?.label}
                   </div>
                 </div>
               ) : (
@@ -722,7 +914,7 @@ export const EvaluationStatisticsModal = ({
                 <div style={{ textAlign: 'center', width: '100%' }}>
                   {renderPodiumNames(podium.find(p => p.rank === 1)?.students || [], '#78350f')}
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#451a03', marginTop: '6px' }}>
-                    {podium.find(p => p.rank === 1)?.score.toFixed(1)} Pkt.
+                    {podium.find(p => p.rank === 1)?.students[0]?.label}
                   </div>
                 </div>
               ) : (
@@ -737,7 +929,7 @@ export const EvaluationStatisticsModal = ({
                 <div style={{ textAlign: 'center', width: '100%' }}>
                   {renderPodiumNames(podium.find(p => p.rank === 3)?.students || [], '#431407')}
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#431407', marginTop: '4px' }}>
-                    {podium.find(p => p.rank === 3)?.score.toFixed(1)} Pkt.
+                    {podium.find(p => p.rank === 3)?.students[0]?.label}
                   </div>
                 </div>
               ) : (
@@ -765,8 +957,8 @@ export const EvaluationStatisticsModal = ({
                       <span style={{ fontSize: '16px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {task.title}
                         {isTooHard && (
-                          <span style={{ fontSize: '13px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', color: '#b45309', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 'normal' }}>
-                            <AlertTriangle size={12} /> Schwierige Aufgabe
+                          <span style={{ fontSize: '16px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', color: '#b45309', padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 'normal' }}>
+                            <AlertTriangle size={16} /> Schwierige Aufgabe
                           </span>
                         )}
                       </span>
@@ -799,13 +991,13 @@ export const EvaluationStatisticsModal = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
                 <span style={{ color: '#64748b', fontSize: '16px' }}>Beste Punkteanzahl</span>
                 <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '16px' }}>
-                  {rankedStudents.length > 0 ? rankedStudents[0].points.toFixed(1) : '0.0'} Pkt. ({rankedStudents.length > 0 ? rankedStudents[0].percent.toFixed(1) : '0'}%)
+                  {rankedStudents.length > 0 ? rankedStudents[0].scoreVal.toFixed(1) : '0.0'} Pkt. ({rankedStudents.length > 0 ? rankedStudents[0].secondaryScoreVal.toFixed(1) : '0'}%)
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
                 <span style={{ color: '#64748b', fontSize: '16px' }}>Schlechteste Punkteanzahl</span>
                 <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '16px' }}>
-                  {rankedStudents.length > 0 ? rankedStudents[rankedStudents.length - 1].points.toFixed(1) : '0.0'} Pkt. ({rankedStudents.length > 0 ? rankedStudents[rankedStudents.length - 1].percent.toFixed(1) : '0'}%)
+                  {rankedStudents.length > 0 ? rankedStudents[rankedStudents.length - 1].scoreVal.toFixed(1) : '0.0'} Pkt. ({rankedStudents.length > 0 ? rankedStudents[rankedStudents.length - 1].secondaryScoreVal.toFixed(1) : '0'}%)
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
@@ -851,69 +1043,196 @@ export const EvaluationStatisticsModal = ({
 
           <div style={{ overflowX: 'auto' }}>
             <table className="stats-table">
-              <thead>
-                <tr>
-                  <th onClick={() => handleSort('name')} style={{ width: '30%' }}>
-                    Schülername <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
-                  </th>
-                  {subTasks.map(t => (
-                    <th key={t.id} style={{ textAlign: 'center', fontSize: '16px' }}>
-                      {t.title} <br />
-                      <span style={{ fontWeight: 'normal', color: '#64748b', fontSize: '14px' }}>max {t.maxPoints} Pkt.</span>
-                    </th>
-                  ))}
-                  <th onClick={() => handleSort('points')} style={{ textAlign: 'center', width: '15%' }}>
-                    Gesamtpunkte <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
-                  </th>
-                  <th onClick={() => handleSort('grade')} style={{ textAlign: 'center', width: '15%' }}>
-                    Note <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAndSortedList.map((entry) => {
-                  const sGrade = grades[entry.student.id]?.[column.id];
-                  const numericGrade = parseInt(entry.grade.toString(), 10);
-
-                  return (
-                    <tr key={entry.student.id}>
-                      <td style={{ fontWeight: '600' }}>
-                        {entry.student.lastName}, {entry.student.firstName}
-                      </td>
-                      {subTasks.map(t => {
-                        const pts = sGrade?.subTaskPoints?.[t.id];
-                        return (
-                          <td key={t.id} style={{ textAlign: 'center', color: pts === undefined ? '#cbd5e1' : '#334155' }}>
-                            {pts !== undefined ? pts.toFixed(1) : '-'}
-                          </td>
-                        );
-                      })}
-                      <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                        <span className="text-primary">{entry.points.toFixed(1)} Pkt.</span>
-                        <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>
-                          ({entry.percent.toFixed(1)}%)
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <span style={{ 
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '18px',
-                          backgroundColor: getGradeBgColor(numericGrade),
-                          color: getGradeTextColor(numericGrade),
-                          fontWeight: 'bold',
-                          fontSize: '16px'
-                        }}>
-                          {entry.grade}
-                        </span>
-                      </td>
+              {column.type === 'collaborationSum' ? (
+                <>
+                  <thead>
+                    <tr>
+                      <th onClick={() => handleSort('name')} style={{ width: '30%' }}>
+                        Schülername <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                      <th onClick={() => handleSort('plus')} style={{ textAlign: 'center', width: '15%' }}>
+                        Plus (+) <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                      <th onClick={() => handleSort('minus')} style={{ textAlign: 'center', width: '15%' }}>
+                        Minus (-) <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                      <th onClick={() => handleSort('saldo')} style={{ textAlign: 'center', width: '20%' }}>
+                        Netto-Saldo <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                      <th onClick={() => handleSort('grade')} style={{ textAlign: 'center', width: '20%' }}>
+                        Note <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
                     </tr>
-                  );
-                })}
-              </tbody>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedList.map((entry) => {
+                      const collab = collaborationData.find(d => d.student.id === entry.student.id);
+                      const numericGrade = parseInt(entry.grade.toString(), 10);
+                      return (
+                        <tr key={entry.student.id}>
+                          <td style={{ fontWeight: '600' }}>
+                            {entry.student.lastName}, {entry.student.firstName}
+                          </td>
+                          <td style={{ textAlign: 'center', color: '#15803d', fontWeight: 'bold' }}>
+                            {collab?.plus || 0}
+                          </td>
+                          <td style={{ textAlign: 'center', color: '#b91c1c', fontWeight: 'bold' }}>
+                            {collab?.minus || 0}
+                          </td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: (collab?.saldo || 0) >= 0 ? '#15803d' : '#b91c1c' }}>
+                            {(collab?.saldo || 0) >= 0 ? '+' : ''}{collab?.saldo || 0}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            {!isNaN(numericGrade) && numericGrade >= 1 && numericGrade <= 5 ? (
+                              <span style={{ 
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '18px',
+                                backgroundColor: getGradeBgColor(numericGrade),
+                                color: getGradeTextColor(numericGrade),
+                                fontWeight: 'bold',
+                                fontSize: '16px'
+                              }}>
+                                {entry.grade}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#94a3b8' }}>-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </>
+              ) : column.type === 'evaluation' ? (
+                <>
+                  <thead>
+                    <tr>
+                      <th onClick={() => handleSort('name')} style={{ width: '30%' }}>
+                        Schülername <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                      {subTasks.map(t => (
+                        <th key={t.id} style={{ textAlign: 'center', fontSize: '16px' }}>
+                          {t.title} <br />
+                          <span style={{ fontWeight: 'normal', color: '#64748b', fontSize: '16px' }}>max {t.maxPoints} Pkt.</span>
+                        </th>
+                      ))}
+                      <th onClick={() => handleSort('points')} style={{ textAlign: 'center', width: '15%' }}>
+                        Gesamtpunkte <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                      <th onClick={() => handleSort('grade')} style={{ textAlign: 'center', width: '15%' }}>
+                        Note <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedList.map((entry) => {
+                      const sGrade = grades[entry.student.id]?.[column.id];
+                      const numericGrade = parseInt(entry.grade.toString(), 10);
+                      const pts = entry.scoreVal;
+                      const pct = entry.secondaryScoreVal;
+
+                      return (
+                        <tr key={entry.student.id}>
+                          <td style={{ fontWeight: '600' }}>
+                            {entry.student.lastName}, {entry.student.firstName}
+                          </td>
+                          {subTasks.map(t => {
+                            const subPts = sGrade?.subTaskPoints?.[t.id];
+                            return (
+                              <td key={t.id} style={{ textAlign: 'center', color: subPts === undefined ? '#cbd5e1' : '#334155' }}>
+                                {subPts !== undefined ? subPts.toFixed(1) : '-'}
+                              </td>
+                            );
+                          })}
+                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>
+                            <span className="text-primary">{pts.toFixed(1)} Pkt.</span>
+                            <span style={{ fontSize: '16px', color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>
+                              ({pct.toFixed(1)}%)
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ 
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '18px',
+                              backgroundColor: getGradeBgColor(numericGrade),
+                              color: getGradeTextColor(numericGrade),
+                              fontWeight: 'bold',
+                              fontSize: '16px'
+                            }}>
+                              {entry.grade}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </>
+              ) : (
+                <>
+                  <thead>
+                    <tr>
+                      <th onClick={() => handleSort('name')} style={{ width: '70%' }}>
+                        Schülername <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                      <th onClick={() => handleSort('grade')} style={{ textAlign: 'center', width: '30%' }}>
+                        Note <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedList.map((entry) => {
+                      const numericGrade = parseInt(entry.grade.toString(), 10);
+                      return (
+                        <tr key={entry.student.id}>
+                          <td style={{ fontWeight: '600' }}>
+                            {entry.student.lastName}, {entry.student.firstName}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            {!isNaN(numericGrade) && numericGrade >= 1 && numericGrade <= 5 ? (
+                              <span style={{ 
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '18px',
+                                backgroundColor: getGradeBgColor(numericGrade),
+                                color: getGradeTextColor(numericGrade),
+                                fontWeight: 'bold',
+                                fontSize: '16px'
+                              }}>
+                                {entry.grade}
+                              </span>
+                            ) : (
+                              <span style={{ 
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                backgroundColor: '#f1f5f9',
+                                color: '#475569',
+                                fontWeight: '600',
+                                fontSize: '16px'
+                              }}>
+                                {entry.grade}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </>
+              )}
             </table>
           </div>
         </div>

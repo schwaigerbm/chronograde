@@ -11,13 +11,12 @@ Das Modal wird vergrößert, um eine übersichtliche, kartenbasierte Auswahl des
   * **Schritt 1: Typauswahl:** Die Spaltentypen werden als interaktive Karten (Cards) in einem responsiven Grid dargestellt.
   * **Schritt 2: Detailkonfiguration:**
     * Für die Typen `manual` und `calculated` werden die Formularfelder in einer übersichtlichen, einspaltigen Liste dargestellt.
-    * Für den Typ `evaluation` (Auswertung) wird das Modal vergrößert (`modal-large`) und ein **zweispaltiges Grid-Layout mit vier Sektionen** verwendet:
-      * **Linke Spalte:**
-        * **Sektion "Allgemeines":** Name (Bezeichnung), Datum.
-        * **Sektion "Darstellung" (darunter):** Datum im Header anzeigen (Switch), Farbmodus (Heatmap) (Switch).
-      * **Rechte Spalte:**
-        * **Sektion "Teilaufgaben":** Dynamische Teilaufgaben-Konfiguration und Gesamtpunkte-Anzeige.
-        * **Sektion "Beurteilung" (darunter):** Notenschlüssel (Mindestpunkte 1-4) und Bewertungseinfluss (Switch & Schieberegler).
+    * Für den Typ `evaluation` (Auswertung) wird das Modal in der Größe `modal-large` dargestellt und ein **einspaltiges Layout** verwendet, das sich strukturiert in folgende Karten-Sektionen untereinander gliedert:
+      * **Sektion "Allgemeines & Darstellung":** Name (Bezeichnung), Datum, Datum im Header anzeigen (Switch) und Farbmodus (Heatmap) (Switch).
+      * **Sektion "Teilaufgaben":** Dynamische Teilaufgaben-Konfiguration und Gesamtpunkte-Anzeige.
+      * **Sektion "Beurteilung (Notenschlüssel)":** Visueller Zeitstrahl des Notenschlüssels, linearer Schlüssel-Generator (Button) und manuelle Mindestpunkte (Note 1-4).
+      * **Sektion "Bewertungseinfluss":** Gewichtungs-Einfluss (Switch & Schieberegler).
+    * Da es sich bei diesem Modal um einen Eingabe- und Änderungsbereich handelt, sind kleine Schriftgrößen zur Platzersparnis erlaubt, müssen jedoch **mindestens 8pt (11px)** betragen.
     * Funktionale Sektionen werden durch separate Karten-Rahmen (`border: 1px solid var(--border-color)`) und leichte Hintergrundtönungen visuell strukturiert.
 
 ### 1.1 Schritt 1: Karten-Design (Card-based Selection)
