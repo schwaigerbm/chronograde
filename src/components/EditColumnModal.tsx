@@ -512,7 +512,7 @@ export const EditColumnModal = ({
                       </div>
                       <div style={{ fontSize: '12px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: 'var(--text-main)', border: '1px solid var(--border-color)', display: 'flex', gap: '8px', flex: 1 }}>
                         <span style={{ fontWeight: '500' }}>Intervall:</span>
-                        <span style={{ fontWeight: '700' }}>{grade1MinPoints.toFixed(1)} - {totalMaxPoints.toFixed(1)} Pkt.</span>
+                        <span style={{ fontWeight: '700' }}>{totalMaxPoints.toFixed(1)} - {grade1MinPoints.toFixed(1)} Pkt.</span>
                         <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>({totalMaxPoints > 0 ? ((grade1MinPoints / totalMaxPoints) * 100).toFixed(0) : 0}%)</span>
                       </div>
                     </div>
@@ -537,7 +537,7 @@ export const EditColumnModal = ({
                       </div>
                       <div style={{ fontSize: '12px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: 'var(--text-main)', border: '1px solid var(--border-color)', display: 'flex', gap: '8px', flex: 1 }}>
                         <span style={{ fontWeight: '500' }}>Intervall:</span>
-                        <span style={{ fontWeight: '700' }}>{grade2MinPoints.toFixed(1)} - {Math.max(0, grade1MinPoints - 0.5).toFixed(1)} Pkt.</span>
+                        <span style={{ fontWeight: '700' }}>{Math.max(0, grade1MinPoints - 0.5).toFixed(1)} - {grade2MinPoints.toFixed(1)} Pkt.</span>
                         <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>({totalMaxPoints > 0 ? ((grade2MinPoints / totalMaxPoints) * 100).toFixed(0) : 0}%)</span>
                       </div>
                     </div>
@@ -562,7 +562,7 @@ export const EditColumnModal = ({
                       </div>
                       <div style={{ fontSize: '12px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: 'var(--text-main)', border: '1px solid var(--border-color)', display: 'flex', gap: '8px', flex: 1 }}>
                         <span style={{ fontWeight: '500' }}>Intervall:</span>
-                        <span style={{ fontWeight: '700' }}>{grade3MinPoints.toFixed(1)} - {Math.max(0, grade2MinPoints - 0.5).toFixed(1)} Pkt.</span>
+                        <span style={{ fontWeight: '700' }}>{Math.max(0, grade2MinPoints - 0.5).toFixed(1)} - {grade3MinPoints.toFixed(1)} Pkt.</span>
                         <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>({totalMaxPoints > 0 ? ((grade3MinPoints / totalMaxPoints) * 100).toFixed(0) : 0}%)</span>
                       </div>
                     </div>
@@ -587,7 +587,7 @@ export const EditColumnModal = ({
                       </div>
                       <div style={{ fontSize: '12px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', color: 'var(--text-main)', border: '1px solid var(--border-color)', display: 'flex', gap: '8px', flex: 1 }}>
                         <span style={{ fontWeight: '500' }}>Intervall:</span>
-                        <span style={{ fontWeight: '700' }}>{grade4MinPoints.toFixed(1)} - {Math.max(0, grade3MinPoints - 0.5).toFixed(1)} Pkt.</span>
+                        <span style={{ fontWeight: '700' }}>{Math.max(0, grade3MinPoints - 0.5).toFixed(1)} - {grade4MinPoints.toFixed(1)} Pkt.</span>
                         <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>({totalMaxPoints > 0 ? ((grade4MinPoints / totalMaxPoints) * 100).toFixed(0) : 0}%)</span>
                       </div>
                     </div>
@@ -602,7 +602,7 @@ export const EditColumnModal = ({
                       </div>
                       <div style={{ fontSize: '12px', background: '#fef2f2', padding: '4px 8px', borderRadius: '4px', color: 'var(--danger-color)', border: '1px solid #fee2e2', display: 'flex', gap: '8px', flex: 1 }}>
                         <span style={{ fontWeight: '500' }}>Intervall:</span>
-                        <span style={{ fontWeight: '700' }}>0.0 - {Math.max(0, grade4MinPoints - 0.5).toFixed(1)} Pkt.</span>
+                        <span style={{ fontWeight: '700' }}>{Math.max(0, grade4MinPoints - 0.5).toFixed(1)} - 0.0 Pkt.</span>
                         <span style={{ color: '#f87171', marginLeft: 'auto' }}>(&lt; {totalMaxPoints > 0 ? ((grade4MinPoints / totalMaxPoints) * 100).toFixed(0) : 0}%)</span>
                       </div>
                     </div>

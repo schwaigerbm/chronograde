@@ -64,11 +64,11 @@ Bei Auswahl wird in Schritt 2 des Modals die Detailkonfiguration in einem sauber
      * **Stauchung bei 50%-Schwelle:** Wenn die Grenze für ein Genügend (4) exakt bei 50% der Gesamtpunkte liegt, wird der Bereich für Note 5 (Nicht Genügend) auf 15% Breite gestaucht/skizziert und beschriftet, um den positiven Noten mehr Platz zu bieten.
    * **Linear-Aufteilung (Button):** Ein Schnellbefüllungs-Button erlaubt das automatische lineare Aufteilen der Punkte ab einer 50%-Hürde für ein Genügend.
    * **Manuelle Eingabefelder:** Der Benutzer editiert die Mindestpunkte für die Noten 1 bis 4. Das jeweilige Intervall wird live daneben angezeigt:
-     * **Sehr Gut (1) ab:** [Eingabefeld] | Vorschau: `von X bis [Gesamtpunkte] Pkt.`
-     * **Gut (2) ab:** [Eingabefeld] | Vorschau: `von Y bis (Sehr Gut ab - 0.5) Pkt.`
-     * **Befriedigend (3) ab:** [Eingabefeld] | Vorschau: `von Z bis (Gut ab - 0.5) Pkt.`
-     * **Genügend (4) ab:** [Eingabefeld] | Vorschau: `von W bis (Befriedigend ab - 0.5) Pkt.`
-     * **Nicht Genügend (5):** (Kein Eingabefeld) | Vorschau: `von 0 bis (Genügend ab - 0.5) Pkt.`
+     * **Sehr Gut (1) ab:** [Eingabefeld] | Vorschau: `[Gesamtpunkte] bis X Pkt.`
+     * **Gut (2) ab:** [Eingabefeld] | Vorschau: `(Sehr Gut ab - 0.5) bis Y Pkt.`
+     * **Befriedigend (3) ab:** [Eingabefeld] | Vorschau: `(Gut ab - 0.5) bis Z Pkt.`
+     * **Genügend (4) ab:** [Eingabefeld] | Vorschau: `(Befriedigend ab - 0.5) bis W Pkt.`
+     * **Nicht Genügend (5):** (Kein Eingabefeld) | Vorschau: `(Genügend ab - 0.5) bis 0.0 Pkt.`
    * **Live-Validierung:** Die Prozentwerte der Untergrenzen werden live neben dem Eingabefeld berechnet. Die Punktwerte müssen logisch absteigend sein.
 
 4. **Sektion "Bewertungseinfluss":**
