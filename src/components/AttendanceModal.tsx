@@ -41,6 +41,10 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
     });
   };
 
+  const handleSetAllAttendance = (value: 'check' | 'x' | 'unset') => {
+    setAttendance(Object.fromEntries(students.map(s => [s.id, value])));
+  };
+
   const handleSave = () => {
     // Filter out unset entries
     const filteredAttendance: Record<string, 'check' | 'x'> = {};
@@ -141,9 +145,37 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
                 </button>
               </div>
 
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                Klicken Sie auf die Zeilen der Schüler, um zwischen Anwesend (Häkchen), Abwesend (X) und Nicht gesetzt zu wechseln.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '16px' }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+                  Klicken Sie auf die Zeilen der Schüler, um zwischen Anwesend (Häkchen), Abwesend (X) und Nicht gesetzt zu wechseln.
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs"
+                    style={{ fontSize: '11px', padding: '4px 8px', borderColor: 'var(--success-color)', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    onClick={() => handleSetAllAttendance('check')}
+                  >
+                    Alle anwesend
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs"
+                    style={{ fontSize: '11px', padding: '4px 8px', borderColor: 'var(--danger-color)', display: 'flex', alignItems: 'center', gap: '2px' }}
+                    onClick={() => handleSetAllAttendance('x')}
+                  >
+                    Alle abwesend
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs"
+                    style={{ fontSize: '11px', padding: '4px 8px' }}
+                    onClick={() => handleSetAllAttendance('unset')}
+                  >
+                    Zurücksetzen
+                  </button>
+                </div>
+              </div>
 
               <div className="attendance-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 <table className="data-table">

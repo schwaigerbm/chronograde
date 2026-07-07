@@ -7,6 +7,7 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 * **Unterüberschrift (H2):** `[Name der Gruppe / Course]`
 * **Gruppen-Schnellauswahl:** (Entfernt) Die Gruppen-Schnellauswahl wurde entfernt. Der Wechsel von Gruppen/Kursen erfolgt ausschließlich über die Sidebar/Hauptnavigation.
 * **Aktions-Menü (Dropdown):** In der Kopfzeile platziert (Label: `Aktionen`, Icon: `ChevronDown`). Bietet folgende Aktionen:
+    * `Schnelleingabe` (Icon: `Zap`) - Startet einen kombinierten Workflow zur schnellen Erfassung von Anwesenheit und Mitarbeit nacheinander.
     * `Beurteilungsspalte hinzufügen` (Icon: `Plus`) - Öffnet das Multi-Step-Modal zum Hinzufügen einer Beurteilungsspalte.
     * `Ansicht konfigurieren` (Icon: `Settings`) - Öffnet das Modal zur Spaltenkonfiguration.
     * `Gruppe ändern` (Icon: `Users`) - Öffnet das `EnrollmentModal` zur Schüler-Zuweisung, um Schüler der Gruppe hinzuzufügen, zu entfernen oder neu zu reihen.
@@ -131,12 +132,13 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 
 #### Modal zur Mitarbeit-Schnellerfassung ("+" Button)
-* **Inhalt:** Liste aller Schüler des Kurses.
-* **Interaktion:**
-    * Pro Schüler: Auswahl zwischen `+`, `~`, `-` oder `Kein Eintrag` (unset).
-    * Globales Pflichtfeld: `Notiz` (wird als Standard für alle gewählten Einträge übernommen).
-    * Datumsauswahl: Standard: Aktuelles Datum.
-* **Aktionen:** `Speichern` oder `Abbrechen`.
+* **Design & Layout:** Großes modales Dialogfenster. Links befindet sich eine Liste aller Schüler des Kurses mit Checkboxen (Mehrfachauswahl) sowie Schaltflächen für „Alle auswählen“ und „Auswahl aufheben“. Rechts befindet sich ein zweigeteiltes Panel: oben die Schnellauswahl der vorgefertigten Kommentare (nach `+`, `~`, `-` gruppiert), unten das manuelle Erfassungsfeld (Textfeld für Notiz und Buttons für `+`, `~`, `-`).
+* **Interaktions-Ablauf:**
+    * Markieren eines oder mehrerer Schüler in der Liste.
+    * Klick auf einen vorgefertigten Kommentar (z.B. `+ Sehr aktiv`): Trägt diesen Eintrag für alle markierten Schüler sofort in die Session ein. Die Auswahl (Checkboxen) wird automatisch geleert, um die nächste Zuweisung zu vereinfachen.
+    * Alternativ: Eingabe einer manuellen Notiz und Klick auf einen der Typ-Buttons (`+`, `~`, `-`).
+    * Bereits zugewiesene Einträge werden in der Schülerliste direkt neben dem Namen angezeigt und können per Mülleimer-Icon wieder entfernt werden.
+* **Aktionen:** `Speichern` persistiert alle in der Session erfassten Mitarbeitseinträge in Firestore. `Abbrechen` schließt das Modal.
 
 * **Massen-Erfassung:** Über das `Plus-Icon` im Header kann weiterhin für die gesamte Klasse gleichzeitig eine Note (z.B. für eine bestimmte Stunde) vergeben werden.
 
@@ -188,6 +190,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * **Stundenanzahl:** Festlegung der Unterrichtsstunden. Schnellauswahl (`1 Std`, `2 Std`, `4 Std`) sowie manuelle Eingabe werden angeboten.
 * **Erfassungs-Schritt:** Nach der Voreinstellung gelangt der Benutzer zur eigentlichen Liste aller Schüler des Kurses.
     * **Entscheidung pro Schüler:** Klick toggelt zwischen `Anwesend`, `Abwesend` und `Nicht gesetzt`.
+    * **Sammel-Aktion:** Es werden Buttons angeboten, um alle Schüler mit einem Klick auf 'Anwesend' oder 'Abwesend' zu setzen.
     * **Speichern:** Erstellt für jeden gesetzten Schüler einen Eintrag mit dem zuvor festgelegten Datum und der Stundenanzahl.
 
 #### Zellen-Darstellung & Toggle-Funktion
@@ -328,3 +331,22 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
 
 ## 8. Implementierungshinweise & Testing (gemini.md)
 * **Testing der Service-Layer:** Um die oben genannte `serviceFirebase` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollten in Jest zwingend `beforeAll` und `afterAll` Hooks implementiert werden. Dies gewährleistet, dass Testdaten (wie Mock-Schüler oder generierte Noten) vor den Testläufen sauber angelegt und im Nachgang wieder restlos aus der Firestore-Testumgebung gelöscht (Clean-up) werden.
+
+---
+
+## 9. Schnelleingabe (Quick Entry Workflow)
+Dieses Feature bündelt die schnelle Erfassung von Anwesenheit und Mitarbeit in einem einzigen, kombinierten Dialog, um den Verwaltungsaufwand während des Unterrichts zu minimieren.
+
+*   **Auslöser:** Klick auf den Eintrag `Schnelleingabe` im Aktions-Menü der Matrix.
+*   **Aktivitätsprüfung:** Der Dialog prüft beim Öffnen, ob im aktuellen Kurs eine Anwesenheitsspalte (`presenceSum`) und/oder eine Mitarbeitspalte (`collaborationSum`) existieren.
+    *   *Sonderfall:* Falls keine dieser Spalten existiert, wird eine Hinweismeldung angezeigt („Keine Anwesenheits- oder Mitarbeitspalten vorhanden.“) und das Modal kann geschlossen werden.
+*   **Ablauf (Kombinierter Wizard):**
+    *   **Phase 1: Anwesenheit** (falls Spalte vorhanden):
+        *   Zuerst erscheint die Voreinstellung für Datum und Stundenanzahl (analog zur regulären Anwesenheitserfassung).
+        *   Nach Klick auf „Weiter zur Schülerliste“ wird die Schülerliste geladen, in der durch Anklicken der Status (`Check` / `X` / `Unset`) gewählt oder über Schnellauswahl-Buttons alle Schüler auf einmal als 'Anwesend' oder 'Abwesend' markiert werden können.
+        *   Mit Klick auf „Weiter zur Mitarbeit“ (bzw. „Speichern“, falls keine Mitarbeit aktiv ist) gelangt der Lehrer zur zweiten Phase.
+    *   **Phase 2: Mitarbeit** (falls Spalte vorhanden):
+        *   Es öffnet sich die neue Massenerfassung für die Mitarbeit.
+        *   Der Lehrer wählt Schüler per Checkbox aus (Mehrfachauswahl) und weist ihnen durch Klick auf einen vorgefertigten Kommentar (z. B. `+ Sehr aktiv`) direkt die Bewertung zu.
+        *   Die Schülerliste zeigt eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen).
+    *   **Speichern & Persistieren:** Ein Klick auf „Speichern“ im letzten Schritt schreibt alle erfassten Anwesenheits- und Mitarbeitseinträge gesammelt über den Service-Layer in Firestore.

@@ -1,110 +1,343 @@
-import { useState } from 'react';
-import { X, Save, Plus, Minus } from 'lucide-react';
-import type { Student } from '../schema';
+import { useState, useEffect } from 'react';
+import { X, Save, Plus, Minus, Trash2 } from 'lucide-react';
+import { firebaseService } from '../services/firebaseService';
+import type { Student, PredefinedComment } from '../schema';
 
 interface CollaborationBulkModalProps {
   isOpen: boolean;
   onClose: () => void;
   students: Student[];
-  onSave: (date: string, note: string, data: Record<string, '+' | '-' | '~' | 'unset'>) => void;
+  onSave: (date: string, updates: { studentId: string; value: '+' | '-' | '~'; note: string }[]) => void;
 }
 
 export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: CollaborationBulkModalProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [note, setNote] = useState('');
-  const [entries, setEntries] = useState<Record<string, '+' | '-' | '~' | 'unset'>>({});
+  const [predefinedComments, setPredefinedComments] = useState<PredefinedComment[]>([]);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
+  const [sessionEntries, setSessionEntries] = useState<Record<string, { value: '+' | '-' | '~'; note: string }>>({});
+  
+  // Custom manual entry states
+  const [customNote, setCustomNote] = useState('');
+
+  // Subscribe to predefined comments when open
+  useEffect(() => {
+    if (isOpen) {
+      const unsubscribe = firebaseService.subscribeToPredefinedComments((comments) => {
+        setPredefinedComments(comments);
+      });
+      // Reset state
+      setSelectedStudentIds(new Set());
+      setSessionEntries({});
+      setCustomNote('');
+      setDate(new Date().toISOString().split('T')[0]);
+      return () => unsubscribe();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleToggle = (studentId: string, val: '+' | '-' | '~') => {
-    setEntries(prev => ({
-      ...prev,
-      [studentId]: prev[studentId] === val ? 'unset' : val
-    }));
+  const handleSelectAll = () => {
+    setSelectedStudentIds(new Set(students.map(s => s.id)));
+  };
+
+  const handleClearSelection = () => {
+    setSelectedStudentIds(new Set());
+  };
+
+  const handleToggleStudent = (studentId: string) => {
+    setSelectedStudentIds(prev => {
+      const next = new Set(prev);
+      if (next.has(studentId)) {
+        next.delete(studentId);
+      } else {
+        next.add(studentId);
+      }
+      return next;
+    });
+  };
+
+  const handleAssignComment = (type: '+' | '-' | '~', noteText: string) => {
+    if (selectedStudentIds.size === 0) return;
+
+    setSessionEntries(prev => {
+      const next = { ...prev };
+      selectedStudentIds.forEach(id => {
+        next[id] = { value: type, note: noteText };
+      });
+      return next;
+    });
+
+    // Clear selection after assignment
+    setSelectedStudentIds(new Set());
+  };
+
+  const handleAssignCustom = (type: '+' | '-' | '~') => {
+    if (!customNote.trim()) return;
+    handleAssignComment(type, customNote.trim());
+    setCustomNote('');
+  };
+
+  const handleRemoveEntry = (studentId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent toggling selection
+    setSessionEntries(prev => {
+      const next = { ...prev };
+      delete next[studentId];
+      return next;
+    });
   };
 
   const handleSave = () => {
-    if (!note.trim()) return;
-    onSave(date, note, entries);
-    setEntries({});
-    setNote('');
+    const updates = Object.entries(sessionEntries).map(([studentId, entry]) => ({
+      studentId,
+      value: entry.value,
+      note: entry.note
+    }));
+
+    if (updates.length === 0) return;
+    onSave(date, updates);
   };
+
+  // Group predefined comments by type
+  const plusComments = predefinedComments.filter(c => c.type === '+');
+  const neutralComments = predefinedComments.filter(c => c.type === '~');
+  const minusComments = predefinedComments.filter(c => c.type === '-');
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card" style={{ maxWidth: '600px' }}>
+      <div className="modal-card collaboration-modal expanded" style={{ maxWidth: '850px', width: '90%' }}>
         <div className="modal-header">
           <h2 className="modal-title">Mitarbeit Schnellerfassung</h2>
           <button className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
         
-        <div className="modal-body p-8">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-            <div className="input-field">
-              <label>Datum</label>
-              <input 
-                type="date" 
-                className="form-input" 
-                value={date} 
-                onChange={(e) => setDate(e.target.value)} 
-              />
-            </div>
-            <div className="input-field">
-              <label>Notiz (Pflicht)</label>
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="z.B. Mitarbeit im Unterricht"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-            </div>
+        <div className="modal-body p-8" style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+          
+          <div className="form-group" style={{ marginBottom: '20px', maxWidth: '250px' }}>
+            <label className="form-label" style={{ fontSize: '12px' }}>Erfassungsdatum</label>
+            <input 
+              type="date" 
+              className="form-input" 
+              value={date} 
+              onChange={(e) => setDate(e.target.value)} 
+            />
           </div>
 
-          <div className="attendance-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '40px' }}>#</th>
-                  <th>Schüler</th>
-                  <th style={{ textAlign: 'center' }}>Bewertung</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((s, idx) => (
-                  <tr key={s.id}>
-                    <td>{idx + 1}</td>
-                    <td>{s.lastName}, {s.firstName}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button 
-                          className={`btn-icon ${entries[s.id] === '+' ? 'bg-success text-white' : 'btn-outline'}`}
-                          onClick={() => handleToggle(s.id, '+')}
-                          style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'start' }}>
+            
+            {/* LINKE SPALTE: Schülerliste */}
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: '#f8fafc' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
+                  Schüler auswählen ({selectedStudentIds.size} markiert)
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs" 
+                    style={{ padding: '2px 8px', fontSize: '11px' }}
+                    onClick={handleSelectAll}
+                  >
+                    Alle
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs" 
+                    style={{ padding: '2px 8px', fontSize: '11px' }}
+                    onClick={handleClearSelection}
+                  >
+                    Keine
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: 'white' }}>
+                <table className="data-table" style={{ margin: 0 }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f1f5f9' }}>
+                      <th style={{ width: '40px', textAlign: 'center' }}>Sel.</th>
+                      <th>Schüler</th>
+                      <th style={{ width: '150px' }}>Aktuelle Erfassung</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => {
+                      const isSelected = selectedStudentIds.has(student.id);
+                      const entry = sessionEntries[student.id];
+                      return (
+                        <tr 
+                          key={student.id} 
+                          onClick={() => handleToggleStudent(student.id)}
+                          style={{ cursor: 'pointer', backgroundColor: isSelected ? '#eff6ff' : 'transparent' }}
                         >
-                          <Plus size={16} />
-                        </button>
-                        <button 
-                          className={`btn-icon ${entries[s.id] === '~' ? 'bg-warning text-white' : 'btn-outline'}`}
-                          onClick={() => handleToggle(s.id, '~')}
-                          style={{ width: '32px', height: '32px', borderRadius: '50%', fontSize: '18px' }}
-                        >
-                          ~
-                        </button>
-                        <button 
-                          className={`btn-icon ${entries[s.id] === '-' ? 'bg-danger text-white' : 'btn-outline'}`}
-                          onClick={() => handleToggle(s.id, '-')}
-                          style={{ width: '32px', height: '32px', borderRadius: '50%' }}
-                        >
-                          <Minus size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                            <input 
+                              type="checkbox" 
+                              checked={isSelected}
+                              onChange={() => handleToggleStudent(student.id)}
+                            />
+                          </td>
+                          <td style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400 }}>
+                            {student.lastName}, {student.firstName}
+                          </td>
+                          <td>
+                            {entry ? (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                                <span className={`badge ${entry.value === '+' ? 'badge-success' : entry.value === '-' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '11px', padding: '2px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>
+                                  {entry.value} {entry.note}
+                                </span>
+                                <button 
+                                  type="button" 
+                                  className="btn-icon" 
+                                  onClick={(e) => handleRemoveEntry(student.id, e)}
+                                  style={{ padding: '2px', color: 'var(--danger-color)' }}
+                                  title="Eintrag entfernen"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            ) : (
+                              <span style={{ color: '#cbd5e1', fontSize: '12px' }}>-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* RECHTE SPALTE: Zuweisungs-Panel */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Vordefinierte Kommentare */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: 'white' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '12px', color: 'var(--text-main)' }}>
+                  Vorgefertigte Kommentare zuweisen
+                </span>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* Plus Kommentare */}
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--success-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Plus (+)</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {plusComments.length === 0 ? (
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
+                      ) : (
+                        plusComments.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className="btn-secondary btn-xs hover-success"
+                            style={{ padding: '4px 8px', fontSize: '11px', borderColor: 'rgba(34, 197, 94, 0.2)', backgroundColor: 'rgba(34, 197, 94, 0.05)' }}
+                            onClick={() => handleAssignComment('+', c.text)}
+                            disabled={selectedStudentIds.size === 0}
+                          >
+                            {c.text}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Neutral Kommentare */}
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Neutral (~)</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {neutralComments.length === 0 ? (
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
+                      ) : (
+                        neutralComments.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className="btn-secondary btn-xs hover-warning"
+                            style={{ padding: '4px 8px', fontSize: '11px', borderColor: 'rgba(245, 158, 11, 0.2)', backgroundColor: 'rgba(245, 158, 11, 0.05)' }}
+                            onClick={() => handleAssignComment('~', c.text)}
+                            disabled={selectedStudentIds.size === 0}
+                          >
+                            {c.text}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Minus Kommentare */}
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Minus (-)</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {minusComments.length === 0 ? (
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
+                      ) : (
+                        minusComments.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className="btn-secondary btn-xs hover-danger"
+                            style={{ padding: '4px 8px', fontSize: '11px', borderColor: 'rgba(239, 68, 68, 0.2)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
+                            onClick={() => handleAssignComment('-', c.text)}
+                            disabled={selectedStudentIds.size === 0}
+                          >
+                            {c.text}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Benutzerdefinierter Eintrag */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: 'white' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '8px', color: 'var(--text-main)' }}>
+                  Benutzerdefinierter Kommentar
+                </span>
+                
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Eigener Kommentartext..."
+                  style={{ marginBottom: '12px', fontSize: '12px', padding: '6px 10px' }}
+                  value={customNote}
+                  onChange={(e) => setCustomNote(e.target.value)}
+                />
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-sm" 
+                    style={{ flex: 1, color: 'var(--success-color)', borderColor: 'rgba(34, 197, 94, 0.3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}
+                    onClick={() => handleAssignCustom('+')}
+                    disabled={selectedStudentIds.size === 0 || !customNote.trim()}
+                  >
+                    <Plus size={14} /> Plus (+)
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-sm" 
+                    style={{ flex: 1, color: 'var(--warning-color)', borderColor: 'rgba(245, 158, 11, 0.3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', fontSize: '14px' }}
+                    onClick={() => handleAssignCustom('~')}
+                    disabled={selectedStudentIds.size === 0 || !customNote.trim()}
+                  >
+                    ~ Neutral
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-sm" 
+                    style={{ flex: 1, color: 'var(--danger-color)', borderColor: 'rgba(239, 68, 68, 0.3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}
+                    onClick={() => handleAssignCustom('-')}
+                    disabled={selectedStudentIds.size === 0 || !customNote.trim()}
+                  >
+                    <Minus size={14} /> Minus (-)
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
           </div>
+
         </div>
 
         <div className="modal-footer">
@@ -112,7 +345,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
           <button 
             className="btn-primary" 
             onClick={handleSave}
-            disabled={!note.trim() || Object.values(entries).every(v => v === 'unset' || !v)}
+            disabled={Object.keys(sessionEntries).length === 0}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto' }}
           >
             <Save size={18} /> Speichern

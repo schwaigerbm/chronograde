@@ -17,7 +17,8 @@ import {
   TrendingUp,
   FileDown,
   ChevronDown,
-  Users
+  Users,
+  Zap
 } from 'lucide-react';
 import { useGradesManager } from '../hooks/useGradesManager';
 import { firebaseService } from '../services/firebaseService';
@@ -38,6 +39,7 @@ import { calculateAverage, getCollaborationPercentage, getPresencePercentage } f
 import { EvaluationEntryModal } from './EvaluationEntryModal';
 import { ManualEntryModal } from './ManualEntryModal';
 import { EnrollmentModal } from './EnrollmentModal';
+import { QuickEntryModal } from './QuickEntryModal';
 
 interface GradesMatrixProps {
   course: Course;
@@ -57,6 +59,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
   const [isEditColumnModalOpen, setIsEditColumnModalOpen] = useState(false);
+  const [isQuickEntryModalOpen, setIsQuickEntryModalOpen] = useState(false);
   const [trendSettingsInitialTab, setTrendSettingsInitialTab] = useState<'layout' | 'trend'>('layout');
   const [isTrendSettingsModalOpen, setIsTrendSettingsModalOpen] = useState(false);
   const [isPDFColumnSelectModalOpen, setIsPDFColumnSelectModalOpen] = useState(false);
@@ -616,31 +619,91 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     }
   };
 
-  const handleSaveCollaborationBulk = async (date: string, note: string, collabData: Record<string, '+' | '-' | '~' | 'unset'>) => {
+  const handleSaveCollaborationBulk = async (date: string, updates: { studentId: string; value: '+' | '-' | '~'; note: string }[]) => {
     if (!activeCollaborationColumnId) return;
 
-    const updates = Object.entries(collabData)
-      .filter(([_, value]) => value !== 'unset')
-      .map(([studentId, value]) => ({
-        studentId,
-        entry: {
-          id: (typeof crypto !== 'undefined' && crypto.randomUUID) 
-              ? crypto.randomUUID() 
-              : Date.now().toString(36) + Math.random().toString(36).substring(2),
-          value: value as string,
-          note,
-          date
-        }
-      }));
+    const formattedUpdates = updates.map(u => ({
+      studentId: u.studentId,
+      entry: {
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID) 
+            ? crypto.randomUUID() 
+            : Date.now().toString(36) + Math.random().toString(36).substring(2),
+        value: u.value,
+        note: u.note,
+        date
+      }
+    }));
 
-    if (updates.length === 0) return;
+    if (formattedUpdates.length === 0) return;
 
     try {
-      await bulkAddEntries(activeCollaborationColumnId, updates);
+      await bulkAddEntries(activeCollaborationColumnId, formattedUpdates);
       setIsCollaborationModalOpen(false);
       setActiveCollaborationColumnId(null);
     } catch (err) {
       console.error("Fehler beim Speichern der Mitarbeit:", err);
+    }
+  };
+
+  const handleSaveQuickEntry = async (data: {
+    attendance?: {
+      columnId: string;
+      date: string;
+      hours: number;
+      entries: Record<string, 'check' | 'x'>;
+    };
+    collaboration?: {
+      columnId: string;
+      date: string;
+      updates: { studentId: string; value: '+' | '-' | '~'; note: string }[];
+    };
+  }) => {
+    try {
+      // 1. Save Attendance
+      if (data.attendance) {
+        const { columnId, date, hours, entries } = data.attendance;
+        const attendanceUpdates = Object.entries(entries).map(([studentId, value]) => ({
+          studentId,
+          entry: {
+            id: (typeof crypto !== 'undefined' && crypto.randomUUID) 
+                ? crypto.randomUUID() 
+                : Date.now().toString(36) + Math.random().toString(36).substring(2),
+            value,
+            date,
+            hours
+          }
+        }));
+        await bulkAddEntries(columnId, attendanceUpdates);
+
+        // Run anomaly check
+        const anomalyUpdates = Object.entries(entries).map(([studentId, value]) => ({
+          studentId,
+          value,
+          hours
+        }));
+        runAttendanceAnomalyCheck(date, columnId, anomalyUpdates);
+      }
+
+      // 2. Save Collaboration
+      if (data.collaboration) {
+        const { columnId, date, updates } = data.collaboration;
+        const collabUpdates = updates.map(u => ({
+          studentId: u.studentId,
+          entry: {
+            id: (typeof crypto !== 'undefined' && crypto.randomUUID) 
+                ? crypto.randomUUID() 
+                : Date.now().toString(36) + Math.random().toString(36).substring(2),
+            value: u.value,
+            note: u.note,
+            date
+          }
+        }));
+        await bulkAddEntries(columnId, collabUpdates);
+      }
+
+      setIsQuickEntryModalOpen(false);
+    } catch (err) {
+      console.error("Fehler beim Speichern der Schnelleingabe:", err);
     }
   };
 
@@ -782,6 +845,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     onClick={() => setIsActionsDropdownOpen(false)}
                   />
                   <div className="dropdown-menu">
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        setIsActionsDropdownOpen(false);
+                        setIsQuickEntryModalOpen(true);
+                      }}
+                    >
+                      <Zap size={16} />
+                      <span>Schnelleingabe</span>
+                    </button>
                     <button
                       className="dropdown-item"
                       onClick={() => {
@@ -1123,6 +1196,14 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsCollaborationModalOpen(false)}
         students={students}
         onSave={handleSaveCollaborationBulk}
+      />
+
+      <QuickEntryModal 
+        isOpen={isQuickEntryModalOpen}
+        onClose={() => setIsQuickEntryModalOpen(false)}
+        course={course}
+        students={students}
+        onSave={handleSaveQuickEntry}
       />
 
       <TrendSettingsModal 
