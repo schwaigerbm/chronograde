@@ -132,7 +132,11 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 
 #### Modal zur Mitarbeit-Schnellerfassung ("+" Button)
-* **Design & Layout:** Großes modales Dialogfenster. Links befindet sich eine Liste aller Schüler des Kurses mit Checkboxen (Mehrfachauswahl) sowie Schaltflächen für „Alle auswählen“ und „Auswahl aufheben“. Rechts befindet sich ein zweigeteiltes Panel: oben die Schnellauswahl der vorgefertigten Kommentare (nach `+`, `~`, `-` gruppiert), unten das manuelle Erfassungsfeld (Textfeld für Notiz und Buttons für `+`, `~`, `-`).
+* **Design & Layout:** Sehr großes, übersichtliches modales Dialogfenster (Breite bis zu 1200px bzw. 95vw). Zweispaltiges Layout:
+    *   **Links (Schülerliste):** Eine Liste aller Schüler des Kurses mit Checkboxen (Mehrfachauswahl) sowie komfortablen Schaltflächen für „Alle auswählen“ und „Auswahl aufheben“. In jeder Zeile wird eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen) angezeigt.
+    *   **Rechts (Zuweisungs-Panel):** 
+        *   Oben: Die Schnellauswahl der vorgefertigten Kommentare, die übersichtlich in drei nebeneinander liegenden Spalten für Plus (`+`), Neutral (`~`) und Minus (`-`) angeordnet sind, um eine schnelle Zuweisung per Klick zu ermöglichen.
+        *   Unten: Das benutzerdefinierte Erfassungsfeld (breites Textfeld für Notiz und Buttons für `+`, `~`, `-` direkt darunter).
 * **Interaktions-Ablauf:**
     * Markieren eines oder mehrerer Schüler in der Liste.
     * Klick auf einen vorgefertigten Kommentar (z.B. `+ Sehr aktiv`): Trägt diesen Eintrag für alle markierten Schüler sofort in die Session ein. Die Auswahl (Checkboxen) wird automatisch geleert, um die nächste Zuweisung zu vereinfachen.

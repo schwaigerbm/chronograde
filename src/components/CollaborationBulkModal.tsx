@@ -104,7 +104,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card collaboration-modal expanded" style={{ maxWidth: '850px', width: '90%' }}>
+      <div className="modal-card collaboration-modal expanded" style={{ maxWidth: '1200px', width: '95%' }}>
         <div className="modal-header">
           <h2 className="modal-title">Mitarbeit Schnellerfassung</h2>
           <button className="btn-icon" onClick={onClose}><X size={20} /></button>
@@ -122,7 +122,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '24px', alignItems: 'start' }}>
             
             {/* LINKE SPALTE: Schülerliste */}
             <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: '#f8fafc' }}>
@@ -216,11 +216,11 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   Vorgefertigte Kommentare zuweisen
                 </span>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                   {/* Plus Kommentare */}
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--success-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Plus (+)</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(34, 197, 94, 0.02)' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--success-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Plus (+)</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {plusComments.length === 0 ? (
                         <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
                       ) : (
@@ -229,7 +229,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                             key={c.id}
                             type="button"
                             className="btn-secondary btn-xs hover-success"
-                            style={{ padding: '4px 8px', fontSize: '11px', borderColor: 'rgba(34, 197, 94, 0.2)', backgroundColor: 'rgba(34, 197, 94, 0.05)' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '11px', borderColor: 'rgba(34, 197, 94, 0.1)', backgroundColor: 'white' }}
                             onClick={() => handleAssignComment('+', c.text)}
                             disabled={selectedStudentIds.size === 0}
                           >
@@ -241,9 +241,9 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   </div>
 
                   {/* Neutral Kommentare */}
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Neutral (~)</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(245, 158, 11, 0.02)' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Neutral (~)</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {neutralComments.length === 0 ? (
                         <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
                       ) : (
@@ -252,7 +252,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                             key={c.id}
                             type="button"
                             className="btn-secondary btn-xs hover-warning"
-                            style={{ padding: '4px 8px', fontSize: '11px', borderColor: 'rgba(245, 158, 11, 0.2)', backgroundColor: 'rgba(245, 158, 11, 0.05)' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '11px', borderColor: 'rgba(245, 158, 11, 0.1)', backgroundColor: 'white' }}
                             onClick={() => handleAssignComment('~', c.text)}
                             disabled={selectedStudentIds.size === 0}
                           >
@@ -264,9 +264,9 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   </div>
 
                   {/* Minus Kommentare */}
-                  <div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Minus (-)</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(239, 68, 68, 0.02)' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Minus (-)</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {minusComments.length === 0 ? (
                         <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
                       ) : (
@@ -275,7 +275,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                             key={c.id}
                             type="button"
                             className="btn-secondary btn-xs hover-danger"
-                            style={{ padding: '4px 8px', fontSize: '11px', borderColor: 'rgba(239, 68, 68, 0.2)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '11px', borderColor: 'rgba(239, 68, 68, 0.1)', backgroundColor: 'white' }}
                             onClick={() => handleAssignComment('-', c.text)}
                             disabled={selectedStudentIds.size === 0}
                           >

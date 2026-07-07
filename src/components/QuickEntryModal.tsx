@@ -196,7 +196,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card collaboration-modal expanded" style={{ maxWidth: '850px', width: '90%' }}>
+      <div className="modal-card collaboration-modal expanded" style={{ maxWidth: '1200px', width: '95%' }}>
         <div className="modal-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Zap size={20} className="text-primary-color" style={{ color: 'var(--primary-color)' }} />
           <h2 className="modal-title" style={{ margin: 0 }}>Schnelleingabe</h2>
@@ -362,7 +362,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'start' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '24px', alignItems: 'start' }}>
                 
                 {/* LINKE SPALTE: Schülerliste */}
                 <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: '#f8fafc' }}>
@@ -456,11 +456,11 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                       Vorgefertigte Kommentare zuweisen
                     </span>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                       {/* Plus Kommentare */}
-                      <div>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--success-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Plus (+)</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <div style={{ border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '8px', padding: '10px', backgroundColor: 'rgba(34, 197, 94, 0.02)' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--success-color)', marginBottom: '6px', textTransform: 'uppercase' }}>Plus (+)</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {plusComments.length === 0 ? (
                             <span style={{ fontSize: '11px', color: '#94a3b8' }}>Keine Kommentare</span>
                           ) : (
@@ -469,7 +469,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                                 key={c.id}
                                 type="button"
                                 className="btn-secondary btn-xs hover-success"
-                                style={{ padding: '2px 6px', fontSize: '10px', borderColor: 'rgba(34, 197, 94, 0.2)', backgroundColor: 'rgba(34, 197, 94, 0.05)' }}
+                                style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '4px 6px', fontSize: '10px', borderColor: 'rgba(34, 197, 94, 0.1)', backgroundColor: 'white' }}
                                 onClick={() => handleAssignComment('+', c.text)}
                                 disabled={selectedCollabStudentIds.size === 0}
                               >
@@ -481,9 +481,9 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                       </div>
 
                       {/* Neutral Kommentare */}
-                      <div>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Neutral (~)</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <div style={{ border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', padding: '10px', backgroundColor: 'rgba(245, 158, 11, 0.02)' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '6px', textTransform: 'uppercase' }}>Neutral (~)</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {neutralComments.length === 0 ? (
                             <span style={{ fontSize: '11px', color: '#94a3b8' }}>Keine Kommentare</span>
                           ) : (
@@ -492,7 +492,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                                 key={c.id}
                                 type="button"
                                 className="btn-secondary btn-xs hover-warning"
-                                style={{ padding: '2px 6px', fontSize: '10px', borderColor: 'rgba(245, 158, 11, 0.2)', backgroundColor: 'rgba(245, 158, 11, 0.05)' }}
+                                style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '4px 6px', fontSize: '10px', borderColor: 'rgba(245, 158, 11, 0.1)', backgroundColor: 'white' }}
                                 onClick={() => handleAssignComment('~', c.text)}
                                 disabled={selectedCollabStudentIds.size === 0}
                               >
@@ -504,9 +504,9 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                       </div>
 
                       {/* Minus Kommentare */}
-                      <div>
-                        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--danger-color)', marginBottom: '4px', textTransform: 'uppercase' }}>Minus (-)</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <div style={{ border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', padding: '10px', backgroundColor: 'rgba(239, 68, 68, 0.02)' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--danger-color)', marginBottom: '6px', textTransform: 'uppercase' }}>Minus (-)</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {minusComments.length === 0 ? (
                             <span style={{ fontSize: '11px', color: '#94a3b8' }}>Keine Kommentare</span>
                           ) : (
@@ -515,7 +515,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                                 key={c.id}
                                 type="button"
                                 className="btn-secondary btn-xs hover-danger"
-                                style={{ padding: '2px 6px', fontSize: '10px', borderColor: 'rgba(239, 68, 68, 0.2)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
+                                style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '4px 6px', fontSize: '10px', borderColor: 'rgba(239, 68, 68, 0.1)', backgroundColor: 'white' }}
                                 onClick={() => handleAssignComment('-', c.text)}
                                 disabled={selectedCollabStudentIds.size === 0}
                               >
