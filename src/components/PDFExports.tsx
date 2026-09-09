@@ -491,13 +491,13 @@ export const StudentReportPDFDocument = ({
             </Text>
 
             {/* Grade key box */}
-            <View style={{ marginTop: 8, padding: 8, backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 6, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: '#334155' }}>
-              <Text style={{ fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>Gesetzlicher österreichischer Notenschlüssel:</Text>
-              <Text>Sehr gut (1): ab 90%</Text>
-              <Text>Gut (2): ab 80%</Text>
-              <Text>Befriedigend (3): ab 65%</Text>
-              <Text>Genügend (4): ab 50%</Text>
-              <Text>Nicht genügend (5): unter 50%</Text>
+            <View style={{ marginTop: 6, padding: '5 8', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 4, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: '#334155' }}>
+              <Text style={{ fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>Notenschlüssel (Österreich):</Text>
+              <Text>1 (Sehr gut) ≥ 90%</Text>
+              <Text>2 (Gut) ≥ 80%</Text>
+              <Text>3 (Befriedigend) ≥ 65%</Text>
+              <Text>4 (Genügend) ≥ 50%</Text>
+              <Text>5 (Nicht genügend) &lt; 50%</Text>
             </View>
           </View>
         )}
