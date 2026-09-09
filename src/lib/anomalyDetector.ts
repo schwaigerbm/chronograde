@@ -1,5 +1,4 @@
-// src/lib/anomalyDetector.ts
-import type { GradeEntry } from '../schema';
+import type { GradeEntry, Course } from '../schema';
 
 export interface Anomaly {
   ruleId: 1 | 2 | 3;
@@ -13,9 +12,22 @@ export interface Anomaly {
  * 3. Absent three times in the last 5 sessions (at least 3 out of the last 5 are 'x')
  * 
  * @param entries List of presence entries for the student
+ * @param settings Optional course attendance anomaly settings
  * @returns Array of detected anomalies
  */
-export const checkAttendanceAnomalies = (entries: GradeEntry[]): Anomaly[] => {
+export const checkAttendanceAnomalies = (
+  entries: GradeEntry[],
+  settings?: Course['attendanceAnomalySettings']
+): Anomaly[] => {
+  // If settings exist and global attendance clarifications are disabled, return no anomalies
+  if (settings && settings.enabled === false) {
+    return [];
+  }
+
+  const isRule1Active = settings ? settings.rule2InRow !== false : true;
+  const isRule2Active = settings ? settings.rule2In3 !== false : true;
+  const isRule3Active = settings ? settings.rule3In5 !== false : true;
+
   // Filter entries to ensure we only look at attendance values and sort them chronologically (ascending)
   const presenceEntries = entries
     .filter(e => e.value === 'check' || e.value === 'x')
@@ -27,7 +39,7 @@ export const checkAttendanceAnomalies = (entries: GradeEntry[]): Anomaly[] => {
   const anomalies: Anomaly[] = [];
 
   // Rule 1: Fehlt der Schüler schon das zweite mal in Folge?
-  if (N >= 2) {
+  if (isRule1Active && N >= 2) {
     const last1 = presenceEntries[N - 1];
     const last2 = presenceEntries[N - 2];
     if (last1.value === 'x' && last2.value === 'x') {
@@ -39,7 +51,7 @@ export const checkAttendanceAnomalies = (entries: GradeEntry[]): Anomaly[] => {
   }
 
   // Rule 2: Hat er in den letzten drei Terminen zweimal gefehlt?
-  if (N >= 2) {
+  if (isRule2Active && N >= 2) {
     const last3 = presenceEntries.slice(Math.max(0, N - 3));
     const absentCount = last3.filter(e => e.value === 'x').length;
     if (absentCount >= 2) {
@@ -51,7 +63,7 @@ export const checkAttendanceAnomalies = (entries: GradeEntry[]): Anomaly[] => {
   }
 
   // Rule 3: Hat er in den letzten 5 Terminen 3 mal gefehlt?
-  if (N >= 3) {
+  if (isRule3Active && N >= 3) {
     const last5 = presenceEntries.slice(Math.max(0, N - 5));
     const absentCount = last5.filter(e => e.value === 'x').length;
     if (absentCount >= 3) {

@@ -60,6 +60,12 @@ export interface Course {
   enrolledStudents: string[]; // Liste der Schüler-IDs (Enrollment)
   timetableDay?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | null;
   timetableSlot?: 'morning' | 'afternoon' | null;
+  attendanceAnomalySettings?: {
+    enabled: boolean;
+    rule2InRow: boolean;
+    rule2In3: boolean;
+    rule3In5: boolean;
+  };
 }
  
 
@@ -119,6 +125,7 @@ export interface Reminder {
   courseName: string;
   anomalyType: string; // e.g. "Fehlt das zweite Mal in Folge"
   date: string;        // Due date (YYYY-MM-DD)
+  dueTime?: string;    // Fälligkeits-Uhrzeit (Standard: "07:00")
   resolved: boolean;   // Whether the task is completed
   createdAt: string;
 }

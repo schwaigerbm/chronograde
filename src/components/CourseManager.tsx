@@ -328,6 +328,88 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
                     required
                   />
                 </div>
+
+                {/* Fehlzeiten-Abklärungen & Einstellungen */}
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+                  <label style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', display: 'block', marginBottom: '8px' }}>
+                    Fehlzeiten-Abklärungen & Erinnerungen
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '12px' }}>
+                    <input 
+                      type="checkbox"
+                      checked={currentCourse?.attendanceAnomalySettings?.enabled !== false}
+                      onChange={e => setCurrentCourse(prev => ({
+                        ...prev!,
+                        attendanceAnomalySettings: {
+                          enabled: e.target.checked,
+                          rule2InRow: prev?.attendanceAnomalySettings?.rule2InRow !== false,
+                          rule2In3: prev?.attendanceAnomalySettings?.rule2In3 !== false,
+                          rule3In5: prev?.attendanceAnomalySettings?.rule3In5 !== false,
+                        }
+                      }))}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-main)' }}>
+                      Automatische Abklärungen für diese Gruppe aktivieren
+                    </span>
+                  </label>
+
+                  {currentCourse?.attendanceAnomalySettings?.enabled !== false && (
+                    <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox"
+                          checked={currentCourse?.attendanceAnomalySettings?.rule2InRow !== false}
+                          onChange={e => setCurrentCourse(prev => ({
+                            ...prev!,
+                            attendanceAnomalySettings: {
+                              enabled: true,
+                              rule2InRow: e.target.checked,
+                              rule2In3: prev?.attendanceAnomalySettings?.rule2In3 !== false,
+                              rule3In5: prev?.attendanceAnomalySettings?.rule3In5 !== false,
+                            }
+                          }))}
+                        />
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>2x in Folge gefehlt</span>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox"
+                          checked={currentCourse?.attendanceAnomalySettings?.rule2In3 !== false}
+                          onChange={e => setCurrentCourse(prev => ({
+                            ...prev!,
+                            attendanceAnomalySettings: {
+                              enabled: true,
+                              rule2InRow: prev?.attendanceAnomalySettings?.rule2InRow !== false,
+                              rule2In3: e.target.checked,
+                              rule3In5: prev?.attendanceAnomalySettings?.rule3In5 !== false,
+                            }
+                          }))}
+                        />
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>2x gefehlt in den letzten 3 Terminen</span>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox"
+                          checked={currentCourse?.attendanceAnomalySettings?.rule3In5 !== false}
+                          onChange={e => setCurrentCourse(prev => ({
+                            ...prev!,
+                            attendanceAnomalySettings: {
+                              enabled: true,
+                              rule2InRow: prev?.attendanceAnomalySettings?.rule2InRow !== false,
+                              rule2In3: prev?.attendanceAnomalySettings?.rule2In3 !== false,
+                              rule3In5: e.target.checked,
+                            }
+                          }))}
+                        />
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>3x gefehlt in den letzten 5 Terminen</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setIsCourseModalOpen(false)}>Abbrechen</button>

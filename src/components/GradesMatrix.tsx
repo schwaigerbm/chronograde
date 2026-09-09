@@ -428,7 +428,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       };
       
       const newEntries = [...(currentGrade.entries || []), mockEntry];
-      const violations = checkAttendanceAnomalies(newEntries);
+      const violations = checkAttendanceAnomalies(newEntries, course.attendanceAnomalySettings);
       
       if (violations.length > 0) {
         queue.push({
@@ -511,7 +511,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         if (student) {
           const currentGrade = grades[studentId]?.[columnId] || { entries: [] };
           const newEntries = (currentGrade.entries || []).map(e => e.id === entry.id ? entry : e);
-          const violations = checkAttendanceAnomalies(newEntries);
+          const violations = checkAttendanceAnomalies(newEntries, course.attendanceAnomalySettings);
           
           if (violations.length > 0) {
             setAnomaliesQueue([{

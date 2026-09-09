@@ -69,6 +69,7 @@ export const AttendanceAnomaliesModal = ({
         courseName: current.courseName,
         anomalyType: violationsStr,
         date: reminderDate,
+        dueTime: '07:00',
         resolved: false,
         createdAt: new Date().toISOString()
       };
@@ -152,7 +153,7 @@ export const AttendanceAnomaliesModal = ({
 
             {createReminder && (
               <div className="form-group" style={{ marginLeft: '24px', display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
-                <label className="form-label" style={{ fontSize: '13px' }}>Erinnerungsdatum</label>
+                <label className="form-label" style={{ fontSize: '13px' }}>Erinnerungsdatum (Anzeige ab 07:00 Uhr morgens)</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <Calendar size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
                   <input 
@@ -163,6 +164,9 @@ export const AttendanceAnomaliesModal = ({
                     style={{ paddingLeft: '34px', fontSize: '14px' }}
                   />
                 </div>
+                <span style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
+                  * Der Termin erscheint am gewählten Stichtag ab 07:00 Uhr früh in der Terminliste.
+                </span>
               </div>
             )}
           </div>

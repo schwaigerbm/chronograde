@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Trash2, CheckCircle2, AlertCircle, CheckSquare, Square, Eye, EyeOff } from 'lucide-react';
+import { Calendar, Trash2, CheckCircle2, AlertCircle, CheckSquare, Square, Eye, EyeOff, Clock, ListFilter } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import { formatDate } from '../lib/utils';
 import type { Reminder } from '../schema';
 
 export const RemindersWidget = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [showResolved, setShowResolved] = useState(false);
+  const [showAllTermine, setShowAllTermine] = useState(false); // false = "Nur aktuelle Termine", true = "Alle Termine"
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,9 +34,6 @@ export const RemindersWidget = () => {
     }
   };
 
-  const filteredReminders = reminders.filter(r => showResolved ? true : !r.resolved);
-  const unresolvedCount = reminders.filter(r => !r.resolved).length;
-
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
@@ -45,54 +42,101 @@ export const RemindersWidget = () => {
     );
   }
 
-  // Get current date string for checking overdue reminders
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Get current date & time info for checking active/current reminders
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const currentHour = now.getHours();
+
+  // Helper to check if a reminder is currently due/active (due at or before today starting at 07:00 AM)
+  const isCurrentReminder = (r: Reminder) => {
+    if (r.resolved) return false;
+    if (r.date < todayStr) return true; // Overdue
+    if (r.date === todayStr && currentHour >= 7) return true; // Today starting at 07:00
+    return false; // Future
+  };
+
+  const currentCount = reminders.filter(isCurrentReminder).length;
+  const filteredReminders = reminders.filter(r => showAllTermine ? true : isCurrentReminder(r));
 
   return (
     <div className="dashboard-card" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid var(--border-color)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Calendar size={20} color="var(--primary-color)" /> Terminliste & Abklärungen
           </h3>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            {unresolvedCount === 0 
-              ? 'Keine offenen Abklärungen ausstehend.' 
-              : `${unresolvedCount} offene ${unresolvedCount === 1 ? 'Abklärung' : 'Abklärungen'} ausstehend.`
+            {currentCount === 0 
+              ? 'Keine aktuellen Abklärungen ausstehend.' 
+              : `${currentCount} aktuelle ${currentCount === 1 ? 'Abklärung' : 'Abklärungen'} ausstehend.`
             }
           </p>
         </div>
         
-        <button 
-          type="button"
-          className="btn-secondary btn-sm"
-          onClick={() => setShowResolved(prev => !prev)}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 12px' }}
-        >
-          {showResolved ? (
-            <>
-              <EyeOff size={14} /> Erledigte ausblenden
-            </>
-          ) : (
-            <>
-              <Eye size={14} /> Erledigte anzeigen
-            </>
-          )}
-        </button>
+        {/* Toggle Switch: Nur aktuelle vs Alle Termine */}
+        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', borderRadius: '8px', padding: '3px' }}>
+          <button 
+            type="button"
+            className={`btn-xs ${!showAllTermine ? 'active-btn' : ''}`}
+            onClick={() => setShowAllTermine(false)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              fontSize: '12px', 
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: !showAllTermine ? 'white' : 'transparent',
+              color: !showAllTermine ? 'var(--primary-color)' : 'var(--text-muted)',
+              boxShadow: !showAllTermine ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              fontWeight: !showAllTermine ? '600' : 'normal',
+              cursor: 'pointer'
+            }}
+          >
+            <Clock size={14} /> Nur aktuelle Termine
+          </button>
+          <button 
+            type="button"
+            className={`btn-xs ${showAllTermine ? 'active-btn' : ''}`}
+            onClick={() => setShowAllTermine(true)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              fontSize: '12px', 
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: showAllTermine ? 'white' : 'transparent',
+              color: showAllTermine ? 'var(--primary-color)' : 'var(--text-muted)',
+              boxShadow: showAllTermine ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              fontWeight: showAllTermine ? '600' : 'normal',
+              cursor: 'pointer'
+            }}
+          >
+            <ListFilter size={14} /> Alle Termine
+          </button>
+        </div>
       </div>
 
       {filteredReminders.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
           <CheckCircle2 size={48} color="#16a34a" style={{ marginBottom: '12px', opacity: 0.8 }} />
-          <h4 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-main)', margin: '0 0 4px 0' }}>Alles erledigt!</h4>
+          <h4 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-main)', margin: '0 0 4px 0' }}>Keine aktuellen Termine!</h4>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
-            {showResolved ? 'Es gibt noch keine aufgezeichneten Erinnerungen.' : 'Keine offenen Fehlzeiten-Erinnerungen vorhanden.'}
+            {!showAllTermine 
+              ? 'Für den heutigen Tag sind derzeit keine offenen Abklärungen ab 07:00 Uhr fällig.' 
+              : 'Es gibt generell keine erfassten Erinnerungen.'
+            }
           </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filteredReminders.map((reminder) => {
             const isOverdue = !reminder.resolved && reminder.date < todayStr;
+            const isFuture = !reminder.resolved && (reminder.date > todayStr || (reminder.date === todayStr && currentHour < 7));
+
             return (
               <div 
                 key={reminder.id}
@@ -102,12 +146,14 @@ export const RemindersWidget = () => {
                   justifyContent: 'space-between', 
                   padding: '14px 16px', 
                   borderRadius: '10px', 
-                  background: reminder.resolved ? '#f8fafc' : isOverdue ? '#fff5f5' : '#ffffff', 
+                  background: reminder.resolved ? '#f8fafc' : isOverdue ? '#fff5f5' : isFuture ? '#f0f9ff' : '#ffffff', 
                   border: reminder.resolved 
                     ? '1px dashed #cbd5e1' 
                     : isOverdue 
                       ? '1px solid #fee2e2' 
-                      : '1px solid var(--border-color)',
+                      : isFuture 
+                        ? '1px solid #bae6fd' 
+                        : '1px solid var(--border-color)',
                   opacity: reminder.resolved ? 0.7 : 1,
                   transition: 'all 0.2s ease'
                 }}
@@ -155,6 +201,23 @@ export const RemindersWidget = () => {
                           <AlertCircle size={10} /> Überfällig
                         </span>
                       )}
+
+                      {/* Future Badge */}
+                      {isFuture && (
+                        <span style={{ 
+                          fontSize: '11px', 
+                          fontWeight: 'bold', 
+                          background: '#e0f2fe', 
+                          color: '#0284c7', 
+                          padding: '1px 6px', 
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px'
+                        }}>
+                          <Clock size={10} /> Geplant (Ab 07:00 Uhr)
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -168,7 +231,7 @@ export const RemindersWidget = () => {
                     </div>
 
                     <div style={{ fontSize: '13px', color: isOverdue ? '#dc2626' : 'var(--text-muted)', marginTop: '6px', fontWeight: isOverdue ? '600' : 'normal' }}>
-                      Fällig bis: {formatDate(reminder.date)}
+                      Fällig ab: {formatDate(reminder.date)} (07:00 Uhr)
                     </div>
                   </div>
                 </div>

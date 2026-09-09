@@ -5,33 +5,31 @@ Dieses Feature dient dazu, auffällige Abwesenheiten von Schülern unmittelbar n
 
 ---
 
-## 2. Erkennung von Auffälligkeiten
-Nach jedem Speichervorgang der Anwesenheit (Sammelerfassung oder Einzeländerung) wird die chronologische Historie der Anwesenheitseinträge des Schülers analysiert. Folgende drei Auffälligkeiten werden geprüft:
-1.  **Zweimal in Folge gefehlt:** Die letzten beiden chronologischen Einträge sind als abwesend ('x') markiert.
-2.  **Zweimal gefehlt in den letzten 3 Terminen:** Mindestens zwei der letzten drei Termine sind abwesend ('x').
-3.  **Dreimal gefehlt in den letzten 5 Terminen:** Mindestens drei der letzten fünf Termine sind abwesend ('x').
+## 2. Kursspezifische Konfiguration (Einstellungen der Beurteilungsgruppe)
+In den Einstellungen der jeweiligen Beurteilungsgruppe (Kurs) können die Fehlzeiten-Abklärungen flexibel konfiguriert werden:
+* **Haupt-Schalter (Toggle):** „Fehlzeiten-Abklärungen aktivieren“ (An / Aus).
+* **Einzelne Regelfälle (Checkboxen):** Falls aktiviert, können die gewünschten Regeln individuell gewählt werden:
+  1. **2x in Folge gefehlt:** Die letzten beiden chronologischen Einträge sind abwesend ('x').
+  2. **2x gefehlt in den letzten 3 Terminen:** Mindestens zwei der letzten drei Termine sind abwesend ('x').
+  3. **3x gefehlt in den letzten 5 Terminen:** Mindestens drei der letzten fünf Termine sind abwesend ('x').
 
 ---
 
-## 3. Interaktives Auffälligkeits-Modal (Wizard)
-Wird bei einem oder mehreren Schülern mindestens eine der oben genannten Auffälligkeiten erkannt, öffnet sich nach dem Speichern automatisch ein Modal zur Bestätigung.
-*   **Schrittweise Anzeige:** Die Schüler werden nacheinander (einzeln pro Schritt) angezeigt.
-*   **Inhalt pro Schüler:**
-    *   Name des Schülers und Gruppe.
-    *   Aufzählung der konkret verletzten Regeln (jede verletzte Regel wird in einer **eigenen Zeile mit einem Aufzählungspunkt** dargestellt).
-    *   Checkbox-Option: "Abklärungserinnerung für den nächsten Termin erstellen".
-    *   Datumsfeld für die Erinnerung (standardmäßig 7 Tage nach dem Erfassungsdatum vorausgewählt, manuell änderbar).
-*   **Interaktion:** Mit Klick auf "Bestätigen & Weiter" (bzw. "Bestätigen & Schließen" beim letzten Schüler) wird der aktuelle Schritt quittiert, die Erinnerung ggf. in der Datenbank gespeichert und der nächste Schüler angezeigt.
+## 3. Interaktives Auffälligkeits-Modal (Wizard bei der Erfassung)
+Wird beim Speichern der Anwesenheit eine aktive Auffälligkeit erkannt, öffnet sich automatisch das Bestätigungs-Modal:
+* **Schrittweise Anzeige:** Die Schüler werden nacheinander (einzeln pro Schritt) angezeigt.
+* **Datums- & Uhrzeitfestlegung:**
+  * Der Benutzer wird gefragt, an welchem **Datum** die Abklärung in der Terminliste auftauchen soll.
+  * **Uhrzeit-Regel:** Der Termin erscheint an diesem Stichtag bereits **früh morgens ab 07:00 Uhr** in der Terminliste.
+* **Speicherung:** Mit Klick auf „Bestätigen & Weiter“ wird der Abklärungstermin mit Fälligkeitsdatum und Startzeit 07:00 Uhr in der Datenbank hinterlegt.
 
 ---
 
-## 4. Terminliste (Reminders-Widget)
-Auf der **Start**-Seite der Anwendung befindet sich ein Widget ("Terminliste & Abklärungen"), das alle ausstehenden Abklärungstermine auflistet.
-*   **Darstellung der Erinnerungen:**
-    *   Name des Schülers und Gruppe.
-    *   **Erkannte Auffälligkeiten:** Jede verknüpfte Fehlzeiten-Auffälligkeit des Schülers wird untereinander in einer **eigenen Zeile mit einem Aufzählungspunkt** dargestellt.
-    *   Fälligkeitsdatum (überfällige Termine werden rot hervorgehoben).
-*   **Interaktion:**
-    *   Über ein Kontrollkästchen (Checkbox) kann eine Erinnerung als erledigt markiert (bzw. wieder reaktiviert) werden.
-    *   Über ein Mülleimer-Symbol kann die Erinnerung dauerhaft gelöscht werden.
-    *   Ein Filter ermöglicht das Ein- und Ausblenden bereits erledigter Termine.
+## 4. Terminliste (Reminders-Widget auf der Startseite)
+Auf der **Start**-Seite listet die Terminliste alle Abklärungen auf.
+* **Filter & Ansichts-Schalter (Toggle):**
+  * **„Nur aktuelle Termine“ (Standard):** Zeigt alle Abklärungen, deren Fälligkeitszeitpunkt (Stichtag ab 07:00 Uhr) erreicht oder überschritten ist und die noch nicht erledigt sind.
+  * **„Alle Termine“:** Zeigt die Gesamtliste aller Termine (inklusive zukünftiger Termine sowie bereits erledigter Abklärungen).
+* **Interaktion:**
+  * Über ein Kontrollkästchen (Checkbox) wird ein Termin als erledigt abgehakt.
+  * Über ein Mülleimer-Symbol kann ein Eintrag gelöscht werden.
