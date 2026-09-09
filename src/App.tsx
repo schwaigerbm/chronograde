@@ -484,7 +484,16 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
               </div>
             </div>
             <div className="content-area" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '0 4px' }}>
-              <RemindersWidget />
+              <RemindersWidget 
+                courses={courses}
+                onOpenCourse={(courseId) => {
+                  const targetCourse = courses.find(c => c.id === courseId);
+                  if (targetCourse) {
+                    setSelectedCourse(targetCourse);
+                    setActiveTab('beurteilungen');
+                  }
+                }}
+              />
             </div>
           </div>
         );

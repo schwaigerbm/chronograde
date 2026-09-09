@@ -33,3 +33,27 @@ Auf der **Start**-Seite listet die Terminliste alle Abklärungen auf.
 * **Interaktion:**
   * Über ein Kontrollkästchen (Checkbox) wird ein Termin als erledigt abgehakt.
   * Über ein Mülleimer-Symbol kann ein Eintrag gelöscht werden.
+
+---
+
+## 5. Manuelle Termine, Tests & Abgaben (`AddReminderModal`)
+Neben automatischen Abklärungen können manuelle Termine für Gruppen oder einzelne Schüler angelegt werden:
+* **Termin-Typen:**
+  * 📝 **Test / Überprüfung** (Schularbeiten, Tests)
+  * 📁 **Aufgabe / Abgabe** (Mitschriften, Portfolios, Hausübungen)
+  * 📌 **Notiz / Sonstiges** (Generelle Termine)
+* **Bezug (Zielgruppe):**
+  * **Gesamte Gruppe:** Gilt für alle Schüler eines ausgewählten Kurses.
+  * **Einzelner Schüler:** Gilt für einen bestimmten Schüler einer ausgewählten Gruppe.
+* **Vorbereitungs-Erinnerung (Vorlaufzeit):**
+  * Option zur Wahl einer Vor-Erinnerung: `Keine`, `1 Tag davor`, `3 Tage davor` oder `7 Tage davor`.
+  * Das System generiert bei Auswahl automatisch eine zusätzliche Vorbereitungs-Erinnerung, die 1, 3 oder 7 Tage vor dem Haupttermin ab 07:00 Uhr morgens in der Terminliste auftaucht.
+* **Farbauswahl (Custom Accent Color):**
+  * Farbauswahl (z. B. Blau, Violett, Smaragdgrün, Bernstein, Rosenrot) für individuelle Farbakzente/Badges in der Terminliste.
+* **Suche, Sortierung & Filter-Pills:**
+  * **Live-Suche:** Echtzeit-Filterung nach Titel, Schülernamen, Gruppe oder Notiz.
+  * **Sortierung:** Chronologisch nach Fälligkeit (auf-/absteigend), Name (A-Z) oder Typ.
+  * **Kategorie-Filter:** Schnellfilter-Pills (`Alle`, `📝 Tests`, `📁 Abgaben`, `⚠️ Fehlzeiten`).
+* **Änderungsmöglichkeiten (Bearbeiten & Löschen):**
+  * **Bearbeiten-Icon (Stift):** Öffnet den Dialog zum Bearbeiten des ausgewählten Termins (Titel, Typ, Farbe, Datum, Vorlaufzeit, Zielgruppe).
+  * **Löschen-Icon (Mistkübel):** Löscht den Termin endgültig. Falls eine Vorbereitsungs-Erinnerung verknüpft ist, wird diese ebenfalls mitbereinigt.

@@ -116,16 +116,22 @@ export interface PredefinedCommentsSettings {
   comments: PredefinedComment[];
 }
 
-// 8. ERINNERUNGEN / TERMINE (Attendance Clarifications)
+// 8. ERINNERUNGEN / TERMINE (Attendance Clarifications & Custom Reminders)
 export interface Reminder {
   id: string;
-  studentId: string;
-  studentName: string;
+  studentId?: string;
+  studentName?: string;
   courseId: string;
   courseName: string;
-  anomalyType: string; // e.g. "Fehlt das zweite Mal in Folge"
+  type?: 'attendance_anomaly' | 'exam' | 'assignment' | 'general' | 'prep_reminder';
+  targetType?: 'course' | 'student';
+  title?: string;
+  color?: string; // 'blue' | 'purple' | 'emerald' | 'amber' | 'rose'
+  anomalyType: string; // Detailbeschreibung / Anomaly text
   date: string;        // Due date (YYYY-MM-DD)
   dueTime?: string;    // Fälligkeits-Uhrzeit (Standard: "07:00")
+  prepDays?: 1 | 3 | 7 | null;
+  parentReminderId?: string;
   resolved: boolean;   // Whether the task is completed
   createdAt: string;
 }

@@ -1,0 +1,392 @@
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, Clock, User, Users, Check, FileText, BookOpen, Palette } from 'lucide-react';
+import type { Course, Student, Reminder } from '../schema';
+
+interface AddReminderModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  courses: Course[];
+  students: Student[];
+  reminderToEdit?: Reminder | null;
+  onSave: (
+    reminderData: Partial<Reminder> & { title: string; courseId: string; date: string },
+    prepDays?: 1 | 3 | 7 | null,
+    existingReminderId?: string
+  ) => Promise<void>;
+}
+
+export const COLOR_OPTIONS = [
+  { id: 'blue', name: 'Blau', hex: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+  { id: 'purple', name: 'Violett', hex: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
+  { id: 'emerald', name: 'Smaragd', hex: '#10b981', bg: '#ecfdf5', border: '#a7f3d0' },
+  { id: 'amber', name: 'Bernstein', hex: '#f59e0b', bg: '#fffbeb', border: '#fde68a' },
+  { id: 'rose', name: 'Rosenrot', hex: '#f43f5e', bg: '#fff1f2', border: '#fecdd3' },
+];
+
+export const AddReminderModal: React.FC<AddReminderModalProps> = ({
+  isOpen,
+  onClose,
+  courses,
+  students,
+  reminderToEdit,
+  onSave
+}) => {
+  const [type, setType] = useState<'exam' | 'assignment' | 'general'>('exam');
+  const [targetType, setTargetType] = useState<'course' | 'student'>('course');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
+  const [color, setColor] = useState<string>('purple');
+  const [date, setDate] = useState<string>('');
+  const [dueTime, setDueTime] = useState<string>('07:00');
+  const [prepDays, setPrepDays] = useState<1 | 3 | 7 | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize or pre-fill state
+  useEffect(() => {
+    if (isOpen) {
+      if (reminderToEdit) {
+        setType((reminderToEdit.type as any) === 'assignment' ? 'assignment' : (reminderToEdit.type as any) === 'general' ? 'general' : 'exam');
+        setTargetType(reminderToEdit.targetType || (reminderToEdit.studentId ? 'student' : 'course'));
+        setSelectedCourseId(reminderToEdit.courseId || (courses[0]?.id || ''));
+        setSelectedStudentId(reminderToEdit.studentId || '');
+        setTitle(reminderToEdit.title || reminderToEdit.anomalyType || '');
+        setColor(reminderToEdit.color || 'purple');
+        setDate(reminderToEdit.date || new Date().toISOString().split('T')[0]);
+        setDueTime(reminderToEdit.dueTime || '07:00');
+        setPrepDays(reminderToEdit.prepDays || null);
+      } else {
+        setType('exam');
+        setTargetType('course');
+        const defaultCourse = courses[0]?.id || '';
+        setSelectedCourseId(defaultCourse);
+        setSelectedStudentId('');
+        setTitle('');
+        setColor('purple');
+        // Default due date: tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        setDate(tomorrow.toISOString().split('T')[0]);
+        setDueTime('07:00');
+        setPrepDays(null);
+      }
+    }
+  }, [isOpen, reminderToEdit, courses]);
+
+  if (!isOpen) return null;
+
+  const currentCourse = courses.find(c => c.id === selectedCourseId);
+  const enrolledStudentIds = currentCourse?.enrolledStudents || [];
+  const enrolledStudents = students.filter(s => enrolledStudentIds.includes(s.id));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !selectedCourseId || !date) return;
+
+    setIsSubmitting(true);
+    try {
+      const selectedStudent = students.find(s => s.id === selectedStudentId);
+      const studentName = targetType === 'student' && selectedStudent 
+        ? `${selectedStudent.lastName}, ${selectedStudent.firstName}`
+        : 'Gesamte Gruppe';
+
+      await onSave(
+        {
+          title: title.trim(),
+          anomalyType: title.trim(),
+          courseId: selectedCourseId,
+          courseName: currentCourse?.name || '',
+          studentId: targetType === 'student' ? selectedStudentId : '',
+          studentName,
+          targetType,
+          type,
+          color,
+          date,
+          dueTime,
+        },
+        prepDays,
+        reminderToEdit?.id
+      );
+
+      onClose();
+    } catch (err) {
+      console.error("Fehler beim Speichern des Termins:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 1150 }}>
+      <div className="modal-card" style={{ maxWidth: '560px', borderRadius: '16px', overflow: 'hidden' }}>
+        <div className="modal-header" style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Calendar size={20} color="var(--primary-color)" /> 
+            {reminderToEdit ? 'Termin / Abgabe bearbeiten' : 'Neuen Termin / Abgabe erstellen'}
+          </h3>
+          <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '75vh', overflowY: 'auto' }}>
+            
+            {/* 1. Termin-Typ Wahl */}
+            <div>
+              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>Typ des Termins</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                <button
+                  type="button"
+                  className={`btn-secondary btn-xs ${type === 'exam' ? 'active-btn' : ''}`}
+                  onClick={() => { setType('exam'); setColor('purple'); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    backgroundColor: type === 'exam' ? '#8b5cf6' : 'white',
+                    color: type === 'exam' ? 'white' : 'var(--text-main)',
+                    borderColor: type === 'exam' ? '#8b5cf6' : 'var(--border-color)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <BookOpen size={15} /> Test / Prüfung
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn-secondary btn-xs ${type === 'assignment' ? 'active-btn' : ''}`}
+                  onClick={() => { setType('assignment'); setColor('emerald'); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    backgroundColor: type === 'assignment' ? '#10b981' : 'white',
+                    color: type === 'assignment' ? 'white' : 'var(--text-main)',
+                    borderColor: type === 'assignment' ? '#10b981' : 'var(--border-color)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <FileText size={15} /> Abgabe / Aufgabe
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn-secondary btn-xs ${type === 'general' ? 'active-btn' : ''}`}
+                  onClick={() => { setType('general'); setColor('blue'); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    backgroundColor: type === 'general' ? '#2563eb' : 'white',
+                    color: type === 'general' ? 'white' : 'var(--text-main)',
+                    borderColor: type === 'general' ? '#2563eb' : 'var(--border-color)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Calendar size={15} /> Notiz / Sonstiges
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Bezeichnung / Titel */}
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 600 }}>Titel / Bezeichnung</label>
+              <input
+                type="text"
+                className="form-input"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="z.B. 1. Schularbeit (Algebra) oder Mitschrift-Abgabe"
+                required
+                autoFocus
+              />
+            </div>
+
+            {/* 3. Bezug (Gesamte Gruppe vs Einzelner Schüler) */}
+            <div>
+              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>Bezug (Zielgruppe)</label>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="radio"
+                    name="targetType"
+                    checked={targetType === 'course'}
+                    onChange={() => setTargetType('course')}
+                  />
+                  <Users size={16} color="var(--primary-color)" /> Gesamte Gruppe
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="radio"
+                    name="targetType"
+                    checked={targetType === 'student'}
+                    onChange={() => setTargetType('student')}
+                  />
+                  <User size={16} color="var(--primary-color)" /> Einzelner Schüler
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: targetType === 'student' ? '1fr 1fr' : '1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Gruppe / Kurs</label>
+                  <select
+                    className="form-input"
+                    value={selectedCourseId}
+                    onChange={e => setSelectedCourseId(e.target.value)}
+                    required
+                  >
+                    {courses.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.year})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {targetType === 'student' && (
+                  <div className="form-group">
+                    <label className="form-label" style={{ fontSize: '12px' }}>Schüler auswählen</label>
+                    <select
+                      className="form-input"
+                      value={selectedStudentId}
+                      onChange={e => setSelectedStudentId(e.target.value)}
+                      required={targetType === 'student'}
+                    >
+                      <option value="">-- Schüler wählen --</option>
+                      {enrolledStudents.map(s => (
+                        <option key={s.id} value={s.id}>{s.lastName}, {s.firstName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 4. Akzentfarbe */}
+            <div>
+              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Palette size={16} /> Farbakzent wählen
+              </label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                {COLOR_OPTIONS.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setColor(c.id)}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: c.hex,
+                      border: color === c.id ? '3px solid #0f172a' : '2px solid transparent',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      transition: 'transform 0.15s ease'
+                    }}
+                    title={c.name}
+                  >
+                    {color === c.id && <Check size={16} strokeWidth={3} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. Fälligkeitsdatum & Uhrzeit */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: 600 }}>Fälligkeitsdatum</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <Calendar size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                    style={{ paddingLeft: '34px' }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: 600 }}>Anzeige ab</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <Clock size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={dueTime}
+                    onChange={e => setDueTime(e.target.value)}
+                    style={{ paddingLeft: '34px' }}
+                    placeholder="07:00"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 6. Vorbereitungs-Erinnerung (Vorlaufzeit) */}
+            <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+                Vorbereitungs-Erinnerung (Vorab-Termin in der Liste)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
+                {[
+                  { days: null, label: 'Keine' },
+                  { days: 1, label: '1 Tag davor' },
+                  { days: 3, label: '3 Tage davor' },
+                  { days: 7, label: '7 Tage davor' },
+                ].map(opt => (
+                  <button
+                    key={String(opt.days)}
+                    type="button"
+                    className={`btn-secondary btn-xs ${prepDays === opt.days ? 'active-btn' : ''}`}
+                    onClick={() => setPrepDays(opt.days as any)}
+                    style={{
+                      padding: '6px 10px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
+                      backgroundColor: prepDays === opt.days ? 'var(--primary-color)' : 'white',
+                      color: prepDays === opt.days ? 'white' : 'var(--text-main)',
+                      borderColor: prepDays === opt.days ? 'var(--primary-color)' : 'var(--border-color)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {prepDays && (
+                <p style={{ fontSize: '12px', color: '#64748b', margin: '8px 0 0 0', fontStyle: 'italic' }}>
+                  * Es wird automatisch ein zusätzlicher Vorbereitungstermin {prepDays} {prepDays === 1 ? 'Tag' : 'Tage'} vor dem Fälligkeitstag ab 07:00 Uhr in der Terminliste generiert.
+                </p>
+              )}
+            </div>
+
+          </div>
+
+          <div className="modal-footer" style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid var(--border-color)' }}>
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={isSubmitting}>Abbrechen</button>
+            <button type="submit" className="btn-primary" style={{ width: 'auto', marginTop: 0 }} disabled={isSubmitting || !title.trim() || !selectedCourseId || !date}>
+              {isSubmitting ? 'Speichere...' : reminderToEdit ? 'Änderungen speichern' : 'Termin anlegen'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
