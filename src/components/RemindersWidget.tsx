@@ -12,8 +12,6 @@ import {
   Pencil, 
   Search, 
   ArrowUpDown, 
-  BookOpen, 
-  FileText, 
   User, 
   Users,
   ExternalLink
