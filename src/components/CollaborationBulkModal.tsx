@@ -104,13 +104,23 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card collaboration-modal expanded" style={{ maxWidth: '1200px', width: '95%' }}>
+      <div 
+        className="modal-card collaboration-bulk-modal" 
+        style={{ 
+          width: '98vw', 
+          height: '95vh', 
+          maxWidth: '1600px', 
+          maxHeight: '95vh', 
+          display: 'flex', 
+          flexDirection: 'column' 
+        }}
+      >
         <div className="modal-header">
           <h2 className="modal-title">Mitarbeit Schnellerfassung</h2>
           <button className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
         
-        <div className="modal-body p-8" style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+        <div className="modal-body p-8" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
           <div className="form-group" style={{ marginBottom: '20px', maxWidth: '250px' }}>
             <label className="form-label" style={{ fontSize: '12px' }}>Erfassungsdatum</label>
@@ -122,12 +132,12 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '24px', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', alignItems: 'stretch', flex: 1, minHeight: 0 }}>
             
             {/* LINKE SPALTE: Schülerliste */}
-            <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: '#f8fafc' }}>
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-main)' }}>
                   Schüler auswählen ({selectedStudentIds.size} markiert)
                 </span>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -150,10 +160,10 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                 </div>
               </div>
 
-              <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: 'white' }}>
+              <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '6px', backgroundColor: 'white' }}>
                 <table className="data-table" style={{ margin: 0 }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#f1f5f9' }}>
+                    <tr style={{ backgroundColor: '#e2e8f0' }}>
                       <th style={{ width: '40px', textAlign: 'center' }}>Sel.</th>
                       <th>Schüler</th>
                       <th style={{ width: '150px' }}>Aktuelle Erfassung</th>
@@ -176,13 +186,21 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                               onChange={() => handleToggleStudent(student.id)}
                             />
                           </td>
-                          <td style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400 }}>
-                            {student.lastName}, {student.firstName}
+                          <td 
+                            className="student-name-cell"
+                            style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400, position: 'relative' }}
+                          >
+                            <strong style={{ fontWeight: 'bold' }}>{student.lastName}</strong>, {student.firstName}
+                            {student.photoBase64 && (
+                              <div className="student-avatar-tooltip">
+                                <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                              </div>
+                            )}
                           </td>
                           <td>
                             {entry ? (
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                                <span className={`badge ${entry.value === '+' ? 'badge-success' : entry.value === '-' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '11px', padding: '2px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>
+                                <span className={`badge ${entry.value === '+' ? 'badge-success' : entry.value === '-' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '12px', padding: '2px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>
                                   {entry.value} {entry.note}
                                 </span>
                                 <button 
@@ -196,7 +214,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                                 </button>
                               </div>
                             ) : (
-                              <span style={{ color: '#cbd5e1', fontSize: '12px' }}>-</span>
+                              <span style={{ color: '#94a3b8', fontSize: '12px' }}>-</span>
                             )}
                           </td>
                         </tr>
@@ -208,28 +226,28 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
             </div>
 
             {/* RECHTE SPALTE: Zuweisungs-Panel */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', height: '100%', minHeight: 0, paddingRight: '4px' }}>
               
               {/* Vordefinierte Kommentare */}
               <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: 'white' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '12px', color: 'var(--text-main)' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600, display: 'block', marginBottom: '12px', color: 'var(--text-main)' }}>
                   Vorgefertigte Kommentare zuweisen
                 </span>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                   {/* Plus Kommentare */}
-                  <div style={{ border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(34, 197, 94, 0.02)' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--success-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Plus (+)</div>
+                  <div style={{ border: '1px solid rgba(34, 197, 94, 0.4)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(34, 197, 94, 0.04)' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--success-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Plus (+)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {plusComments.length === 0 ? (
-                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
+                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>Keine Kommentare</span>
                       ) : (
                         plusComments.map(c => (
                           <button
                             key={c.id}
                             type="button"
                             className="btn-secondary btn-xs hover-success"
-                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '11px', borderColor: 'rgba(34, 197, 94, 0.1)', backgroundColor: 'white' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '13px', borderColor: 'rgba(34, 197, 94, 0.2)', backgroundColor: 'white', color: '#0f172a' }}
                             onClick={() => handleAssignComment('+', c.text)}
                             disabled={selectedStudentIds.size === 0}
                           >
@@ -241,18 +259,18 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   </div>
 
                   {/* Neutral Kommentare */}
-                  <div style={{ border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(245, 158, 11, 0.02)' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Neutral (~)</div>
+                  <div style={{ border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(245, 158, 11, 0.04)' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warning-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Neutral (~)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {neutralComments.length === 0 ? (
-                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
+                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>Keine Kommentare</span>
                       ) : (
                         neutralComments.map(c => (
                           <button
                             key={c.id}
                             type="button"
                             className="btn-secondary btn-xs hover-warning"
-                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '11px', borderColor: 'rgba(245, 158, 11, 0.1)', backgroundColor: 'white' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '13px', borderColor: 'rgba(245, 158, 11, 0.3)', backgroundColor: 'white', color: '#0f172a' }}
                             onClick={() => handleAssignComment('~', c.text)}
                             disabled={selectedStudentIds.size === 0}
                           >
@@ -264,18 +282,18 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   </div>
 
                   {/* Minus Kommentare */}
-                  <div style={{ border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(239, 68, 68, 0.02)' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Minus (-)</div>
+                  <div style={{ border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '8px', padding: '12px', backgroundColor: 'rgba(239, 68, 68, 0.04)' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--danger-color)', marginBottom: '8px', textTransform: 'uppercase' }}>Minus (-)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {minusComments.length === 0 ? (
-                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Keine Kommentare</span>
+                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>Keine Kommentare</span>
                       ) : (
                         minusComments.map(c => (
                           <button
                             key={c.id}
                             type="button"
                             className="btn-secondary btn-xs hover-danger"
-                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '11px', borderColor: 'rgba(239, 68, 68, 0.1)', backgroundColor: 'white' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', padding: '6px 8px', fontSize: '13px', borderColor: 'rgba(239, 68, 68, 0.2)', backgroundColor: 'white', color: '#0f172a' }}
                             onClick={() => handleAssignComment('-', c.text)}
                             disabled={selectedStudentIds.size === 0}
                           >
@@ -290,7 +308,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
 
               {/* Benutzerdefinierter Eintrag */}
               <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: 'white' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, display: 'block', marginBottom: '8px', color: 'var(--text-main)' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600, display: 'block', marginBottom: '8px', color: 'var(--text-main)' }}>
                   Benutzerdefinierter Kommentar
                 </span>
                 
@@ -298,7 +316,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   type="text" 
                   className="form-input" 
                   placeholder="Eigener Kommentartext..."
-                  style={{ marginBottom: '12px', fontSize: '12px', padding: '6px 10px' }}
+                  style={{ marginBottom: '12px', fontSize: '14px', padding: '6px 10px' }}
                   value={customNote}
                   onChange={(e) => setCustomNote(e.target.value)}
                 />

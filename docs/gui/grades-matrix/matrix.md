@@ -132,11 +132,19 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Unter der Beschriftung befindet sich ein **Auge-Icon (Eye/EyeOff)** (Ebene 3): Dient zum Umschalten zwischen Kompakt- und Detailansicht.
 
 #### Modal zur Mitarbeit-Schnellerfassung ("+" Button)
-* **Design & Layout:** Sehr großes, übersichtliches modales Dialogfenster (Breite bis zu 1200px bzw. 95vw). Zweispaltiges Layout:
-    *   **Links (Schülerliste):** Eine Liste aller Schüler des Kurses mit Checkboxen (Mehrfachauswahl) sowie komfortablen Schaltflächen für „Alle auswählen“ und „Auswahl aufheben“. In jeder Zeile wird eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen) angezeigt.
-    *   **Rechts (Zuweisungs-Panel):** 
-        *   Oben: Die Schnellauswahl der vorgefertigten Kommentare, die übersichtlich in drei nebeneinander liegenden Spalten für Plus (`+`), Neutral (`~`) und Minus (`-`) angeordnet sind, um eine schnelle Zuweisung per Klick zu ermöglichen.
+* **Design & Layout:** Sehr großes, präsentes modales Dialogfenster (Breite: 98vw, Höhe: 95vh, maxWidth: 1600px, maxHeight: 95vh, fühlt sich wie ein eigenes Fenster an). Verwendet die Klasse `collaboration-bulk-modal` zur Vermeidung von Breiten-Konflikten mit dem Standard-Kollaborations-Modal. Zweispaltiges Layout (Aufteilung ca. 2/3 links, 1/3 rechts):
+    *   **Links (Schülerliste):** Eine breite Liste aller Schüler des Kurses (nimmt ca. 2/3 der Gesamtbreite ein, mit Checkboxen für Mehrfachauswahl, komfortablen Schaltflächen für „Alle auswählen“ und „Auswahl aufheben“). In jeder Zeile wird eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen) angezeigt.
+        *   **Name:** Die Schüler werden als `[Nachname], [Vorname]` dargestellt, wobei der Nachname fett gedruckt ist.
+        *   **Profilbild-Hover:** Beim Bewegen des Mauszeigers (Hover) über den Namen eines Schülers wird dessen Profilbild (falls vorhanden) in einem schwebenden Tooltip angezeigt.
+        *   **Schriftgröße:** Die Namen und Badges haben eine lesbare Schriftgröße (13px).
+    *   **Rechts (Zuweisungs-Panel):** Nimmt ca. 1/3 der Gesamtbreite ein.
+        *   Oben: Die Schnellauswahl der vorgefertigten Kommentare, die übersichtlich in drei untereinander liegenden Sektionen für Plus (`+`), Neutral (`~`) und Minus (`-`) angeordnet sind, um eine schnelle Zuweisung per Klick zu ermöglichen.
         *   Unten: Das benutzerdefinierte Erfassungsfeld (breites Textfeld für Notiz und Buttons für `+`, `~`, `-` direkt darunter).
+        *   **Schriftgrößen:** 
+            *   Unterüberschriften ("Schüler auswählen", "Vorgefertigte Kommentare zuweisen", "Benutzerdefinierter Kommentar") werden größer dargestellt (16px).
+            *   Kategorie-Labels ("Plus (+)", etc.) werden in 13px dargestellt.
+            *   Kommentar-Schaltflächen und Eingabefelder haben eine Schriftgröße von 13px bzw. 14px.
+        *   **Kontraste:** Umrisse (Borders) der Kommentarbereiche und Buttons sind farblich verstärkt (z.B. 40% Deckkraft statt 20%), um sich klarer vom Hintergrund abzuheben. Die Hintergrundfarben der linken Spalte und Tabellenköpfe sind für einen besseren Graustufen-Kontrast abgedunkelt.
 * **Interaktions-Ablauf:**
     * Markieren eines oder mehrerer Schüler in der Liste.
     * Klick auf einen vorgefertigten Kommentar (z.B. `+ Sehr aktiv`): Trägt diesen Eintrag für alle markierten Schüler sofort in die Session ein. Die Auswahl (Checkboxen) wird automatisch geleert, um die nächste Zuweisung zu vereinfachen.

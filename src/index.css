@@ -2007,6 +2007,11 @@ input:checked+.slider:before {
   max-width: 600px !important;
 }
 
+/* --- COLLABORATION BULK MODAL --- */
+.collaboration-bulk-modal {
+  min-width: 800px;
+}
+
 .modal-layout-split {
   display: flex;
   gap: 20px;
@@ -2183,7 +2188,8 @@ input:checked+.slider:before {
   z-index: -1;
 }
 
-.student-cell-content:hover .student-avatar-tooltip {
+.student-cell-content:hover .student-avatar-tooltip,
+.student-name-cell:hover .student-avatar-tooltip {
   visibility: visible;
   opacity: 1;
   transform: scale(1);
