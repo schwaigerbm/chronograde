@@ -326,8 +326,8 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
 * **Inhalt:**
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr. Ein Button zum Generieren des PDF-Einzelberichts (Datenblatt) ist im Header platziert.
     * **Zusammenfassung (Summary):** Anzeige des aktuellen berechneten Live-Trends (Note und Prozentwert), der Meilensteine (berechnete Noten) sowie Statistiken. **Wichtig:** Die Anwesenheitsquote ist eine rein informative Statistik und darf zu keinem Zeitpunkt in die Notenberechnung einfließen.
-    * **PDF-Notenzusammensetzung (BVwG-konform & laienverständlich):** Der PDF-Ausdruck (Leistungsdatenblatt) enthält eine übersichtliche Tabelle zur Notenermittlung:
-        - **Spalten:** Beurteilungsbereich (Prüfung/Mitarbeit), Gewichtung (Wie viel zählt es?), Erreichte Leistung, Anteil an der Gesamtnote.
+        - **Header:** Oben steht nur der App-Titel "CHRONOGRADE". Die Schüler-ID wird im Schüler-Kasten nicht angezeigt.
+        - **Spalten:** Beurteilungsbereich (Prüfung/Mitarbeit), Gewichtung, Erreichte Leistung, Anteil an der Gesamtnote.
         - **Einfache Formel:** Der Anteil an der Gesamtnote je Zeile ist das Ergebnis einer einfachen Multiplikation ($\text{Anteil} = \text{Leistung} \times \text{Gewichtung}$). Die Summe aller Anteile ergibt das Gesamtergebnis.
         - **Erklärungstext (Berechnungshilfe):** Unter der Tabelle wird ein verständlicher, anschaulicher Hilfetext gedruckt, der das Rechenschema erklärt.
         - **Notenschlüssel:** Ein kompakter Kasten weist den österreichischen Notenschlüssel in prägnanter Form ("Notenschlüssel (Österreich): 1 (Sehr gut) ≥ 90% | 2 (Gut) ≥ 80% | 3 (Befriedigend) ≥ 65% | 4 (Genügend) ≥ 50% | 5 (Nicht genügend) < 50%") aus, damit die Notenfindung direkt nachvollzogen werden kann.

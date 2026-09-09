@@ -199,7 +199,7 @@ export const MatrixPDFDocument = ({
       <Page size="A4" orientation="landscape" style={styles.pageLandscape}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>Chronograde School Admin 2026</Text>
+          <Text style={styles.appTitle}>CHRONOGRADE</Text>
           <Text style={styles.title}>Leistungsbeurteilung: {course.name}</Text>
           <Text style={styles.subtitle}>Schuljahr: {course.year}</Text>
           <View style={styles.metaRow}>
@@ -382,7 +382,7 @@ export const StudentReportPDFDocument = ({
       <Page size="A4" style={styles.pagePortrait}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>Chronograde School Admin 2026</Text>
+          <Text style={styles.appTitle}>CHRONOGRADE</Text>
           <Text style={styles.title}>Leistungsdatenblatt</Text>
           <Text style={styles.subtitle}>Kurs: {course.name} | Schuljahr: {course.year}</Text>
           <View style={styles.metaRow}>
@@ -396,7 +396,6 @@ export const StudentReportPDFDocument = ({
             <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>
               {student.lastName}, {student.firstName}
             </Text>
-            <Text style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>Schüler-ID: {student.id}</Text>
           </View>
           {student.photoBase64 && (
             <Image 
@@ -447,7 +446,7 @@ export const StudentReportPDFDocument = ({
               {/* Header */}
               <View style={styles.tableRowHeader}>
                 <Text style={[styles.th, styles.colCompTitle]}>Beurteilungsbereich (Prüfung/Mitarbeit)</Text>
-                <Text style={[styles.th, styles.colCompWeight]}>Gewichtung (Wie viel zählt es?)</Text>
+                <Text style={[styles.th, styles.colCompWeight]}>Gewichtung</Text>
                 <Text style={[styles.th, styles.colCompValue]}>Erreichte Leistung</Text>
                 <Text style={[styles.th, styles.colCompContrib]}>Anteil an der Gesamtnote</Text>
               </View>
