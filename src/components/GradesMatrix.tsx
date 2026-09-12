@@ -166,6 +166,19 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     await firebaseService.saveCourse(updatedCourse);
   };
 
+  const handleToggleDeregister = async (studentId: string) => {
+    const deregistered = course.deregisteredStudents || [];
+    const isDeregistered = deregistered.includes(studentId);
+    const newList = isDeregistered
+      ? deregistered.filter(id => id !== studentId)
+      : [...deregistered, studentId];
+    const updatedCourse = {
+      ...course,
+      deregisteredStudents: newList
+    };
+    await firebaseService.saveCourse(updatedCourse);
+  };
+
   // Global keydown listener for cell quick entry and grid navigation
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -1184,7 +1197,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '2px', backgroundColor: '#94a3b8', zIndex: 10 }} />
                           <div className="summary-content">
                             <span className="summary-grade" style={{ color: '#94a3b8' }}>-</span>
-                            <span className="summary-percent" style={{ fontSize: '10px', color: '#64748b' }}>Abgemeldet</span>
                           </div>
                         </td>
                       );
@@ -1347,6 +1359,19 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
             }
             setActiveManualCell(null);
           }}
+        />
+      )}
+
+      {isEnrollmentModalOpen && (
+        <EnrollmentModal 
+          isOpen={isEnrollmentModalOpen}
+          onClose={() => setIsEnrollmentModalOpen(false)}
+          course={course}
+          students={allStudents.length > 0 ? allStudents : students}
+          onEnroll={handleEnroll}
+          onUnenroll={handleUnenroll}
+          onToggleDeregister={handleToggleDeregister}
+          onReorder={handleReorder}
         />
       )}
 

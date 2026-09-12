@@ -215,39 +215,9 @@ export const EnrollmentModal = ({
                           <span style={{ textDecoration: isDeregistered ? 'line-through' : 'none' }}>
                             {student.lastName}, {student.firstName}
                           </span>
-                          {isDeregistered && (
-                            <span 
-                              style={{ 
-                                marginLeft: '8px', 
-                                fontSize: '10px', 
-                                fontWeight: '700', 
-                                background: '#fee2e2', 
-                                color: '#991b1b', 
-                                padding: '2px 6px', 
-                                borderRadius: '4px',
-                                textTransform: 'uppercase'
-                              }}
-                            >
-                              Abgemeldet
-                            </span>
-                          )}
                         </td>
                         <td className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            {onToggleDeregister && (
-                              <button
-                                className={`btn-icon btn-sm ${isDeregistered ? '' : 'warning'}`}
-                                onClick={() => handleToggleDeregisterInternal(student.id)}
-                                disabled={isSaving}
-                                title={isDeregistered ? "Ausstreichen rückgängig machen" : "Schüler ausstreichen (Abmelden)"}
-                                style={{ 
-                                  color: isDeregistered ? '#2563eb' : '#d97706',
-                                  background: isDeregistered ? 'rgba(37,99,235,0.1)' : 'rgba(217,119,6,0.1)'
-                                }}
-                              >
-                                {isDeregistered ? <RotateCcw size={14} /> : <UserX size={14} />}
-                              </button>
-                            )}
                             <button 
                               className="btn-icon btn-sm" 
                               onClick={() => onReorder(index, 'up')}
@@ -272,6 +242,20 @@ export const EnrollmentModal = ({
                             >
                               <UserMinus size={14} />
                             </button>
+                            {onToggleDeregister && (
+                              <button
+                                className={`btn-icon btn-sm ${isDeregistered ? '' : 'warning'}`}
+                                onClick={() => handleToggleDeregisterInternal(student.id)}
+                                disabled={isSaving}
+                                title={isDeregistered ? "Ausstreichen rückgängig machen" : "Schüler ausstreichen"}
+                                style={{ 
+                                  color: isDeregistered ? '#2563eb' : '#d97706',
+                                  background: isDeregistered ? 'rgba(37,99,235,0.1)' : 'rgba(217,119,6,0.1)'
+                                }}
+                              >
+                                {isDeregistered ? <RotateCcw size={14} /> : <UserX size={14} />}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

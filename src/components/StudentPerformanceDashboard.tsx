@@ -634,22 +634,6 @@ export const StudentPerformanceDashboard = ({
             <div className="student-profile-text">
               <h1 className="student-dashboard-name">
                 <span className="lastname-bold">{student.lastName}</span>, {student.firstName}
-                {course.deregisteredStudents?.includes(student.id) && (
-                  <span 
-                    style={{ 
-                      marginLeft: '12px', 
-                      fontSize: '11px', 
-                      fontWeight: '700', 
-                      background: '#fee2e2', 
-                      color: '#991b1b', 
-                      padding: '3px 8px', 
-                      borderRadius: '4px',
-                      textTransform: 'uppercase'
-                    }}
-                  >
-                    Abgemeldet
-                  </span>
-                )}
               </h1>
               <p className="student-dashboard-meta">
                 Kurs: <strong>{course.name}</strong> | Schuljahr: {course.year}

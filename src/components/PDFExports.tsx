@@ -244,7 +244,7 @@ export const MatrixPDFDocument = ({
               >
                 <Text style={[styles.td, styles.colNr, { color: '#64748b' }]}>{index + 1}</Text>
                 <Text style={[styles.td, styles.colStudent]}>
-                  {student.lastName}, {student.firstName} {isDeregistered ? '(Abgemeldet)' : ''}
+                  {student.lastName}, {student.firstName}
                 </Text>
                 
                 {visibleColumns.map(col => {
