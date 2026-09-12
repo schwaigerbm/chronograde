@@ -244,6 +244,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       };
 
       // --- Direkteingabe (Noten / Zeichen / Löschen) ---
+      if (course.deregisteredStudents?.includes(studentId)) return;
+
       if (column.type === 'manual' || column.type === 'calculated') {
         if (column.calcType === 'grade') {
           if (e.key >= '1' && e.key <= '5') {
@@ -1030,7 +1032,10 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           </thead>
           <tbody>
             {students.map((student, index) => {
-              const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+              const isDeregistered = Boolean(course.deregisteredStudents?.includes(student.id));
+              const liveSummary = isDeregistered
+                ? { grade: null, percent: null, breakdown: [] }
+                : calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
               
               return (
                 <tr key={student.id}>
@@ -1039,6 +1044,22 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                       <span className="student-number">{index + 1}</span>
                       <span className="student-lastname">{student.lastName}</span>
                       <span className="student-firstname">{student.firstName}</span>
+                      {isDeregistered && (
+                        <span 
+                          style={{ 
+                            marginLeft: '6px', 
+                            fontSize: '9px', 
+                            fontWeight: '700', 
+                            background: '#fee2e2', 
+                            color: '#991b1b', 
+                            padding: '1px 5px', 
+                            borderRadius: '4px',
+                            textTransform: 'uppercase'
+                          }}
+                        >
+                          Abgemeldet
+                        </span>
+                      )}
                       <button 
                         className="btn-student-analysis"
                         onClick={(e) => {
@@ -1060,7 +1081,9 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     let grade = grades[student.id]?.[col.id];
                     
                     if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+                      const calculated = isDeregistered
+                        ? { grade: null }
+                        : calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
                       grade = { 
                         value: calculated.grade || undefined,
                         date: new Date().toISOString()
@@ -1082,17 +1105,44 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           } ${
                             flashedCell?.studentId === student.id && flashedCell?.columnId === col.id ? 'animate-flash-green' : ''
                           }`}
-                          onClick={() => setFocusedCell({ studentId: student.id, columnId: col.id })}
+                          onClick={() => {
+                            if (!isDeregistered) {
+                              setFocusedCell({ studentId: student.id, columnId: col.id });
+                            }
+                          }}
                           onMouseEnter={() => {
-                            setHoveredColId(col.id);
-                            setHoveredCell({ studentId: student.id, column: col });
+                            if (!isDeregistered) {
+                              setHoveredColId(col.id);
+                              setHoveredCell({ studentId: student.id, column: col });
+                            }
                           }}
                           onMouseLeave={() => {
                             setHoveredColId(null);
                             setHoveredCell(null);
                           }}
-                          style={heatmapStyle}
+                          style={{
+                            ...heatmapStyle,
+                            ...(isDeregistered ? {
+                              opacity: 0.45,
+                              pointerEvents: 'none',
+                              position: 'relative'
+                            } : {})
+                          }}
                         >
+                        {isDeregistered && (
+                          <div 
+                            style={{ 
+                              position: 'absolute', 
+                              top: '50%', 
+                              left: 0, 
+                              right: 0, 
+                              height: '2px', 
+                              backgroundColor: '#94a3b8', 
+                              zIndex: 10,
+                              pointerEvents: 'none'
+                            }} 
+                          />
+                        )}
                         <GradeCell 
                           studentId={student.id}
                           column={col}
@@ -1106,11 +1156,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           onHoverAttendanceDate={setHoveredAttendanceDate}
                           heatmapStyle={heatmapStyle}
                           onOpenEvaluation={() => {
+                            if (isDeregistered) return;
                             setActiveEvaluationColumn(col);
                             setActiveEvaluationStudent({ id: student.id, name: `${student.firstName} ${student.lastName}` });
                             setIsEvaluationModalOpen(true);
                           }}
                           onOpenManualEdit={(studentId, column, currentGrade) => {
+                            if (isDeregistered) return;
                             setActiveManualCell({
                               studentId,
                               studentName: `${student.lastName}, ${student.firstName}`,
@@ -1123,6 +1175,20 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     );
                   })}
                   {course.showTrend !== false && (() => {
+                    if (isDeregistered) {
+                      return (
+                        <td 
+                          className="sticky-col-right summary-cell"
+                          style={{ opacity: 0.45, pointerEvents: 'none', position: 'relative' }}
+                        >
+                          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '2px', backgroundColor: '#94a3b8', zIndex: 10 }} />
+                          <div className="summary-content">
+                            <span className="summary-grade" style={{ color: '#94a3b8' }}>-</span>
+                            <span className="summary-percent" style={{ fontSize: '10px', color: '#64748b' }}>Abgemeldet</span>
+                          </div>
+                        </td>
+                      );
+                    }
                     const trendHeatmapStyle = course.isTrendColorEnabled && liveSummary.grade
                       ? getHeatmapStyle(
                           { calcType: 'grade', isColorEnabled: true } as any, 
@@ -1172,6 +1238,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onSave={handleEditColumn}
         students={students}
         grades={grades}
+        deregisteredStudentIds={course.deregisteredStudents}
       />
 
       <AttendanceModal 

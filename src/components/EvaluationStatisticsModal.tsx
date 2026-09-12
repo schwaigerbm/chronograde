@@ -23,6 +23,7 @@ interface EvaluationStatisticsModalProps {
   column: CourseEntry;
   students: Student[];
   grades: GradesState;
+  deregisteredStudentIds?: string[];
 }
 
 export const EvaluationStatisticsModal = ({
@@ -30,7 +31,8 @@ export const EvaluationStatisticsModal = ({
   onClose,
   column,
   students,
-  grades
+  grades,
+  deregisteredStudentIds
 }: EvaluationStatisticsModalProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'points' | 'grade' | 'plus' | 'minus' | 'saldo'>('points');
@@ -70,8 +72,8 @@ export const EvaluationStatisticsModal = ({
   const subTasks = column.subTasks || [];
   const totalMaxPoints = subTasks.reduce((sum, t) => sum + (t.maxPoints || 0), 0);
 
-  // Filter out students who wish to be excluded from public statistics
-  const activeStudents = students.filter(s => !s.excludeFromPublicStats);
+  // Filter out students who wish to be excluded from public statistics or are deregistered
+  const activeStudents = students.filter(s => !s.excludeFromPublicStats && !deregisteredStudentIds?.includes(s.id));
 
   // Filter students who have a grade/points/entries for this column
   const gradedList = activeStudents.filter(student => {

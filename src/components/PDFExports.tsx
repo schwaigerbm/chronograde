@@ -228,31 +228,41 @@ export const MatrixPDFDocument = ({
 
           {/* Student Rows */}
           {students.map((student, index) => {
-            const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+            const isDeregistered = Boolean(course.deregisteredStudents?.includes(student.id));
+            const liveSummary = isDeregistered 
+              ? { grade: null, percent: null }
+              : calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
             
             return (
               <View 
                 key={student.id} 
                 style={[
                   styles.tableRow,
-                  index % 2 === 1 ? { backgroundColor: '#f8fafc' } : {}
+                  index % 2 === 1 ? { backgroundColor: '#f8fafc' } : {},
+                  isDeregistered ? { opacity: 0.5 } : {}
                 ]}
               >
                 <Text style={[styles.td, styles.colNr, { color: '#64748b' }]}>{index + 1}</Text>
-                <Text style={[styles.td, styles.colStudent]}>{student.lastName}, {student.firstName}</Text>
+                <Text style={[styles.td, styles.colStudent]}>
+                  {student.lastName}, {student.firstName} {isDeregistered ? '(Abgemeldet)' : ''}
+                </Text>
                 
                 {visibleColumns.map(col => {
                   let grade = grades[student.id]?.[col.id];
                   
                   if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                    const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+                    const calculated = isDeregistered
+                      ? { grade: null }
+                      : calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
                     grade = { 
                       value: calculated.grade || undefined
                     };
                   }
 
                   let displayValue = '';
-                  if (grade?.value !== undefined && grade.value !== '') {
+                  if (isDeregistered) {
+                    displayValue = '-';
+                  } else if (grade?.value !== undefined && grade.value !== '') {
                     displayValue = String(grade.value);
                   } else if (col.type === 'collaborationSum') {
                     const p = getCollaborationPercentage(grade?.entries);
@@ -267,7 +277,7 @@ export const MatrixPDFDocument = ({
                   return (
                     <Text 
                       key={col.id} 
-                      style={[styles.td, { width: gradeColWidth, textAlign: 'center' }]}
+                      style={[styles.td, { width: gradeColWidth, textAlign: 'center', color: isDeregistered ? '#94a3b8' : undefined }]}
                     >
                       {displayValue}
                     </Text>
@@ -275,7 +285,7 @@ export const MatrixPDFDocument = ({
                 })}
 
                 {actualShowTrend && (
-                  <Text style={[styles.td, styles.colTrend, { fontFamily: 'Helvetica-Bold', color: '#2563eb' }]}>
+                  <Text style={[styles.td, styles.colTrend, { fontFamily: 'Helvetica-Bold', color: (isDeregistered || !liveSummary.grade) ? '#94a3b8' : '#2563eb' }]}>
                     {liveSummary.grade ? `${liveSummary.grade} (${liveSummary.percent}%)` : '-'}
                   </Text>
                 )}
