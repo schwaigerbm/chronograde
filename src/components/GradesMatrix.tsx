@@ -32,7 +32,6 @@ import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment
 import { checkAttendanceAnomalies } from '../lib/anomalyDetector';
 import { AttendanceAnomaliesModal } from './AttendanceAnomaliesModal';
 import type { AnomalyResult } from './AttendanceAnomaliesModal';
-import { exportMatrixPDF } from './PDFExports';
 import { StudentPerformanceDashboard } from './StudentPerformanceDashboard';
 import { TrendSettingsModal } from './TrendSettingsModal';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
@@ -1388,8 +1387,9 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsPDFColumnSelectModalOpen(false)}
         columns={course.columns}
         course={course}
-        onConfirm={(selectedColIds, includeTrend) => {
+        onConfirm={async (selectedColIds, includeTrend) => {
           const selectedColumns = course.columns.filter(col => selectedColIds.includes(col.id));
+          const { exportMatrixPDF } = await import('./PDFExports');
           exportMatrixPDF(course, students, grades, selectedColumns, includeTrend);
           setIsPDFColumnSelectModalOpen(false);
         }}

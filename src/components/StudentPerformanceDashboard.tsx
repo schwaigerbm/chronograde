@@ -16,7 +16,6 @@ import {
 import type { Student, Course, CourseEntry, Grade } from '../schema';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
 import { formatDate } from '../lib/utils';
-import { exportStudentReportPDF } from './PDFExports';
 
 interface StudentPerformanceDashboardProps {
   student: Student;
@@ -644,7 +643,10 @@ export const StudentPerformanceDashboard = ({
           <div className="dashboard-actions">
             <button
               className="btn-secondary btn-sm dashboard-pdf-btn"
-              onClick={() => exportStudentReportPDF(student, course, grades, visibleColumns)}
+              onClick={async () => {
+                const { exportStudentReportPDF } = await import('./PDFExports');
+                exportStudentReportPDF(student, course, grades, visibleColumns);
+              }}
               title="Einzel-Schüler PDF Bericht herunterladen"
             >
               <FileDown size={16} />

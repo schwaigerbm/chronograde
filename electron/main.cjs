@@ -14,6 +14,26 @@ const {
 } = require('./database.cjs');
 
 let mainWindow;
+let splashWindow;
+
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 380,
+    height: 260,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    center: true,
+    alwaysOnTop: true,
+    show: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -23,6 +43,7 @@ function createWindow() {
     minHeight: 700,
     title: 'Chronograde - School Admin 2026',
     autoHideMenuBar: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
@@ -39,6 +60,15 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
+
+  mainWindow.once('ready-to-show', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+    }
+    mainWindow.show();
+    mainWindow.focus();
+  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('http:') || url.startsWith('https:')) {
@@ -410,6 +440,7 @@ function setupIpcHandlers() {
 }
 
 app.whenReady().then(async () => {
+  createSplashWindow();
   try {
     let targetDbPath = getSavedDbPath(app);
 
