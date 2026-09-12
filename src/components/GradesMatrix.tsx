@@ -123,7 +123,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   useEffect(() => {
     setHoveredCell(null);
     setActiveManualCell(null);
-  }, [course]);
+  }, [course?.id]);
 
   // Load all students for enrollment search
   useEffect(() => {

@@ -19,6 +19,9 @@ import { GradesMatrix } from './components/GradesMatrix';
 import { SettingsView } from './components/SettingsView';
 import { RemindersWidget } from './components/RemindersWidget';
 import { firebaseService } from './services/firebaseService';
+import { sqliteService } from './services/sqliteService';
+import { VaultLockScreen } from './components/VaultLockScreen';
+import { useInactivityTimer } from './hooks/useInactivityTimer';
 import type { Course } from './schema';
 
 // --- LOGIN VIEW ---
@@ -164,11 +167,17 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
   useEffect(() => {
     const unsubscribe = firebaseService.subscribeToCourses(false, (data) => {
-      setCourses(data);
+      setCourses(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(data)) return prev;
+        return data;
+      });
       // Sync selectedCourse if it exists
       setSelectedCourse(prev => {
         if (!prev) return null;
-        return data.find(c => c.id === prev.id) || null;
+        const updated = data.find(c => c.id === prev.id);
+        if (!updated) return null;
+        if (JSON.stringify(prev) === JSON.stringify(updated)) return prev;
+        return updated;
       });
     });
     return () => unsubscribe();
@@ -579,7 +588,37 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
 
 // --- MAIN APP COMPONENT ---
 const App = () => {
-  const { logout } = useAuth();
+  const isDesktop = sqliteService.isDesktopAvailable();
+  const [isVaultLocked, setIsVaultLocked] = useState<boolean>(isDesktop);
+  const { isAuthenticated, login, logout, loading } = useAuth();
+
+  // Automatic 5-minute inactivity lock for Desktop mode
+  useInactivityTimer(isVaultLocked, () => {
+    if (isDesktop) {
+      setIsVaultLocked(true);
+    }
+  });
+
+  if (isDesktop) {
+    if (isVaultLocked) {
+      return <VaultLockScreen onUnlock={() => setIsVaultLocked(false)} />;
+    }
+    return <Dashboard onLogout={() => setIsVaultLocked(true)} />;
+  }
+
+  // Web mode (Firebase Auth)
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-app)' }}>
+        <div className="spinner" style={{ width: '36px', height: '36px' }} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginView onLogin={login} />;
+  }
+
   return <Dashboard onLogout={logout} />;
 };
 

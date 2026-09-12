@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import CryptoJS from "crypto-js";
 import type { Course, Student, Grade, CourseEntry, AppUser, PredefinedComment, Reminder } from "../schema";
+import { sqliteService } from "./sqliteService";
 
 export const firebaseService = {
   
@@ -25,6 +26,9 @@ export const firebaseService = {
    * Hashes password with MD5 and checks against 'users' collection.
    */
   loginWithCredentials: async (username: string, password: string): Promise<AppUser> => {
+    if (sqliteService.isDesktopAvailable()) {
+      return { username: 'desktop_user', role: 'admin', name: 'Lehrer' };
+    }
     const hashedPassword = CryptoJS.MD5(password).toString();
     
     const q = query(
@@ -50,6 +54,9 @@ export const firebaseService = {
 
   // Abonniert Kurse (gefiltert nach archiviert)
   subscribeToCourses: (archived: boolean, callback: (courses: Course[]) => void) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return sqliteService.subscribeToCourses(archived, callback);
+    }
     const q = query(collection(db, "courses"));
     
     // Wir filtern lokal, um Dokumente ohne 'archived' Feld (Legacy) korrekt als 'false' zu behandeln
@@ -69,6 +76,9 @@ export const firebaseService = {
 
   // Erstellt oder aktualisiert einen Kurs
   saveCourse: async (course: Partial<Course> & { name: string }) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.saveCourse(course);
+    }
     const archived = course.archived ?? false; // Sicherstellen, dass archived immer gesetzt ist
     if (course.id) {
       const { id, ...data } = course;
@@ -87,57 +97,91 @@ export const firebaseService = {
 
   // Löscht einen Kurs endgültig
   deleteCourse: async (courseId: string) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.deleteCourse(courseId);
+    }
     return await deleteDoc(doc(db, "courses", courseId));
   },
-// --- 3. SCHÜLER-VERWALTUNG (Students) ---
 
-// Lädt alle Schüler (einmalig)
-getStudents: async (): Promise<Student[]> => {
-  const q = query(collection(db, "students"), orderBy("lastName", "asc"));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
-},
+  // --- 3. SCHÜLER-VERWALTUNG (Students) ---
 
-// Lädt alle Schüler (optional gefiltert nach Klasse, Echtzeit)
-subscribeToStudents: (classId: string | null, callback: (students: Student[]) => void) => {
-  let q = query(collection(db, "students"), orderBy("lastName", "asc"));
+  // Lädt alle Schüler (einmalig)
+  getStudents: async (): Promise<Student[]> => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.getStudents();
+    }
+    const q = query(collection(db, "students"), orderBy("lastName", "asc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+  },
 
-  if (classId) {
-    q = query(q, where("classId", "==", classId));
-  }
+  // Lädt alle Schüler (optional gefiltert nach Klasse, Echtzeit)
+  subscribeToStudents: (classId: string | null, callback: (students: Student[]) => void) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return sqliteService.subscribeToStudents(classId, callback);
+    }
+    let q = query(collection(db, "students"), orderBy("lastName", "asc"));
 
-  return onSnapshot(q, (snapshot) => {
-    const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
-    callback(students);
-  });
-},
+    if (classId) {
+      q = query(q, where("classId", "==", classId));
+    }
 
-// Schüler hinzufügen
-addStudent: async (student: Omit<Student, 'id'>) => {
-  return await addDoc(collection(db, "students"), student);
-},
+    return onSnapshot(q, (snapshot) => {
+      const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+      callback(students);
+    });
+  },
 
-// Schüler aktualisieren
-updateStudent: async (id: string, data: Partial<Student>) => {
-  const docRef = doc(db, "students", id);
-  return await setDoc(docRef, data, { merge: true });
-},
-
-saveStudent: async (student: Partial<Student> & { firstName: string, lastName: string }) => {
-  if (student.id) {
-    const docRef = doc(db, "students", student.id);
-    return await setDoc(docRef, student, { merge: true });
-  } else {
+  // Schüler hinzufügen
+  addStudent: async (student: Omit<Student, 'id'>) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.addStudent(student);
+    }
     return await addDoc(collection(db, "students"), student);
-  }
-},
+  },
+
+  // Schüler aktualisieren
+  updateStudent: async (id: string, data: Partial<Student>) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.updateStudent(id, data);
+    }
+    const docRef = doc(db, "students", id);
+    return await setDoc(docRef, data, { merge: true });
+  },
+
+  saveStudent: async (student: Partial<Student> & { firstName: string, lastName: string }) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.saveStudent(student);
+    }
+    if (student.id) {
+      const docRef = doc(db, "students", student.id);
+      return await setDoc(docRef, student, { merge: true });
+    } else {
+      return await addDoc(collection(db, "students"), student);
+    }
+  },
+
   deleteStudent: async (studentId: string) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.deleteStudent(studentId);
+    }
     return await deleteDoc(doc(db, "students", studentId));
   },
 
   // --- 4. NOTEN-VERWALTUNG (Grades) ---
 
+  subscribeToGradesForCourse: (courseId: string, callback: (allGrades: Record<string, Record<string, Grade>>) => void) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return sqliteService.subscribeToGradesForCourse(courseId, callback);
+    }
+    // Web fallback: return empty unsub for now as Firestore uses per-doc subscriptions
+    return () => {};
+  },
+
   subscribeToGrades: (studentId: string, courseId: string, callback: (grades: { [columnId: string]: Grade }) => void) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return sqliteService.subscribeToGrades(studentId, courseId, callback);
+    }
     const docRef = doc(db, `students/${studentId}/grades`, courseId);
     return onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -149,6 +193,9 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
   },
 
   updateGradeEntry: async (studentId: string, courseId: string, columnId: string, grade: Grade) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.updateGradeEntry(studentId, courseId, columnId, grade);
+    }
     const docRef = doc(db, `students/${studentId}/grades`, courseId);
     return await setDoc(docRef, {
       [columnId]: {
@@ -159,17 +206,26 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
   },
 
   updateCourseColumns: async (courseId: string, columns: CourseEntry[]) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.saveCourse({ id: courseId, columns } as any);
+    }
     const docRef = doc(db, "courses", courseId);
     return await setDoc(docRef, { columns }, { merge: true });
   },
 
   updateCourse: async (courseId: string, data: Partial<Course>) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.saveCourse({ id: courseId, ...data } as any);
+    }
     const docRef = doc(db, "courses", courseId);
     return await setDoc(docRef, data, { merge: true });
   },
 
   // Massen-Update von Noten (z.B. für Anwesenheit im ganzen Kurs)
   bulkUpdateGrades: async (courseId: string, updates: { studentId: string, columnId: string, grade: Grade }[]) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.bulkUpdateGrades(courseId, updates);
+    }
     const promises = updates.map(u => {
       const docRef = doc(db, `students/${u.studentId}/grades`, courseId);
       return setDoc(docRef, {
@@ -186,6 +242,9 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
 
   // Abonniert vorgefertigte Mitarbeitskommentare in Echtzeit
   subscribeToPredefinedComments: (callback: (comments: PredefinedComment[]) => void) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return sqliteService.subscribeToPredefinedComments(callback);
+    }
     const docRef = doc(db, "settings", "collaboration");
     return onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -199,6 +258,9 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
 
   // Speichert vorgefertigte Mitarbeitskommentare
   savePredefinedComments: async (comments: PredefinedComment[]) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.savePredefinedComments(comments);
+    }
     const docRef = doc(db, "settings", "collaboration");
     return await setDoc(docRef, { comments });
   },
@@ -207,6 +269,9 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
 
   // Abonniert alle Erinnerungen chronologisch
   subscribeToReminders: (callback: (reminders: Reminder[]) => void) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return sqliteService.subscribeToReminders(callback);
+    }
     const q = query(collection(db, "reminders"), orderBy("date", "asc"));
     return onSnapshot(q, (snapshot) => {
       const reminders = snapshot.docs.map(doc => ({
@@ -219,6 +284,9 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
 
   // Erstellt eine neue Erinnerung
   addReminder: async (reminder: Omit<Reminder, 'id'>) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.saveCustomReminder(reminder as any);
+    }
     return await addDoc(collection(db, "reminders"), reminder);
   },
 
@@ -228,6 +296,9 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
     prepDays?: 1 | 3 | 7 | null,
     existingReminderId?: string
   ) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.saveCustomReminder(reminder, prepDays, existingReminderId);
+    }
     let mainId = existingReminderId;
     const mainData: Omit<Reminder, 'id'> = {
       title: reminder.title,
@@ -299,12 +370,18 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
 
   // Aktualisiert den Status einer Erinnerung
   updateReminder: async (id: string, data: Partial<Reminder>) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.updateReminder(id, data);
+    }
     const docRef = doc(db, "reminders", id);
     return await setDoc(docRef, data, { merge: true });
   },
 
   // Löscht eine Erinnerung (inkl. verknüpfter Vorbereitungs-Erinnerungen)
   deleteReminder: async (id: string) => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.deleteReminder(id);
+    }
     // Check if there are linked child prep reminders
     const qChild = query(collection(db, "reminders"), where("parentReminderId", "==", id));
     const snapChild = await getDocs(qChild);
@@ -314,3 +391,4 @@ saveStudent: async (student: Partial<Student> & { firstName: string, lastName: s
     return await deleteDoc(doc(db, "reminders", id));
   }
 };
+

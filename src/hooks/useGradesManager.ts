@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { firebaseService } from '../services/firebaseService';
+import { sqliteService } from '../services/sqliteService';
 import type { Student, Grade, GradesState, Course, GradeEntry } from '../schema';
 
 /**
@@ -46,12 +47,29 @@ export const useGradesManager = (course: Course | null) => {
       return;
     }
 
+    if (sqliteService.isDesktopAvailable()) {
+      const unsub = firebaseService.subscribeToGradesForCourse(course.id, (allGrades) => {
+        setGrades((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(allGrades)) {
+            return prev;
+          }
+          return allGrades;
+        });
+      });
+      return () => unsub();
+    }
+
     const unsubscribes = students.map((student) => {
       return firebaseService.subscribeToGrades(student.id, course.id, (studentGrades) => {
-        setGrades((prev) => ({
-          ...prev,
-          [student.id]: studentGrades,
-        }));
+        setGrades((prev) => {
+          if (JSON.stringify(prev[student.id]) === JSON.stringify(studentGrades)) {
+            return prev;
+          }
+          return {
+            ...prev,
+            [student.id]: studentGrades,
+          };
+        });
       });
     });
 
