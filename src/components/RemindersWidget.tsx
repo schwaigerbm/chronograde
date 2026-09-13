@@ -21,6 +21,7 @@ import {
 import { firebaseService } from '../services/firebaseService';
 import type { Reminder, Course, Student } from '../schema';
 import { AddReminderModal, COLOR_OPTIONS } from './AddReminderModal';
+import { formatDate } from '../lib/utils';
 
 interface RemindersWidgetProps {
   courses?: Course[];
@@ -195,26 +196,28 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
   };
 
   return (
-    <div className="reminders-widget-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="reminders-widget-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '0 20px' }}>
       
       {/* Widget Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Calendar size={24} color="var(--primary-color)" /> Terminkalender & Aufgaben
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            Übersicht aller Fälligkeiten, Prüfungen und Abklärungen
-          </p>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Calendar size={22} color="var(--primary-color)" /> Terminkalender & Aufgaben
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+              Übersicht aller Fälligkeiten, Prüfungen und Abklärungen
+            </p>
+          </div>
 
-        <button 
-          onClick={handleOpenAdd} 
-          className="btn-primary" 
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '9px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
-        >
-          <Plus size={18} /> Neuer Termin
-        </button>
+          <button 
+            onClick={handleOpenAdd} 
+            className="btn-primary btn-sm" 
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', height: '34px' }}
+          >
+            <Plus size={16} /> Neuer Termin
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Left Calendar (1/3), Right Appointment List (2/3) */}
@@ -315,7 +318,7 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
           {/* Selected Day Filter Active Banner */}
           {selectedDayFilter && (
             <div style={{ marginTop: '16px', padding: '10px 12px', background: 'rgba(37, 99, 235, 0.1)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: 'var(--primary-color)' }}>
-              <span>Filter: <strong>{selectedDayFilter}</strong></span>
+              <span>Filter: <strong>{formatDate(selectedDayFilter)}</strong></span>
               <button 
                 onClick={() => setSelectedDayFilter(null)}
                 style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
@@ -510,7 +513,7 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
         {/* Right Date & Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ textAlign: 'right', fontSize: '12px', fontWeight: 'bold', color: item.date <= todayStr && !item.resolved ? '#dc2626' : 'var(--text-primary)' }}>
-            <div>{item.date}</div>
+            <div>{formatDate(item.date)}</div>
             <div style={{ fontSize: '11px', fontWeight: 'normal', color: 'var(--text-muted)' }}>{item.dueTime || '07:00'}</div>
           </div>
 

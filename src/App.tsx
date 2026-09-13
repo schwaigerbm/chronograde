@@ -487,8 +487,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                   <GraduationCap size={32} />
                 </div>
                 <div>
-                  <h1 className="main-title">Willkommen bei Chronograde</h1>
-                  <h2 className="sub-title">Ihr intelligenter Noten- und Anwesenheitsmanager</h2>
+                  <h1 className="main-title">Chronograde</h1>
+                  <h2 className="sub-title">Noten- und Unterrichtsmanagement</h2>
                 </div>
               </div>
             </div>
