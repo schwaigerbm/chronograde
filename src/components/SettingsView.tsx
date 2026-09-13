@@ -13,19 +13,28 @@ import {
   Download,
   Upload
 } from 'lucide-react';
-import { firebaseService } from '../services/firebaseService';
-import type { PredefinedComment } from '../schema';
+import { firebaseService, DEFAULT_REMINDER_CATEGORIES } from '../services/firebaseService';
+import type { PredefinedComment, ReminderCategory } from '../schema';
 import { DialogModal } from './DialogModal';
 
 export const SettingsView = () => {
-  const [activeTab, setActiveTab] = useState<'evaluation' | 'preferences' | 'backup'>('evaluation');
+  const [activeTab, setActiveTab] = useState<'evaluation' | 'categories' | 'preferences' | 'backup'>('evaluation');
   const [showAvatars, setShowAvatars] = useState<boolean>(() => {
     const stored = localStorage.getItem('showAvatars');
     return stored !== 'false'; // Default to true
   });
   
   const [comments, setComments] = useState<PredefinedComment[]>([]);
+  const [categories, setCategories] = useState<ReminderCategory[]>(DEFAULT_REMINDER_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Category form states
+  const [catName, setCatName] = useState('');
+  const [catColor, setCatColor] = useState('#7e22ce');
+  const [catIcon, setCatIcon] = useState('BookOpen');
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [catToDelete, setCatToDelete] = useState<ReminderCategory | null>(null);
+  const [isCatDeleteModalOpen, setIsCatDeleteModalOpen] = useState(false);
 
   // Backup & Restore states
   const [isExporting, setIsExporting] = useState(false);
@@ -146,6 +155,53 @@ export const SettingsView = () => {
     } catch (err) {
       console.error("Error reordering comments:", err);
     }
+  };
+
+  useEffect(() => {
+    firebaseService.getReminderCategories().then(setCategories).catch(() => {});
+  }, []);
+
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catName.trim()) return;
+
+    if (editingCatId) {
+      const updated = categories.map(c => c.id === editingCatId ? { ...c, name: catName.trim(), color: catColor, icon: catIcon } : c);
+      await firebaseService.saveReminderCategories(updated);
+      setCategories(updated);
+      setEditingCatId(null);
+    } else {
+      const newCat: ReminderCategory = {
+        id: 'cat_' + Date.now().toString(36),
+        name: catName.trim(),
+        color: catColor,
+        icon: catIcon,
+        isFixed: false
+      };
+      const updated = [...categories, newCat];
+      await firebaseService.saveReminderCategories(updated);
+      setCategories(updated);
+    }
+    setCatName('');
+    setCatColor('#7e22ce');
+    setCatIcon('BookOpen');
+  };
+
+  const handleStartEditCat = (cat: ReminderCategory) => {
+    if (cat.isFixed) return;
+    setEditingCatId(cat.id);
+    setCatName(cat.name);
+    setCatColor(cat.color);
+    setCatIcon(cat.icon);
+  };
+
+  const handleConfirmDeleteCat = async () => {
+    if (!catToDelete || catToDelete.isFixed) return;
+    const updated = categories.filter(c => c.id !== catToDelete.id);
+    await firebaseService.saveReminderCategories(updated);
+    setCategories(updated);
+    setIsCatDeleteModalOpen(false);
+    setCatToDelete(null);
   };
 
   // Group comments by type
@@ -325,6 +381,17 @@ export const SettingsView = () => {
             Bewertungsvorgaben
           </button>
           <button
+            id="tab-categories"
+            role="tab"
+            type="button"
+            aria-selected={activeTab === 'categories'}
+            aria-controls="panel-categories"
+            className="custom-tab-button"
+            onClick={() => setActiveTab('categories')}
+          >
+            Terminkategorien
+          </button>
+          <button
             id="tab-preferences"
             role="tab"
             type="button"
@@ -414,6 +481,137 @@ export const SettingsView = () => {
                 {renderCommentList(minusComments, '- (Negativ)', 'danger')}
               </div>
             )}
+          </section>
+        ) : activeTab === 'categories' ? (
+          /* Section: Terminkategorien */
+          <section 
+            id="panel-categories"
+            role="tabpanel"
+            aria-labelledby="tab-categories"
+            className="settings-section-card"
+          >
+            <div className="settings-section-header">
+              <MessageSquare size={22} className="text-indigo-600" />
+              <div>
+                <h3 className="text-lg font-bold">Termin- & Aufgabenkategorien</h3>
+                <p className="section-desc text-base">Verwalte Kategorien (Farbe, Name) für die Terminliste. „Fehlzeiten“ ist eine fixe System-Kategorie.</p>
+              </div>
+            </div>
+
+            {/* Category Form */}
+            <form onSubmit={handleSaveCategory} className="settings-add-form" style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '12px', alignItems: 'flex-end' }}>
+                <div className="form-group">
+                  <label className="form-label font-semibold">Kategoriename</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="z.B. Projektarbeit oder Elterngespräche"
+                    value={catName}
+                    onChange={e => setCatName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label font-semibold">Farbe wählen</label>
+                  <input
+                    type="color"
+                    className="form-input"
+                    value={catColor}
+                    onChange={e => setCatColor(e.target.value)}
+                    style={{ height: '38px', padding: '2px', cursor: 'pointer' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label font-semibold">Icon</label>
+                  <select
+                    className="form-input"
+                    value={catIcon}
+                    onChange={e => setCatIcon(e.target.value)}
+                  >
+                    <option value="BookOpen">📝 Test / Buch</option>
+                    <option value="FileText">📁 Datei / Abgabe</option>
+                    <option value="Calendar">📅 Kalender / Notiz</option>
+                    <option value="AlertTriangle">⚠️ Fehlzeit / Warnung</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {editingCatId && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        setEditingCatId(null);
+                        setCatName('');
+                        setCatColor('#7e22ce');
+                      }}
+                      style={{ height: '38px' }}
+                    >
+                      Abbrechen
+                    </button>
+                  )}
+                  <button type="submit" className="btn-primary" style={{ height: '38px', whiteSpace: 'nowrap' }} disabled={!catName.trim()}>
+                    <Plus size={16} /> {editingCatId ? 'Speichern' : 'Hinzufügen'}
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Categories List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {categories.map(cat => (
+                <div
+                  key={cat.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    borderLeft: `5px solid ${cat.color}`
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: cat.color }} />
+                    <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--text-primary)' }}>{cat.name}</span>
+                    {cat.isFixed && (
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: '12px' }}>
+                        Fixierte System-Kategorie
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {!cat.isFixed && (
+                      <>
+                        <button
+                          className="btn-icon"
+                          onClick={() => handleStartEditCat(cat)}
+                          title="Kategorie bearbeiten"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          className="btn-icon danger"
+                          onClick={() => {
+                            setCatToDelete(cat);
+                            setIsCatDeleteModalOpen(true);
+                          }}
+                          title="Kategorie löschen"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
         ) : activeTab === 'preferences' ? (
           /* Section: Benutzerpräferenzen */
@@ -548,6 +746,21 @@ export const SettingsView = () => {
         message="Sind Sie sicher, dass Sie die Daten aus der Backup-Datei wiederherstellen möchten? Dieser Vorgang importiert alle Schüler, Kurse und Noten."
         type="warning"
         confirmLabel="Wiederherstellen"
+        cancelLabel="Abbrechen"
+      />
+
+      {/* Delete Category Confirmation Modal */}
+      <DialogModal
+        isOpen={isCatDeleteModalOpen}
+        onClose={() => {
+          setIsCatDeleteModalOpen(false);
+          setCatToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteCat}
+        title="Kategorie löschen"
+        message={`Möchtest du die Kategorie "${catToDelete?.name}" wirklich löschen?`}
+        type="danger"
+        confirmLabel="Löschen"
         cancelLabel="Abbrechen"
       />
     </div>

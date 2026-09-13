@@ -1,5 +1,4 @@
-// src/services/sqliteService.ts
-import type { Course, Student, Grade, PredefinedComment, Reminder } from '../schema';
+import type { Course, Student, Grade, PredefinedComment, Reminder, ReminderCategory } from '../schema';
 
 declare global {
   interface Window {
@@ -29,6 +28,8 @@ declare global {
       deleteReminder: (id: string) => Promise<boolean>;
       getPredefinedComments: () => Promise<PredefinedComment[]>;
       savePredefinedComments: (comments: PredefinedComment[]) => Promise<boolean>;
+      getReminderCategories: () => Promise<ReminderCategory[]>;
+      saveReminderCategories: (categories: ReminderCategory[]) => Promise<boolean>;
       getLoadedDbPath: () => Promise<string>;
     };
   }
@@ -423,5 +424,24 @@ export const sqliteService = {
       return await window.electronAPI.getAllGradesForCourse(courseId);
     }
     return {};
+  },
+
+  getReminderCategories: async (): Promise<ReminderCategory[]> => {
+    if (window.electronAPI) {
+      return await window.electronAPI.getReminderCategories();
+    }
+    return [
+      { id: 'attendance_anomaly', name: 'Fehlzeiten', color: '#b91c1c', icon: 'AlertTriangle', isFixed: true },
+      { id: 'exam', name: 'Tests', color: '#7e22ce', icon: 'BookOpen', isFixed: false },
+      { id: 'assignment', name: 'Abgaben', color: '#15803d', icon: 'FileText', isFixed: false },
+      { id: 'general', name: 'Notizen', color: '#1d4ed8', icon: 'Calendar', isFixed: false }
+    ];
+  },
+
+  saveReminderCategories: async (categories: ReminderCategory[]): Promise<boolean> => {
+    if (window.electronAPI) {
+      return await window.electronAPI.saveReminderCategories(categories);
+    }
+    return true;
   }
 };

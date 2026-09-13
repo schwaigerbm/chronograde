@@ -36,6 +36,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [color, setColor] = useState<string>('purple');
   const [date, setDate] = useState<string>('');
   const [dueTime, setDueTime] = useState<string>('07:00');
@@ -49,6 +50,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
         setSelectedCourseId(reminderToEdit.courseId || (courses[0]?.id || ''));
         setSelectedStudentId(reminderToEdit.studentId || '');
         setTitle(reminderToEdit.title || reminderToEdit.anomalyType || '');
+        setDescription(reminderToEdit.description || '');
         setColor(reminderToEdit.color || 'purple');
         setDate(reminderToEdit.date || new Date().toISOString().split('T')[0]);
         setDueTime(reminderToEdit.dueTime || '07:00');
@@ -59,6 +61,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
         setSelectedCourseId(defaultCourse);
         setSelectedStudentId('');
         setTitle('');
+        setDescription('');
         setColor('purple');
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -88,6 +91,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
       await onSave(
         {
           title: title.trim(),
+          description: description.trim(),
           anomalyType: title.trim(),
           courseId: selectedCourseId,
           courseName: currentCourse?.name || '',
@@ -208,6 +212,18 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
                 placeholder="z.B. 1. Schularbeit (Algebra) oder Mitschrift-Abgabe"
                 required
                 autoFocus
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label font-semibold">Notiz / Beschreibung (mehrzeilig)</label>
+              <textarea
+                className="form-input"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Details, Anmerkungen oder Notizen zu diesem Eintrag..."
+                rows={3}
+                style={{ resize: 'vertical', fontFamily: 'inherit' }}
               />
             </div>
 

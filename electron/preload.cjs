@@ -34,6 +34,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Settings
   getPredefinedComments: () => ipcRenderer.invoke('settings:getPredefinedComments'),
   savePredefinedComments: (comments) => ipcRenderer.invoke('settings:savePredefinedComments', comments),
+  getReminderCategories: () => ipcRenderer.invoke('settings:getReminderCategories'),
+  saveReminderCategories: (categories) => ipcRenderer.invoke('settings:saveReminderCategories', categories),
   
   // Database Info
   getLoadedDbPath: () => ipcRenderer.invoke('database:getLoadedPath')

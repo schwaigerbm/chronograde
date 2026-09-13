@@ -319,9 +319,9 @@ function setupIpcHandlers() {
 
     await dbOps.run(
       `INSERT OR REPLACE INTO reminders (
-        id, studentId, studentName, courseId, courseName, type, targetType, 
-        title, color, anomalyType, date, dueTime, prepDays, resolved, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id, studentId, studentName, courseId, courseName, type, categoryId, targetType, 
+        title, description, color, anomalyType, date, dueTime, prepDays, resolved, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         mainId,
         reminder.studentId || '',
@@ -329,8 +329,10 @@ function setupIpcHandlers() {
         reminder.courseId,
         reminder.courseName || '',
         reminder.type || 'general',
+        reminder.categoryId || '',
         reminder.targetType || 'course',
         reminder.title,
+        reminder.description || '',
         reminder.color || 'blue',
         reminder.anomalyType || reminder.title,
         reminder.date,
@@ -430,6 +432,27 @@ function setupIpcHandlers() {
     await dbOps.run(
       `INSERT OR REPLACE INTO settings (key, value) VALUES ('collaboration_comments', ?)`,
       [JSON.stringify(comments)]
+    );
+    return true;
+  });
+
+  ipcMain.handle('settings:getReminderCategories', async () => {
+    const row = await dbOps.get(`SELECT value FROM settings WHERE key = 'reminder_categories'`);
+    if (row && row.value) {
+      try { return JSON.parse(row.value); } catch(e){}
+    }
+    return [
+      { id: 'attendance_anomaly', name: 'Fehlzeiten', color: '#b91c1c', icon: 'AlertTriangle', isFixed: true },
+      { id: 'exam', name: 'Tests', color: '#7e22ce', icon: 'BookOpen', isFixed: false },
+      { id: 'assignment', name: 'Abgaben', color: '#15803d', icon: 'FileText', isFixed: false },
+      { id: 'general', name: 'Notizen', color: '#1d4ed8', icon: 'Calendar', isFixed: false }
+    ];
+  });
+
+  ipcMain.handle('settings:saveReminderCategories', async (_, categories) => {
+    await dbOps.run(
+      `INSERT OR REPLACE INTO settings (key, value) VALUES ('reminder_categories', ?)`,
+      [JSON.stringify(categories)]
     );
     return true;
   });

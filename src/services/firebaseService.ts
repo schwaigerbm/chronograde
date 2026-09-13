@@ -14,8 +14,15 @@ import {
   orderBy
 } from "firebase/firestore";
 import CryptoJS from "crypto-js";
-import type { Course, Student, Grade, CourseEntry, AppUser, PredefinedComment, Reminder } from "../schema";
+import type { Course, Student, Grade, CourseEntry, AppUser, PredefinedComment, Reminder, ReminderCategory } from "../schema";
 import { sqliteService } from "./sqliteService";
+
+export const DEFAULT_REMINDER_CATEGORIES: ReminderCategory[] = [
+  { id: 'attendance_anomaly', name: 'Fehlzeiten', color: '#b91c1c', icon: 'AlertTriangle', isFixed: true },
+  { id: 'exam', name: 'Tests', color: '#7e22ce', icon: 'BookOpen', isFixed: false },
+  { id: 'assignment', name: 'Abgaben', color: '#15803d', icon: 'FileText', isFixed: false },
+  { id: 'general', name: 'Notizen', color: '#1d4ed8', icon: 'Calendar', isFixed: false }
+];
 
 export const firebaseService = {
   
@@ -314,6 +321,8 @@ export const firebaseService = {
     let mainId = existingReminderId;
     const mainData: Omit<Reminder, 'id'> = {
       title: reminder.title,
+      description: reminder.description || '',
+      categoryId: reminder.categoryId || '',
       anomalyType: reminder.anomalyType || reminder.title,
       courseId: reminder.courseId,
       courseName: reminder.courseName || '',
@@ -374,6 +383,27 @@ export const firebaseService = {
       return (found.data().comments || []) as PredefinedComment[];
     }
     return [];
+  },
+
+  getReminderCategories: async (): Promise<ReminderCategory[]> => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.getReminderCategories();
+    }
+    const snap = await getDocs(query(collection(db, "settings")));
+    const found = snap.docs.find(d => d.id === 'reminder_categories');
+    if (found && found.exists() && Array.isArray(found.data().categories)) {
+      return found.data().categories as ReminderCategory[];
+    }
+    return DEFAULT_REMINDER_CATEGORIES;
+  },
+
+  saveReminderCategories: async (categories: ReminderCategory[]): Promise<boolean> => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.saveReminderCategories(categories);
+    }
+    const docRef = doc(db, "settings", "reminder_categories");
+    await setDoc(docRef, { categories }, { merge: true });
+    return true;
   },
 
   // --- 9. DATEN-IMPORT & EXPORT (CSV / JSON) ---

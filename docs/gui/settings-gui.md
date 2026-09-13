@@ -72,3 +72,27 @@ Hier können Lehrer globale UI-Einstellungen verwalten, die im LocalStorage des 
 * **Logik:** 
   * Änderungen an den Toggles werden sofort im `LocalStorage` gespeichert und auf die betroffenen Komponenten angewendet (ohne dass ein Speichern-Button gedrückt werden muss).
 
+---
+
+## 5. Tab: Aufgaben- & Terminkategorien (Kategorie-Verwaltung)
+Hier können Lehrer eigene Kategorien für die Termin- und Aufgabenliste anlegen, bearbeiten und verwalten.
+
+### 5.1 Eigenschaften einer Kategorie
+* **Name:** Name/Bezeichnung der Kategorie.
+* **Farbe:** Akzentfarbe (HEX oder Farbpalette).
+* **Icon:** Icon-Auswahl (z. B. BookOpen, FileText, Calendar, AlertTriangle, Bookmark etc.).
+* **Schutz-Status (`isFixed`):** 
+  * **Sonderfall „Fehlzeiten“:** Die Kategorie `Fehlzeiten` ist **fix im System verankert** (nicht löschbar und nicht im Typ abänderbar), da sie direkt mit der automatischen Fehlzeiten-Abklärung verknüpft ist.
+  * **Standard-Kategorien („Tests“, „Abgaben“, „Notizen“):** Sind im System vorangelegt, können aber flexibel angepasst (Name, Farbe, Icon verändert) oder gelöscht werden.
+  * **Benutzerdefinierte Kategorien:** Neue Kategorien können frei angelegt, bearbeitet und gelöscht werden.
+
+### 5.2 Benutzeroberfläche (UI)
+* **Tab/Bereichs-Überschrift:** `Terminkategorien verwalten`
+* **Formular:**
+  * Eingabefeld für Kategorienamen, Icon-Picker und Farbauswahl.
+  * Button `Kategorie hinzufügen`.
+* **Kategorie-Liste:**
+  * Übersicht aller aktiven Kategorien mit Farb-Badge, Icon, Name und System-Status (z. B. `Fixiert` bei Fehlzeiten).
+  * Aktions-Buttons: `Bearbeiten` und `Löschen` (deaktiviert bei fixierten Kategorien).
+
+

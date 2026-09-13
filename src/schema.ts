@@ -118,16 +118,26 @@ export interface PredefinedCommentsSettings {
 }
 
 // 8. ERINNERUNGEN / TERMINE (Attendance Clarifications & Custom Reminders)
+export interface ReminderCategory {
+  id: string;
+  name: string;
+  color: string; // Hex or CSS color string
+  icon: string;  // Lucide icon identifier (e.g., 'BookOpen', 'FileText', 'AlertTriangle', 'Calendar', etc.)
+  isFixed?: boolean; // Fixed categories (like Fehlzeiten) cannot be deleted or modified
+}
+
 export interface Reminder {
   id: string;
   studentId?: string;
   studentName?: string;
   courseId: string;
   courseName: string;
-  type?: 'attendance_anomaly' | 'exam' | 'assignment' | 'general';
+  type?: 'attendance_anomaly' | 'exam' | 'assignment' | 'general' | string;
+  categoryId?: string;
   targetType?: 'course' | 'student';
   title?: string;
-  color?: string; // 'blue' | 'purple' | 'emerald' | 'amber' | 'rose'
+  description?: string; // Mehrzeiliger Notiz- / Beschreibungstext
+  color?: string; // 'blue' | 'purple' | 'emerald' | 'amber' | 'rose' or hex
   anomalyType: string; // Detailbeschreibung / Anomaly text
   date: string;        // Due date (YYYY-MM-DD)
   dueTime?: string;    // Fälligkeits-Uhrzeit (Standard: "07:00")

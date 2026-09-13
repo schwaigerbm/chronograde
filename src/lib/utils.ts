@@ -24,6 +24,26 @@ export const formatDate = (dateString: string | undefined, _includeYear: boolean
   }
 };
 
+export const formatDateWithWeekday = (dateString: string | undefined): string => {
+  if (!dateString) return '';
+  const formattedDate = formatDate(dateString);
+  try {
+    let d: Date;
+    const parts = dateString.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      d = new Date(dateString);
+    }
+    if (isNaN(d.getTime())) return formattedDate;
+    const weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const weekdayName = weekdays[d.getDay()];
+    return `${weekdayName} ${formattedDate}`;
+  } catch (e) {
+    return formattedDate;
+  }
+};
+
 export const compressImageToBase64 = (
   file: File,
   maxWidth = 120,

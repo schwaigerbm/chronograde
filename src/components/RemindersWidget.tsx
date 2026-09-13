@@ -18,10 +18,10 @@ import {
   BookOpen,
   X
 } from 'lucide-react';
-import { firebaseService } from '../services/firebaseService';
-import type { Reminder, Course, Student } from '../schema';
+import { firebaseService, DEFAULT_REMINDER_CATEGORIES } from '../services/firebaseService';
+import type { Reminder, Course, Student, ReminderCategory } from '../schema';
 import { AddReminderModal, COLOR_OPTIONS } from './AddReminderModal';
-import { formatDate } from '../lib/utils';
+import { formatDate, formatDateWithWeekday } from '../lib/utils';
 
 interface RemindersWidgetProps {
   courses?: Course[];
@@ -35,11 +35,13 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
   onOpenCourse
 }) => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [categories, setCategories] = useState<ReminderCategory[]>(DEFAULT_REMINDER_CATEGORIES);
   const [loading, setLoading] = useState(true);
   
   // Filter & Search State
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'all' | 'exam' | 'assignment' | 'anomaly' | 'general'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'resolved'>('all');
   
   // Calendar Navigation & Filter State
   const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
@@ -52,6 +54,10 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
   // Local fallback states
   const [localCourses, setLocalCourses] = useState<Course[]>(courses);
   const [localStudents, setLocalStudents] = useState<Student[]>(students);
+
+  useEffect(() => {
+    firebaseService.getReminderCategories().then(setCategories).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (courses.length > 0) {
@@ -140,27 +146,37 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
   // Filtered Reminders List
   const filteredReminders = useMemo(() => {
     return reminders.filter(r => {
+      // Status filter
+      if (statusFilter === 'open' && r.resolved) return false;
+      if (statusFilter === 'resolved' && !r.resolved) return false;
+
       // Live search filter
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         const titleMatch = (r.title || r.anomalyType || '').toLowerCase().includes(term);
+        const descMatch = (r.description || '').toLowerCase().includes(term);
         const courseMatch = (r.courseName || '').toLowerCase().includes(term);
         const studentMatch = (r.studentName || '').toLowerCase().includes(term);
-        if (!titleMatch && !courseMatch && !studentMatch) return false;
+        if (!titleMatch && !descMatch && !courseMatch && !studentMatch) return false;
       }
 
       // Category filter
-      if (categoryFilter === 'exam' && r.type !== 'exam') return false;
-      if (categoryFilter === 'assignment' && r.type !== 'assignment') return false;
-      if (categoryFilter === 'anomaly' && r.type !== 'attendance_anomaly') return false;
-      if (categoryFilter === 'general' && r.type !== 'general' && r.type !== undefined) return false;
+      if (categoryFilter !== 'all') {
+        if (categoryFilter === 'exam' && r.type !== 'exam') return false;
+        if (categoryFilter === 'assignment' && r.type !== 'assignment') return false;
+        if (categoryFilter === 'anomaly' && r.type !== 'attendance_anomaly') return false;
+        if (categoryFilter === 'general' && r.type !== 'general' && r.type !== undefined) return false;
+        if (categoryFilter !== 'exam' && categoryFilter !== 'assignment' && categoryFilter !== 'anomaly' && categoryFilter !== 'general') {
+          if (r.type !== categoryFilter && r.categoryId !== categoryFilter) return false;
+        }
+      }
 
       // Calendar Selected Day filter
       if (selectedDayFilter && r.date !== selectedDayFilter) return false;
 
       return true;
     });
-  }, [reminders, searchTerm, categoryFilter, selectedDayFilter]);
+  }, [reminders, searchTerm, categoryFilter, statusFilter, selectedDayFilter]);
 
   // Group filtered reminders into sections
   const overdueOrTodayList = useMemo(() => {
@@ -179,6 +195,10 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
   const nextMonth = () => setCurrentCalendarDate(new Date(year, month + 1, 1));
 
   const getTypeBadge = (type?: string) => {
+    const cat = categories.find(c => c.id === type);
+    if (cat) {
+      return { label: cat.name, icon: <BookOpen size={14} />, bg: `${cat.color}18`, color: cat.color };
+    }
     switch (type) {
       case 'exam':
         return { label: 'Test / Prüfung', icon: <BookOpen size={14} />, bg: '#f3e8ff', color: '#7e22ce' };
@@ -196,32 +216,30 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
   };
 
   return (
-    <div className="reminders-widget-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '0 20px' }}>
+    <div className="reminders-widget-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '15px 20px 0 20px' }}>
       
-      {/* Widget Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Calendar size={22} color="var(--primary-color)" /> Terminkalender & Aufgaben
-            </h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Übersicht aller Fälligkeiten, Prüfungen und Abklärungen
-            </p>
-          </div>
-
-          <button 
-            onClick={handleOpenAdd} 
-            className="btn-primary btn-sm" 
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', height: '34px' }}
-          >
-            <Plus size={16} /> Neuer Termin
-          </button>
+      {/* Widget Header with +15px top spacing and right-aligned compact button */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '4px' }}>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Calendar size={22} color="var(--primary-color)" /> Terminkalender & Aufgaben
+          </h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+            Übersicht aller Fälligkeiten, Prüfungen und Abklärungen
+          </p>
         </div>
+
+        <button 
+          onClick={handleOpenAdd} 
+          className="btn-primary btn-sm" 
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', height: '34px', marginLeft: 'auto' }}
+        >
+          <Plus size={16} /> Neuer Termin
+        </button>
       </div>
 
-      {/* Main Grid: Left Calendar (1/3), Right Appointment List (2/3) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 340px) 1fr', gap: '24px', alignItems: 'start' }}>
+      {/* Main Grid: Left Calendar (1/3), Right Appointment List (2/3) with bottom margin */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 340px) 1fr', gap: '24px', alignItems: 'start', marginBottom: '20px' }}>
         
         {/* LEFT COLUMN: Calendar Grid Card */}
         <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px' }}>
@@ -348,37 +366,83 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
               />
             </div>
 
-            {/* Category Filter Pills */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Filter size={14} /> Filter:
-              </span>
-              {[
-                { id: 'all', label: 'Alle' },
-                { id: 'exam', label: '📝 Tests' },
-                { id: 'assignment', label: '📁 Abgaben' },
-                { id: 'anomaly', label: '⚠️ Fehlzeiten' },
-                { id: 'general', label: '📌 Notizen' },
-              ].map(pill => (
+            {/* Status & Category Filter Pills */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              
+              {/* Status Filter */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Filter size={14} /> Status:
+                </span>
+                {[
+                  { id: 'all', label: 'Alle' },
+                  { id: 'open', label: '⏳ Offen / Unerledigt' },
+                  { id: 'resolved', label: '✅ Erledigt' },
+                ].map(pill => (
+                  <button
+                    key={pill.id}
+                    onClick={() => setStatusFilter(pill.id as any)}
+                    style={{
+                      padding: '4px 11px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: '1px solid',
+                      borderColor: statusFilter === pill.id ? 'var(--primary-color)' : 'var(--border-color)',
+                      backgroundColor: statusFilter === pill.id ? 'var(--primary-color)' : 'transparent',
+                      color: statusFilter === pill.id ? 'white' : 'var(--text-primary)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Category Filter */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', marginRight: '4px' }}>
+                  Kategorie:
+                </span>
                 <button
-                  key={pill.id}
-                  onClick={() => setCategoryFilter(pill.id as any)}
+                  onClick={() => setCategoryFilter('all')}
                   style={{
-                    padding: '5px 12px',
+                    padding: '4px 11px',
                     borderRadius: '20px',
                     fontSize: '12px',
                     fontWeight: 600,
                     cursor: 'pointer',
                     border: '1px solid',
-                    borderColor: categoryFilter === pill.id ? 'var(--primary-color)' : 'var(--border-color)',
-                    backgroundColor: categoryFilter === pill.id ? 'var(--primary-color)' : 'transparent',
-                    color: categoryFilter === pill.id ? 'white' : 'var(--text-primary)',
+                    borderColor: categoryFilter === 'all' ? 'var(--primary-color)' : 'var(--border-color)',
+                    backgroundColor: categoryFilter === 'all' ? 'var(--primary-color)' : 'transparent',
+                    color: categoryFilter === 'all' ? 'white' : 'var(--text-primary)',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  {pill.label}
+                  Alle
                 </button>
-              ))}
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategoryFilter(cat.id)}
+                    style={{
+                      padding: '4px 11px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: '1px solid',
+                      borderColor: categoryFilter === cat.id ? cat.color : 'var(--border-color)',
+                      backgroundColor: categoryFilter === cat.id ? cat.color : 'transparent',
+                      color: categoryFilter === cat.id ? 'white' : 'var(--text-primary)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -487,10 +551,19 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
               <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px', backgroundColor: badge.bg, color: badge.color, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 {badge.icon} {badge.label}
               </span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--primary-color)', background: 'rgba(37,99,235,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
+                📅 {formatDateWithWeekday(item.date)}
+              </span>
               <span style={{ fontSize: '14px', fontWeight: 'bold', color: item.resolved ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.resolved ? 'line-through' : 'none' }}>
                 {item.title || item.anomalyType}
               </span>
             </div>
+
+            {(item.description || (item.type === 'attendance_anomaly' && item.anomalyType)) && (
+              <div style={{ margin: '4px 0 6px 0', fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'pre-wrap', background: 'rgba(0,0,0,0.02)', padding: '6px 10px', borderRadius: '6px', borderLeft: '3px solid var(--border-color)' }}>
+                {item.description || item.anomalyType}
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
               <span 

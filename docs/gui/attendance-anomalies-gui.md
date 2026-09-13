@@ -29,34 +29,40 @@ Wird beim Speichern der Anwesenheit eine aktive Auffälligkeit erkannt, öffnet 
 
 Auf der **Start**-Seite wird das Modul als kombinierter **Terminkalender mit strukturierter Terminliste** dargestellt.
 
-### 3.1 Terminkalender-Ansicht (Kalender-Grid)
-* **Monats- & Wochenübersicht:** Ein interaktives Kalender-Grid des aktuellen Monats.
-* **Tages-Markierungen:** Tage mit fälligen Terminen werden durch kleine farbige Indikator-Punkte oder farbige Tages-Badges hervorgehoben (Farbe entspricht dem Termin-Typ oder der gewählten Akzentfarbe).
-* **Aktueller Tag:** Der heutige Tag wird optisch markiert (z. B. primärblauer Kreis um das Datum).
-* **Klick-Interaktion:** Klick auf einen Kalendertag filtert die darunterliegende/danebenstehende Terminliste auf die an diesem Tag fälligen Termine.
+### 3.1 Layout & Abstände
+* **Top-Padding:** Über der Hauptüberschrift „Terminkalender & Aufgaben“ befinden sich zusätzlich 15px Abstand (Padding nach oben).
+* **Bottom-Spacing:** Unterhalb des Kalender-Grids (zwischen Kalenderende und den Darstellungs-Cards darunter/daneben) ist ein definierter Abstand eingerichtet.
+* **Header-Button „+ Neuer Termin“:** Der Button „+ Neuer Termin“ ist schmäler/kompakt gestaltet und **rechtsbündig** in der Header-Zeile platziert.
 
-### 3.2 Saubere Terminliste (Chronologisch strukturiert)
-* **Keine verschachtelten Vorbereitungs-Erinnerungen:** Jeder Termin ist ein eigenständiger Datensatz mit exakt **einem Fälligkeitsdatum** (ohne verwirrende 1/3/7-Tage Vor-Erinnerungs-Ableger).
-* **Chronologische Gruppierung:**
-  * **⚠️ Überfällig / Heute:** Alle noch nicht erledigten Termine mit Fälligkeit heute oder in der Vergangenheit.
-  * **📅 Demnächst:** Anstehende Termine der nächsten Tage.
-  * **✅ Erledigt:** Abgehakte Termine (einklappbar oder per Filter umschaltbar).
-* **Termin-Karten (Einträge):**
-  * **Details:** Typ-Icon (📝 Test, 📁 Abgabe, ⚠️ Fehlzeit, 📌 Notiz), Titel, Kursname, Schülersatz (falls schülerspezifisch) und Fälligkeitsdatum.
-  * **Interaktionen:** 
-    * **Checkbox:** Hakte den Termin als erledigt/unerledigt ab.
-    * **Bearbeiten-Icon (Stift):** Öffnet das Modal zum Anpassen von Titel, Typ, Fälligkeitsdatum, Kurs oder Farbe.
-    * **Löschen-Icon (Mistkübel):** Löscht den Termin endgültig.
-* **Suche & Kategorie-Filter:**
-  * Live-Suchfeld (nach Titel, Schüler oder Kurs).
-  * Schnellfilter-Pills (`Alle`, `📝 Tests`, `📁 Abgaben`, `⚠️ Fehlzeiten`, `📌 Notizen`).
+### 3.2 Terminkalender-Ansicht (Kalender-Grid)
+* **Monats- & Wochenübersicht:** Ein interaktives Kalender-Grid des aktuellen Monats.
+* **Tages-Markierungen:** Tage mit fälligen Terminen werden durch kleine farbige Indikator-Punkte oder farbige Tages-Badges hervorgehoben (Farbe entspricht der Kategorie-Farbe).
+* **Aktueller Tag:** Der heutige Tag wird optisch markiert (z. B. primärblauer Kreis um das Datum).
+* **Klick-Interaktion:** Klick auf einen Kalendertag filtert die Terminliste auf die an diesem Tag fälligen Termine.
+
+### 3.3 Saubere Terminliste & Filter
+* **Status-Filter („Erledigt“ / „Nicht erledigt“):** Eigene Schnellfilter-Schaltflächen zur Trennung von unerledigten und bereits abgehakten Terminen, um die Liste stets übersichtlich zu halten (`Alle Status`, `Offen / Nicht erledigt`, `Erledigt`).
+* **Kategorie-Filter:** Dynamische Filter-Pills basierend auf den in den Einstellungen verwalteten Kategorien (`Alle`, `📝 Tests`, `📁 Abgaben`, `⚠️ Fehlzeiten`, `📌 Notizen` sowie benutzerdefinierte Kategorien).
+* **Suchfeld:** Live-Suchfeld zur Filterung nach Titel, Kurs, Schüler oder Notiz-Text.
+
+### 3.4 Termin-Karten (Einträge)
+* **Kategorie-Badge & Datumsanzeige mit Wochentag:** 
+  * Direkt nach dem Kategorie-Badge wird das Fälligkeitsdatum **inklusive Wochentag und voller Datumsangabe** im Format `[Wochentag] DD.MM.YYYY` gerendert (z. B. `Mittwoch 21.05.2026`).
+* **Notiz- & Beschreibungstext (Mehrzeilig):**
+  * Jeder Termin verfügt über ein optionales, mehrzeiliges Notizfeld (`description` / `note`), in dem ausführliche Informationen eingegeben, gelesen, bearbeitet oder gelöscht werden können.
+  * Bei automatisch aus der Anwesenheitserfassung erstellten Fehlzeiten-Terminen wird die entsprechende Anomalie-Regel sowie der betroffene Schüler automatisch als Notiz hinterlegt.
+* **Interaktionen:** 
+  * **Checkbox:** Hakte den Termin als erledigt/unerledigt ab.
+  * **Bearbeiten-Icon (Stift):** Öffnet das Modal zum Anpassen von Titel, Notiz, Typ/Kategorie, Fälligkeitsdatum, Uhrzeit, Kurs oder Farbe.
+  * **Löschen-Icon (Mistkübel):** Löscht den Termin nach Bestätigung.
 
 ---
 
 ## 4. Manuelle Terminerstellung & Bearbeitung (`AddReminderModal`)
 * **Felder:**
   * **Titel:** Bezeichnung des Termins.
-  * **Typ:** 📝 Test / Überprüfung | 📁 Aufgabe / Abgabe | 📌 Notiz / Sonstiges | ⚠️ Fehlzeit.
+  * **Notiz / Beschreibung:** Mehrzeiliges Textfeld für detaillierte Anmerkungen.
+  * **Kategorie / Typ:** Auswahl aus allen verfügbaren Kategorien (Tests, Abgaben, Notizen, Fehlzeiten oder selbst definierte Kategorien).
   * **Kurs & Zielgruppe:** Gesamte Gruppe oder einzelner Schüler.
-  * **Fälligkeitsdatum:** Exaktes Stichtagsdatum (`YYYY-MM-DD`).
-  * **Akzentfarbe:** Farbauswahl (Blau, Violett, Smaragdgrün, Amber, Rose).
+  * **Fälligkeitsdatum & Uhrzeit:** Exaktes Stichtagsdatum (`YYYY-MM-DD`, Anzeige: `[Wochentag] DD.MM.YYYY`) und Uhrzeit.
+  * **Akzentfarbe & Icon:** Übernahme der Standardfarbe der gewählten Kategorie oder individuelle Anpassung.

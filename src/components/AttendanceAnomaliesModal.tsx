@@ -59,6 +59,7 @@ export const AttendanceAnomaliesModal = ({
       courseId: current.courseId,
       courseName: current.courseName,
       title: `Abklärung: ${current.studentName}`,
+      description: `Fehlzeiten-Auffälligkeit (${violationsStr}) für ${current.studentName} in Gruppe ${current.courseName}.`,
       anomalyType: violationsStr,
       type: 'attendance_anomaly',
       color: 'rose',

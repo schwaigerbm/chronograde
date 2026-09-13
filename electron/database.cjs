@@ -132,6 +132,8 @@ function initDatabase(app, customPath) {
           type TEXT,
           targetType TEXT,
           title TEXT,
+          description TEXT,
+          categoryId TEXT,
           color TEXT,
           anomalyType TEXT,
           date TEXT,
@@ -140,7 +142,10 @@ function initDatabase(app, customPath) {
           parentReminderId TEXT,
           resolved INTEGER,
           createdAt TEXT
-        )`);
+        )`, () => {
+          db.run(`ALTER TABLE reminders ADD COLUMN description TEXT`, () => {});
+          db.run(`ALTER TABLE reminders ADD COLUMN categoryId TEXT`, () => {});
+        });
 
         // 6. Settings Table
         db.run(`CREATE TABLE IF NOT EXISTS settings (

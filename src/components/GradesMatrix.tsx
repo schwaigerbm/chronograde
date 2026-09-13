@@ -1399,18 +1399,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           onClose={() => setSelectedStudentForDashboard(null)}
         />
       )}
-
-      {isEnrollmentModalOpen && (
-        <EnrollmentModal
-          isOpen={isEnrollmentModalOpen}
-          onClose={() => setIsEnrollmentModalOpen(false)}
-          course={course}
-          students={allStudents}
-          onEnroll={handleEnroll}
-          onUnenroll={handleUnenroll}
-          onReorder={handleReorder}
-        />
-      )}
     </div>
   );
 };

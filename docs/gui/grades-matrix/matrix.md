@@ -10,7 +10,7 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
     * `Schnelleingabe` (Icon: `Zap`) - Startet einen kombinierten Workflow zur schnellen Erfassung von Anwesenheit und Mitarbeit nacheinander.
     * `Beurteilungsspalte hinzufügen` (Icon: `Plus`) - Öffnet das Multi-Step-Modal zum Hinzufügen einer Beurteilungsspalte.
     * `Ansicht konfigurieren` (Icon: `Settings`) - Öffnet das Modal zur Spaltenkonfiguration.
-    * `Gruppe ändern` (Icon: `Users`) - Öffnet das `EnrollmentModal` zur Schüler-Zuweisung, um Schüler der Gruppe hinzuzufügen, zu entfernen oder neu zu reihen.
+    * `Gruppe ändern` (Icon: `Users`) - Öffnet das `EnrollmentModal` zur Schüler-Zuweisung und Schüler-Verwaltung, in dem Schüler der Gruppe hinzugefügt, entfernt, neu gereiht sowie **ausgestrichen bzw. wieder aktiviert (Durchstreich-Funktion)** werden können (identischer Dialog wie im Gruppen-Manager).
     * `PDF Export` (Icon: `FileDown`) - Öffnet das Modal zur Spaltenauswahl für den PDF-Export der Gesamtmatrix.
 
 ## 2. Datenanbindung & Architektur
