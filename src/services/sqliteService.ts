@@ -30,6 +30,8 @@ declare global {
       savePredefinedComments: (comments: PredefinedComment[]) => Promise<boolean>;
       getReminderCategories: () => Promise<ReminderCategory[]>;
       saveReminderCategories: (categories: ReminderCategory[]) => Promise<boolean>;
+      getSetting: (key: string) => Promise<any>;
+      saveSetting: (key: string, value: any) => Promise<boolean>;
       getLoadedDbPath: () => Promise<string>;
     };
   }
@@ -442,6 +444,23 @@ export const sqliteService = {
     if (window.electronAPI) {
       return await window.electronAPI.saveReminderCategories(categories);
     }
+    return true;
+  },
+
+  getSetting: async <T>(key: string, defaultValue: T): Promise<T> => {
+    if (window.electronAPI) {
+      const val = await window.electronAPI.getSetting(key);
+      return (val !== null && val !== undefined) ? val : defaultValue;
+    }
+    const raw = localStorage.getItem(`chronograde_${key}`);
+    return raw ? JSON.parse(raw) : defaultValue;
+  },
+
+  saveSetting: async <T>(key: string, value: T): Promise<boolean> => {
+    if (window.electronAPI) {
+      return await window.electronAPI.saveSetting(key, value);
+    }
+    localStorage.setItem(`chronograde_${key}`, JSON.stringify(value));
     return true;
   }
 };

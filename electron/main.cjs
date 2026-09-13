@@ -457,6 +457,22 @@ function setupIpcHandlers() {
     return true;
   });
 
+  ipcMain.handle('settings:get', async (_, key) => {
+    const row = await dbOps.get(`SELECT value FROM settings WHERE key = ?`, [key]);
+    if (row && row.value) {
+      try { return JSON.parse(row.value); } catch(e){}
+    }
+    return null;
+  });
+
+  ipcMain.handle('settings:save', async (_, { key, value }) => {
+    await dbOps.run(
+      `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`,
+      [key, JSON.stringify(value)]
+    );
+    return true;
+  });
+
   ipcMain.handle('database:getLoadedPath', async () => {
     return getLoadedDbPath();
   });

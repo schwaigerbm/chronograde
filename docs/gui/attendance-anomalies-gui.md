@@ -32,7 +32,7 @@ Auf der **Start**-Seite wird das Modul als kombinierter **Terminkalender mit str
 ### 3.1 Layout & Abstände
 * **Top-Padding:** Über der Hauptüberschrift „Terminkalender & Aufgaben“ befinden sich zusätzlich 15px Abstand (Padding nach oben).
 * **Bottom-Spacing:** Unterhalb des Kalender-Grids (zwischen Kalenderende und den Darstellungs-Cards darunter/daneben) ist ein definierter Abstand eingerichtet.
-* **Header-Button „+ Neuer Termin“:** Der Button „+ Neuer Termin“ ist kompakt und klein (analog zu den Aktions-Buttons der Notenmatrix) und **rechtsbündig** platziert.
+* **Header-Button „+ Neuer Termin“:** Der Button „+ Neuer Termin“ ist als **einfacher, schlichter und kleiner Button** (ohne schwere Akzentfarben/Schatten, rechtsbündig platziert).
 
 ### 3.2 Terminkalender-Ansicht (Kalender-Grid)
 * **Monats- & Wochenübersicht:** Ein interaktives Kalender-Grid des aktuellen Monats.
@@ -40,13 +40,20 @@ Auf der **Start**-Seite wird das Modul als kombinierter **Terminkalender mit str
 * **Aktueller Tag:** Der heutige Tag wird optisch markiert (z. B. primärblauer Kreis um das Datum).
 * **Klick-Interaktion & Vorauswahl:** Klick auf einen Kalendertag filtert die Terminliste auf die an diesem Tag fälligen Termine. Wird bei aktivem Tagesfilter der Button „+ Neuer Termin“ gedrückt, wird dieses angeklickte Datum im Modal automatisch als Fälligkeitsdatum vorausgewählt.
 
----
+### 3.3 Saubere Terminliste, Filter & Speicherung in SQLite
+* **Status-Filter („Erledigt“ / „Nicht erledigt“):** Eigene Schnellfilter-Schaltflächen zur Trennung von unerledigten und bereits abgehakten Terminen (`Alle Status`, `Offen / Nicht erledigt`, `Erledigt`).
+* **Kategorie-Filter:** Dynamische Filter-Pills basierend auf den in den Einstellungen verwalteten Kategorien (`Alle`, `📝 Tests`, `📁 Abgaben`, `⚠️ Fehlzeiten`, `📌 Notizen` sowie benutzerdefinierte Kategorien).
+* **Suchfeld:** Live-Suchfeld zur Filterung nach Titel, Kurs, Schüler oder Notiz-Text.
+* **Persistierung in der SQLite-Datenbank:** Sämtliche gewählten Filtereinstellungen (Status-Filter, Kategorie-Filter, Suchtext) werden direkt in der **SQLite-Datenbank** (Tabelle `settings`) gespeichert und beim nächsten Start der Anwendung automatisch wiederhergestellt.
 
-## 4. Manuelle Terminerstellung & Bearbeitung (`AddReminderModal`)
-* **Felder:**
-  * **Titel:** Bezeichnung des Termins.
-  * **Notiz / Beschreibung:** Mehrzeiliges Textfeld für detaillierte Anmerkungen.
-  * **Kategorie / Typ:** Vollständige Auswahl aus **allen** in den Einstellungen angelegten Kategorien (Tests, Abgaben, Notizen, Fehlzeiten sowie allen benutzerdefinierten Kategorien) inklusive deren spezifischen Farben und Icons.
-  * **Kurs & Zielgruppe:** Gesamte Gruppe oder einzelner Schüler.
-  * **Fälligkeitsdatum & Uhrzeit:** Exaktes Stichtagsdatum (`YYYY-MM-DD`, Anzeige: `[Wochentag] DD.MM.YYYY`, automatische Vorauswahl des im Kalender angeklickten Tages) und Uhrzeit.
-  * **Akzentfarbe & Icon:** Automatische Übernahme der Standardfarbe der gewählten Kategorie oder individuelle Anpassung.
+### 3.4 Termin-Karten (Einträge & Badges)
+* **Badge-Reihenfolge & Datumsanzeige mit relativer Angabe:** 
+  1. **1. Badge (Datum mit Wochentag & relativem Zeitraum):** Steht an erster Stelle und formatiert das Fälligkeitsdatum in der Form `[Wochentag] DD.MM.YYYY, [relativer Zeitraum]` (z. B. `Mittwoch 21.05.2026, diese Woche`, `Mittwoch 30.06.2026, in 2 Wochen`, `Heute`, `Morgen`, `in 3 Tagen`, `vor 2 Wochen`).
+  2. **2. Badge (Kategorie):** Steht an zweiter Stelle und zeigt den Namen und das Icon der Kategorie an (z. B. `Tests`, `Abgaben`, `Fehlzeiten`).
+* **Notiz- & Beschreibungstext (Mehrzeilig):**
+  * Jeder Termin verfügt über ein optionales, mehrzeiliges Notizfeld (`description` / `note`), in dem ausführliche Informationen eingegeben, gelesen, bearbeitet oder gelöscht werden können.
+  * Bei automatisch aus der Anwesenheitserfassung erstellten Fehlzeiten-Terminen wird die entsprechende Anomalie-Regel sowie der betroffene Schüler automatisch als Notiz hinterlegt.
+* **Interaktionen:** 
+  * **Checkbox:** Hakte den Termin als erledigt/unerledigt ab.
+  * **Bearbeiten-Icon (Stift):** Öffnet das Modal zum Anpassen von Titel, Notiz, Typ/Kategorie, Fälligkeitsdatum, Uhrzeit, Kurs oder Farbe.
+  * **Löschen-Icon (Mistkübel):** Löscht den Termin nach Bestätigung.

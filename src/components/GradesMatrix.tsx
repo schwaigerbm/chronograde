@@ -27,7 +27,7 @@ import { EditColumnModal } from './EditColumnModal';
 import { AttendanceModal } from './AttendanceModal';
 import { CollaborationBulkModal } from './CollaborationBulkModal';
 import { DialogModal } from './DialogModal';
-import { formatDate } from '../lib/utils';
+import { formatDate, formatDateDDMM } from '../lib/utils';
 import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment, Reminder } from '../schema';
 import { checkAttendanceAnomalies } from '../lib/anomalyDetector';
 import { AttendanceAnomaliesModal } from './AttendanceAnomaliesModal';
@@ -949,7 +949,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                         
                         {col.showDateInHeader !== false && col.type !== 'presenceSum' && col.type !== 'collaborationSum' && (
                           <div className="horizontal-date">
-                            {col.type === 'calculated' ? (col.cutoffDate ? formatDate(col.cutoffDate) : '') : formatDate(col.date, false)}
+                            {col.type === 'calculated' ? (col.cutoffDate ? formatDateDDMM(col.cutoffDate) : '') : formatDateDDMM(col.date)}
                           </div>
                         )}
                       </div>

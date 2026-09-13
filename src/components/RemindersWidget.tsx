@@ -19,9 +19,10 @@ import {
   X
 } from 'lucide-react';
 import { firebaseService, DEFAULT_REMINDER_CATEGORIES } from '../services/firebaseService';
+import { sqliteService } from '../services/sqliteService';
 import type { Reminder, Course, Student, ReminderCategory } from '../schema';
 import { AddReminderModal, COLOR_OPTIONS } from './AddReminderModal';
-import { formatDate, formatDateWithWeekday } from '../lib/utils';
+import { formatDate, formatDateWithRelativeInfo } from '../lib/utils';
 
 interface RemindersWidgetProps {
   courses?: Course[];
@@ -42,6 +43,28 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'resolved'>('all');
+
+  // Load saved filters from SQLite database on mount
+  useEffect(() => {
+    sqliteService.getSetting('reminders_search_term', '').then(setSearchTerm);
+    sqliteService.getSetting('reminders_category_filter', 'all').then(setCategoryFilter);
+    sqliteService.getSetting<'all' | 'open' | 'resolved'>('reminders_status_filter', 'all').then(setStatusFilter);
+  }, []);
+
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+    sqliteService.saveSetting('reminders_search_term', term);
+  };
+
+  const handleCategoryFilterChange = (catId: string) => {
+    setCategoryFilter(catId);
+    sqliteService.saveSetting('reminders_category_filter', catId);
+  };
+
+  const handleStatusFilterChange = (status: 'all' | 'open' | 'resolved') => {
+    setStatusFilter(status);
+    sqliteService.saveSetting('reminders_status_filter', status);
+  };
   
   // Calendar Navigation & Filter State
   const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(new Date());
@@ -231,8 +254,8 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
 
         <button 
           onClick={handleOpenAdd} 
-          className="btn-primary btn-sm" 
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', height: '30px', marginLeft: 'auto', alignSelf: 'center' }}
+          className="btn-secondary btn-sm" 
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', height: '28px', marginLeft: 'auto', alignSelf: 'center' }}
         >
           <Plus size={14} /> Neuer Termin
         </button>
@@ -360,7 +383,7 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
                 type="text"
                 placeholder="Termine suchen (Titel, Kurs, Schüler)..."
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={e => handleSearchChange(e.target.value)}
                 className="form-input"
                 style={{ paddingLeft: '38px', borderRadius: '8px', fontSize: '14px' }}
               />
@@ -381,7 +404,7 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
                 ].map(pill => (
                   <button
                     key={pill.id}
-                    onClick={() => setStatusFilter(pill.id as any)}
+                    onClick={() => handleStatusFilterChange(pill.id as any)}
                     style={{
                       padding: '4px 11px',
                       borderRadius: '20px',
@@ -406,7 +429,7 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
                   Kategorie:
                 </span>
                 <button
-                  onClick={() => setCategoryFilter('all')}
+                  onClick={() => handleCategoryFilterChange('all')}
                   style={{
                     padding: '4px 11px',
                     borderRadius: '20px',
@@ -425,7 +448,7 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
                 {categories.map(cat => (
                   <button
                     key={cat.id}
-                    onClick={() => setCategoryFilter(cat.id)}
+                    onClick={() => handleCategoryFilterChange(cat.id)}
                     style={{
                       padding: '4px 11px',
                       borderRadius: '20px',
@@ -550,11 +573,13 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
 
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+              {/* 1. BADGE: Datum mit Wochentag & relativem Zeitraum */}
+              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--primary-color)', background: 'rgba(37,99,235,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
+                📅 {formatDateWithRelativeInfo(item.date)}
+              </span>
+              {/* 2. BADGE: Kategorie */}
               <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px', backgroundColor: badge.bg, color: badge.color, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 {badge.icon} {badge.label}
-              </span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--primary-color)', background: 'rgba(37,99,235,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
-                📅 {formatDateWithWeekday(item.date)}
               </span>
               <span style={{ fontSize: '14px', fontWeight: 'bold', color: item.resolved ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.resolved ? 'line-through' : 'none' }}>
                 {item.title || item.anomalyType}
