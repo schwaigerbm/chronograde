@@ -232,9 +232,9 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
         <button 
           onClick={handleOpenAdd} 
           className="btn-primary btn-sm" 
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', height: '34px', marginLeft: 'auto' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', height: '30px', marginLeft: 'auto', alignSelf: 'center' }}
         >
-          <Plus size={16} /> Neuer Termin
+          <Plus size={14} /> Neuer Termin
         </button>
       </div>
 
@@ -509,6 +509,8 @@ export const RemindersWidget: React.FC<RemindersWidgetProps> = ({
         }}
         courses={localCourses}
         students={localStudents}
+        categories={categories}
+        initialDate={selectedDayFilter || undefined}
         reminderToEdit={reminderToEdit}
         onSave={handleSaveReminder}
       />
