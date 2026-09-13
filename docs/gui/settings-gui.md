@@ -69,8 +69,12 @@ Hier können Lehrer globale UI-Einstellungen verwalten, die im LocalStorage des 
   * **Avatar-Sichtbarkeit:** Ein Toggle-Switch (Schalter) mit der Beschriftung `Schüler-Avatare anzeigen`. 
     * *Standard:* Aktiv (`true`).
     * *Funktion:* Bestimmt, ob in der Schülerübersicht und in der Matrix die kleinen runden Profilbilder der Schüler angezeigt werden.
+  * **A & D Dialog Sichtbarkeit:** Ein Toggle-Switch mit der Beschriftung `„A & D Dialog >“ Button auf Gruppen-Karten anzeigen`.
+    * *Standard:* Aktiv (`true`).
+    * *Speicherung:* In SQLite-Datenbank (Tabelle `settings`, Key `enable_ad_dialog`).
+    * *Funktion:* Blendet den Button `A & D Dialog >` auf den Gruppen-Karten in der Beurteilungsansicht ein oder aus.
 * **Logik:** 
-  * Änderungen an den Toggles werden sofort im `LocalStorage` gespeichert und auf die betroffenen Komponenten angewendet (ohne dass ein Speichern-Button gedrückt werden muss).
+  * Änderungen an den Toggles werden sofort in der SQLite-Datenbank / LocalStorage gespeichert und auf die betroffenen Komponenten angewendet (ohne dass ein Speichern-Button gedrückt werden muss).
 
 ---
 

@@ -14,6 +14,7 @@ import {
   Upload
 } from 'lucide-react';
 import { firebaseService, DEFAULT_REMINDER_CATEGORIES } from '../services/firebaseService';
+import { sqliteService } from '../services/sqliteService';
 import type { PredefinedComment, ReminderCategory } from '../schema';
 import { DialogModal } from './DialogModal';
 
@@ -23,6 +24,18 @@ export const SettingsView = () => {
     const stored = localStorage.getItem('showAvatars');
     return stored !== 'false'; // Default to true
   });
+  
+  const [enableADDialog, setEnableADDialog] = useState<boolean>(true);
+
+  useEffect(() => {
+    sqliteService.getSetting<boolean>('enable_ad_dialog', true).then(setEnableADDialog);
+  }, []);
+
+  const handleToggleADDialog = async (checked: boolean) => {
+    setEnableADDialog(checked);
+    await sqliteService.saveSetting('enable_ad_dialog', checked);
+    window.dispatchEvent(new Event('storage_enableADDialog'));
+  };
   
   const [comments, setComments] = useState<PredefinedComment[]>([]);
   const [categories, setCategories] = useState<ReminderCategory[]>(DEFAULT_REMINDER_CATEGORIES);
@@ -629,7 +642,7 @@ export const SettingsView = () => {
               </div>
             </div>
 
-            <div className="py-4">
+            <div className="py-4" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div className="switch-container">
                 <div className="switch-label-group">
                   <label htmlFor="avatar-toggle" className="switch-title">Schüler-Avatare anzeigen</label>
@@ -641,6 +654,22 @@ export const SettingsView = () => {
                     type="checkbox"
                     checked={showAvatars}
                     onChange={(e) => handleToggleAvatars(e.target.checked)}
+                  />
+                  <span className="custom-switch-slider"></span>
+                </label>
+              </div>
+
+              <div className="switch-container">
+                <div className="switch-label-group">
+                  <label htmlFor="ad-dialog-toggle" className="switch-title">„A &amp; D Dialog &gt;“ Button auf Gruppen-Karten anzeigen</label>
+                  <span className="switch-description">Blendet den Button für Anwesenheits-Schnellerfassung & Zufallsgenerator unter „Matrix öffnen“ auf allen Gruppenkarten ein oder aus.</span>
+                </div>
+                <label className="custom-switch">
+                  <input
+                    id="ad-dialog-toggle"
+                    type="checkbox"
+                    checked={enableADDialog}
+                    onChange={(e) => handleToggleADDialog(e.target.checked)}
                   />
                   <span className="custom-switch-slider"></span>
                 </label>

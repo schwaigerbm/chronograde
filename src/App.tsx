@@ -21,8 +21,9 @@ import { RemindersWidget } from './components/RemindersWidget';
 import { firebaseService } from './services/firebaseService';
 import { sqliteService } from './services/sqliteService';
 import { VaultLockScreen } from './components/VaultLockScreen';
+import { ADDialogModal } from './components/ADDialogModal';
 import { useInactivityTimer } from './hooks/useInactivityTimer';
-import type { Course } from './schema';
+import type { Course, Student } from './schema';
 
 // --- LOGIN VIEW ---
 interface LoginViewProps {
@@ -164,6 +165,21 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState('start');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+
+  const [enableADDialog, setEnableADDialog] = useState<boolean>(true);
+  const [adModalCourse, setAdModalCourse] = useState<Course | null>(null);
+
+  useEffect(() => {
+    firebaseService.getStudents().then(setStudents);
+    sqliteService.getSetting<boolean>('enable_ad_dialog', true).then(setEnableADDialog);
+
+    const handleSyncSetting = () => {
+      sqliteService.getSetting<boolean>('enable_ad_dialog', true).then(setEnableADDialog);
+    };
+    window.addEventListener('storage_enableADDialog', handleSyncSetting);
+    return () => window.removeEventListener('storage_enableADDialog', handleSyncSetting);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = firebaseService.subscribeToCourses(false, (data) => {
@@ -419,6 +435,18 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                                           <div className="timetable-course-card-link">
                                             Matrix öffnen <ChevronRight size={11} />
                                           </div>
+                                          {enableADDialog && (
+                                            <div 
+                                              className="timetable-course-card-link"
+                                              style={{ marginTop: '4px', color: '#10b981', fontWeight: 600 }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setAdModalCourse(course);
+                                              }}
+                                            >
+                                              A & D Dialog <ChevronRight size={11} />
+                                            </div>
+                                          )}
                                         </div>
                                       );
                                     })}
@@ -466,6 +494,18 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                               <div className="timetable-course-card-link">
                                 Matrix öffnen <ChevronRight size={11} />
                               </div>
+                              {enableADDialog && (
+                                <div 
+                                  className="timetable-course-card-link"
+                                  style={{ marginTop: '4px', color: '#10b981', fontWeight: 600 }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAdModalCourse(course);
+                                  }}
+                                >
+                                  A & D Dialog <ChevronRight size={11} />
+                                </div>
+                              )}
                             </div>
                           );
                         })
@@ -582,6 +622,25 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
       <main className="main-content">
         {renderContent()}
       </main>
+
+      {adModalCourse && (
+        <ADDialogModal
+          isOpen={Boolean(adModalCourse)}
+          onClose={() => setAdModalCourse(null)}
+          course={adModalCourse}
+          students={students}
+          onSaveAttendance={async (date, _hours, attendanceMap) => {
+            const updates = Object.entries(attendanceMap).map(([studentId, val]) => ({
+              studentId,
+              columnId: 'presence_' + date,
+              grade: { value: val === 'check' ? 'p' : 'x', date }
+            }));
+            for (const item of updates) {
+              await sqliteService.saveGrade(item.studentId, adModalCourse.id, { [item.columnId]: item.grade });
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

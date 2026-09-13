@@ -57,3 +57,21 @@ Auf der **Start**-Seite wird das Modul als kombinierter **Terminkalender mit str
   * **Checkbox:** Hakte den Termin als erledigt/unerledigt ab.
   * **Bearbeiten-Icon (Stift):** Öffnet das Modal zum Anpassen von Titel, Notiz, Typ/Kategorie, Fälligkeitsdatum, Uhrzeit, Kurs oder Farbe.
   * **Löschen-Icon (Mistkübel):** Löscht den Termin nach Bestätigung.
+
+---
+
+## 5. Anwesenheit & Zufalls-Erfassung („A & D Dialog“)
+Auf allen Gruppen-Karten in der Beurteilungsübersicht befindet sich **unterhalb** des Links `Matrix öffnen >` der Button `A & D Dialog >` (sofern in den Einstellungen aktiviert).
+
+### 5.1 Ablauf & Phasen
+1. **Phase 1: Anwesenheits-Schnellerfassung**
+   * Es öffnet sich ein Schnellerfassungs-Modal für die gewählte Gruppe.
+   * Sämtliche Schüler der Gruppe werden mit ihrer laufenden Klassenbuchnummer (`#1`, `#2`, `#3`...), ihrem Namen und Profilbild aufgelistet.
+   * Über einfache Toggle-Buttons kann der Status schnell auf Anwesend (`'p'`) oder Abwesend (`'x'`) gesetzt werden (Standard: Alle anwesend).
+   * Klick auf `Anwesenheit speichern & Zufalls-Generator starten 🎲` speichert die Anwesenheit ab und startet Phase 2.
+
+2. **Phase 2: Spektakulärer Zufallszahlengenerator (Slot / Lotto-Roller)**
+   * **Kandidaten-Pool:** Ausschließlich diejenigen Klassenbuchnummern der Schüler, die in Phase 1 als **anwesend** (`'p'`) erfasst wurden.
+   * **Animation:** Animiertes Durchrollen aller anwesenden Klassenbuchnummern (Lotto- / Slot-Machine-Roller) mit dynamischer Beschleunigung und dramatischem Abbremsen.
+   * **Ergebnis & Siegerehrung:** Nach dem Stopp erstrahlt die gewählte Klassenbuchnummer mit Gold-Effekt und Partikel-Animation. Es werden der Name des gezogenen Schülers, dessen Klassenbuchnummer sowie Profilbild hervorgehoben dargestellt (ideal für zufällige Stundenwiederholungen oder Moderatoren).
+   * **Aktionen:** `🎲 Erneut drehen` oder `Schließen`.
