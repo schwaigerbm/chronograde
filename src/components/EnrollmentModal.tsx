@@ -209,7 +209,7 @@ export const EnrollmentModal = ({
                   {enrolledStudents.map((student, index) => {
                     const isDeregistered = Boolean(course.deregisteredStudents?.includes(student.id));
                     return (
-                      <tr key={student.id} style={{ opacity: isDeregistered ? 0.7 : 1, backgroundColor: isDeregistered ? '#f8fafc' : 'transparent' }}>
+                      <tr key={student.id} style={{ opacity: isDeregistered ? 0.85 : 1, backgroundColor: isDeregistered ? '#e2e8f0' : 'transparent' }}>
                         <td style={{ width: '40px', color: '#64748b' }}>{index + 1}</td>
                         <td>
                           <span style={{ textDecoration: isDeregistered ? 'line-through' : 'none' }}>

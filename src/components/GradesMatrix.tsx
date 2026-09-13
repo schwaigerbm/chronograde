@@ -1050,28 +1050,12 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                 : calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
               
               return (
-                <tr key={student.id}>
-                  <td className="sticky-col">
+                <tr key={student.id} className={isDeregistered ? 'deregistered-row' : ''}>
+                  <td className={`sticky-col ${isDeregistered ? 'deregistered-sticky-col' : ''}`}>
                     <div className="student-cell-content has-avatar-tooltip">
-                      <span className="student-number">{index + 1}</span>
-                      <span className="student-lastname">{student.lastName}</span>
-                      <span className="student-firstname">{student.firstName}</span>
-                      {isDeregistered && (
-                        <span 
-                          style={{ 
-                            marginLeft: '6px', 
-                            fontSize: '9px', 
-                            fontWeight: '700', 
-                            background: '#fee2e2', 
-                            color: '#991b1b', 
-                            padding: '1px 5px', 
-                            borderRadius: '4px',
-                            textTransform: 'uppercase'
-                          }}
-                        >
-                          Abgemeldet
-                        </span>
-                      )}
+                      <span className="student-number" style={isDeregistered ? { color: '#64748b' } : undefined}>{index + 1}</span>
+                      <span className="student-lastname" style={isDeregistered ? { textDecoration: 'line-through', color: '#64748b' } : undefined}>{student.lastName}</span>
+                      <span className="student-firstname" style={isDeregistered ? { textDecoration: 'line-through', color: '#64748b' } : undefined}>{student.firstName}</span>
                       <button 
                         className="btn-student-analysis"
                         onClick={(e) => {
