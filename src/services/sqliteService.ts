@@ -402,5 +402,26 @@ export const sqliteService = {
       return res;
     }
     return true;
+  },
+
+  getReminders: async (): Promise<Reminder[]> => {
+    if (window.electronAPI) {
+      return await window.electronAPI.getReminders();
+    }
+    return [];
+  },
+
+  getPredefinedComments: async (): Promise<PredefinedComment[]> => {
+    if (window.electronAPI) {
+      return await window.electronAPI.getPredefinedComments();
+    }
+    return [];
+  },
+
+  getAllGradesForCourse: async (courseId: string): Promise<Record<string, Record<string, Grade>>> => {
+    if (window.electronAPI) {
+      return await window.electronAPI.getAllGradesForCourse(courseId);
+    }
+    return {};
   }
 };

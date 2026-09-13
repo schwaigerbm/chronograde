@@ -52,6 +52,18 @@ export const firebaseService = {
     } as AppUser;
   },
 
+  // Lädt Kurse einmalig (gefiltert nach archiviert)
+  getCourses: async (archived: boolean = false): Promise<Course[]> => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.getCourses(archived);
+    }
+    const q = query(collection(db, "courses"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data(), archived: doc.data().archived || false } as Course))
+      .filter(c => c.archived === archived);
+  },
+
   // Abonniert Kurse (gefiltert nach archiviert)
   subscribeToCourses: (archived: boolean, callback: (courses: Course[]) => void) => {
     if (sqliteService.isDesktopAvailable()) {
@@ -290,14 +302,14 @@ export const firebaseService = {
     return await addDoc(collection(db, "reminders"), reminder);
   },
 
-  // Speichert einen benutzerdefinierten Termin inkl. Vorbereitungs-Erinnerung
+  // Speichert einen Termin
   saveCustomReminder: async (
     reminder: Partial<Reminder> & { title: string; courseId: string; date: string },
-    prepDays?: 1 | 3 | 7 | null,
+    _prepDays?: any,
     existingReminderId?: string
   ) => {
     if (sqliteService.isDesktopAvailable()) {
-      return await sqliteService.saveCustomReminder(reminder, prepDays, existingReminderId);
+      return await sqliteService.saveCustomReminder(reminder, null, existingReminderId);
     }
     let mainId = existingReminderId;
     const mainData: Omit<Reminder, 'id'> = {
@@ -312,7 +324,6 @@ export const firebaseService = {
       color: reminder.color || 'blue',
       date: reminder.date,
       dueTime: reminder.dueTime || '07:00',
-      prepDays: prepDays || null,
       resolved: reminder.resolved ?? false,
       createdAt: reminder.createdAt || new Date().toISOString()
     };
@@ -323,46 +334,6 @@ export const firebaseService = {
     } else {
       const res = await addDoc(collection(db, "reminders"), mainData);
       mainId = res.id;
-    }
-
-    // Handle preparation reminder if prepDays is specified
-    if (prepDays && mainId) {
-      const mainDateObj = new Date(reminder.date);
-      mainDateObj.setDate(mainDateObj.getDate() - prepDays);
-      const prepDateStr = mainDateObj.toISOString().split('T')[0];
-
-      const prepData: Omit<Reminder, 'id'> = {
-        title: `Vorbereitung (${prepDays} ${prepDays === 1 ? 'Tag' : 'Tage'} davor): ${reminder.title}`,
-        anomalyType: `Vorbereitungserinnerung für ${reminder.title}`,
-        courseId: reminder.courseId,
-        courseName: reminder.courseName || '',
-        studentId: reminder.studentId || '',
-        studentName: reminder.studentName || '',
-        targetType: reminder.targetType || 'course',
-        type: 'prep_reminder',
-        color: reminder.color || 'blue',
-        date: prepDateStr,
-        dueTime: '07:00',
-        parentReminderId: mainId,
-        resolved: false,
-        createdAt: new Date().toISOString()
-      };
-
-      // Check if a linked prep reminder already exists
-      const q = query(collection(db, "reminders"), where("parentReminderId", "==", mainId));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const prepDocId = snap.docs[0].id;
-        await setDoc(doc(db, "reminders", prepDocId), prepData, { merge: true });
-      } else {
-        await addDoc(collection(db, "reminders"), prepData);
-      }
-    } else if (mainId) {
-      // Remove any existing prep reminder if prepDays was unset
-      const q = query(collection(db, "reminders"), where("parentReminderId", "==", mainId));
-      const snap = await getDocs(q);
-      const deletePromises = snap.docs.map(d => deleteDoc(doc(db, "reminders", d.id)));
-      await Promise.all(deletePromises);
     }
 
     return mainId;
@@ -377,18 +348,194 @@ export const firebaseService = {
     return await setDoc(docRef, data, { merge: true });
   },
 
-  // Löscht eine Erinnerung (inkl. verknüpfter Vorbereitungs-Erinnerungen)
+  // Löscht eine Erinnerung
   deleteReminder: async (id: string) => {
     if (sqliteService.isDesktopAvailable()) {
       return await sqliteService.deleteReminder(id);
     }
-    // Check if there are linked child prep reminders
-    const qChild = query(collection(db, "reminders"), where("parentReminderId", "==", id));
-    const snapChild = await getDocs(qChild);
-    const deletePromises = snapChild.docs.map(d => deleteDoc(doc(db, "reminders", d.id)));
-    await Promise.all(deletePromises);
-
     return await deleteDoc(doc(db, "reminders", id));
+  },
+
+  getReminders: async (): Promise<Reminder[]> => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.getReminders();
+    }
+    const snapshot = await getDocs(collection(db, "reminders"));
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Reminder));
+  },
+
+  getPredefinedComments: async (): Promise<PredefinedComment[]> => {
+    if (sqliteService.isDesktopAvailable()) {
+      return await sqliteService.getPredefinedComments();
+    }
+    const snap = await getDocs(query(collection(db, "settings")));
+    const found = snap.docs.find(d => d.id === 'collaboration');
+    if (found && found.exists()) {
+      return (found.data().comments || []) as PredefinedComment[];
+    }
+    return [];
+  },
+
+  // --- 9. DATEN-IMPORT & EXPORT (CSV / JSON) ---
+
+  importStudentsFromCSV: async (newStudents: Omit<Student, 'id'>[]): Promise<{ added: number; skipped: number }> => {
+    const existingStudents = await firebaseService.getStudents();
+    const existingSet = new Set(
+      existingStudents.map(s => `${s.firstName.trim().toLowerCase()}_${s.lastName.trim().toLowerCase()}`)
+    );
+
+    let added = 0;
+    let skipped = 0;
+
+    for (const student of newStudents) {
+      const key = `${student.firstName.trim().toLowerCase()}_${student.lastName.trim().toLowerCase()}`;
+      if (existingSet.has(key)) {
+        skipped++;
+      } else {
+        await firebaseService.saveStudent(student as any);
+        existingSet.add(key);
+        added++;
+      }
+    }
+
+    return { added, skipped };
+  },
+
+  exportCourseToCSV: async (courseId: string): Promise<string> => {
+    const allCourses = [
+      ...(await firebaseService.getCourses(false)),
+      ...(await firebaseService.getCourses(true))
+    ];
+    const course = allCourses.find(c => c.id === courseId);
+    if (!course) throw new Error("Kurs nicht gefunden.");
+
+    const allStudents = await firebaseService.getStudents();
+    const enrolledStudentIds = course.enrolledStudents || [];
+    const enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(s.id));
+
+    enrolledStudents.sort((a, b) => a.lastName.localeCompare(b.lastName, 'de'));
+
+    const allGrades = sqliteService.isDesktopAvailable()
+      ? await sqliteService.getAllGradesForCourse(courseId)
+      : {};
+
+    const cols = (course.columns || []).filter(c => c.isVisible !== false);
+    const headers = ['Nachname', 'Vorname', 'Klasse', ...cols.map(c => `"${c.title.replace(/"/g, '""')}"`)];
+
+    const rows: string[] = [];
+    rows.push(headers.join(';'));
+
+    for (const student of enrolledStudents) {
+      const studentGrades = allGrades[student.id] || {};
+      const rowVals = [
+        `"${student.lastName.replace(/"/g, '""')}"`,
+        `"${student.firstName.replace(/"/g, '""')}"`,
+        `"${(student.classId || '').replace(/"/g, '""')}"`
+      ];
+
+      for (const col of cols) {
+        const gradeObj = studentGrades[col.id];
+        let valStr = '';
+        if (gradeObj) {
+          if (gradeObj.value !== undefined && gradeObj.value !== null) {
+            valStr = String(gradeObj.value);
+          } else if (gradeObj.evaluationPercent !== undefined) {
+            valStr = `${gradeObj.evaluationPercent.toFixed(1)}%`;
+          }
+        }
+        rowVals.push(`"${valStr.replace(/"/g, '""')}"`);
+      }
+
+      rows.push(rowVals.join(';'));
+    }
+
+    return rows.join('\n');
+  },
+
+  exportFullBackupJSON: async (): Promise<string> => {
+    const activeCourses = await firebaseService.getCourses(false);
+    const archivedCourses = await firebaseService.getCourses(true);
+    const allCourses = [...activeCourses, ...archivedCourses];
+    const allStudents = await firebaseService.getStudents();
+    const allReminders = await firebaseService.getReminders();
+    const allComments = await firebaseService.getPredefinedComments();
+
+    const gradesByCourse: Record<string, Record<string, Record<string, Grade>>> = {};
+    for (const course of allCourses) {
+      if (sqliteService.isDesktopAvailable()) {
+        gradesByCourse[course.id] = await sqliteService.getAllGradesForCourse(course.id);
+      }
+    }
+
+    const backupData = {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      courses: allCourses,
+      students: allStudents,
+      reminders: allReminders,
+      settings: allComments,
+      grades: gradesByCourse
+    };
+
+    return JSON.stringify(backupData, null, 2);
+  },
+
+  restoreFullBackupJSON: async (jsonData: string): Promise<{ courses: number; students: number; reminders: number }> => {
+    const data = JSON.parse(jsonData);
+    if (!data || typeof data !== 'object') throw new Error("Ungültiges Backup-Format.");
+
+    let coursesCount = 0;
+    let studentsCount = 0;
+    let remindersCount = 0;
+
+    if (Array.isArray(data.students)) {
+      for (const student of data.students) {
+        if (student.firstName && student.lastName) {
+          await firebaseService.saveStudent(student);
+          studentsCount++;
+        }
+      }
+    }
+
+    if (Array.isArray(data.courses)) {
+      for (const course of data.courses) {
+        if (course.name) {
+          await firebaseService.saveCourse(course);
+          coursesCount++;
+        }
+      }
+    }
+
+    if (Array.isArray(data.reminders)) {
+      for (const reminder of data.reminders) {
+        if (reminder.title && reminder.courseId && reminder.date) {
+          await firebaseService.saveCustomReminder(reminder);
+          remindersCount++;
+        }
+      }
+    }
+
+    if (data.grades && typeof data.grades === 'object') {
+      for (const courseId of Object.keys(data.grades)) {
+        const courseGrades = data.grades[courseId];
+        if (courseGrades && typeof courseGrades === 'object') {
+          const updates: { studentId: string; columnId: string; grade: Grade }[] = [];
+          for (const studentId of Object.keys(courseGrades)) {
+            const cols = courseGrades[studentId];
+            if (cols && typeof cols === 'object') {
+              for (const columnId of Object.keys(cols)) {
+                updates.push({ studentId, columnId, grade: cols[columnId] });
+              }
+            }
+          }
+          if (updates.length > 0) {
+            await firebaseService.bulkUpdateGrades(courseId, updates);
+          }
+        }
+      }
+    }
+
+    return { courses: coursesCount, students: studentsCount, reminders: remindersCount };
   }
 };
 

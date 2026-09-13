@@ -8,14 +8,17 @@ import {
   Check, 
   X,
   MessageSquare,
-  Users
+  Users,
+  Database,
+  Download,
+  Upload
 } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import type { PredefinedComment } from '../schema';
 import { DialogModal } from './DialogModal';
 
 export const SettingsView = () => {
-  const [activeTab, setActiveTab] = useState<'evaluation' | 'preferences'>('evaluation');
+  const [activeTab, setActiveTab] = useState<'evaluation' | 'preferences' | 'backup'>('evaluation');
   const [showAvatars, setShowAvatars] = useState<boolean>(() => {
     const stored = localStorage.getItem('showAvatars');
     return stored !== 'false'; // Default to true
@@ -23,6 +26,13 @@ export const SettingsView = () => {
   
   const [comments, setComments] = useState<PredefinedComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Backup & Restore states
+  const [isExporting, setIsExporting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [backupStatusMessage, setBackupStatusMessage] = useState<string | null>(null);
+  const [restoreFileContent, setRestoreFileContent] = useState<string | null>(null);
+  const [isRestoreConfirmModalOpen, setIsRestoreConfirmModalOpen] = useState(false);
 
   const handleToggleAvatars = (checked: boolean) => {
     setShowAvatars(checked);
@@ -228,6 +238,69 @@ export const SettingsView = () => {
     );
   };
 
+  const handleExportBackup = async () => {
+    setIsExporting(true);
+    setBackupStatusMessage(null);
+    try {
+      const jsonStr = await firebaseService.exportFullBackupJSON();
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `chronograde_backup_${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setBackupStatusMessage("Datensicherung erfolgreich heruntergeladen!");
+    } catch (err: any) {
+      console.error("Backup error:", err);
+      setBackupStatusMessage(`Fehler beim Erstellen des Backups: ${err.message || err}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleSelectRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBackupStatusMessage(null);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      if (!text) {
+        setBackupStatusMessage("Die ausgewählte Backup-Datei ist leer.");
+        return;
+      }
+      try {
+        JSON.parse(text);
+        setRestoreFileContent(text);
+        setIsRestoreConfirmModalOpen(true);
+      } catch (err) {
+        setBackupStatusMessage("Die Datei ist kein gültiges JSON-Format.");
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!restoreFileContent) return;
+    setIsRestoring(true);
+    setIsRestoreConfirmModalOpen(false);
+    try {
+      const res = await firebaseService.restoreFullBackupJSON(restoreFileContent);
+      setBackupStatusMessage(`Wiederherstellung erfolgreich! (${res.students} Schüler, ${res.courses} Kurse, ${res.reminders} Termine geladen)`);
+      setRestoreFileContent(null);
+    } catch (err: any) {
+      console.error("Restore error:", err);
+      setBackupStatusMessage(`Fehler bei der Wiederherstellung: ${err.message || err}`);
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   return (
     <div className="view-container">
       <div className="view-header">
@@ -261,6 +334,17 @@ export const SettingsView = () => {
             onClick={() => setActiveTab('preferences')}
           >
             Benutzerpräferenzen
+          </button>
+          <button
+            id="tab-backup"
+            role="tab"
+            type="button"
+            aria-selected={activeTab === 'backup'}
+            aria-controls="panel-backup"
+            className="custom-tab-button"
+            onClick={() => setActiveTab('backup')}
+          >
+            Datensicherung & Import
           </button>
         </nav>
       </div>
@@ -331,7 +415,7 @@ export const SettingsView = () => {
               </div>
             )}
           </section>
-        ) : (
+        ) : activeTab === 'preferences' ? (
           /* Section: Benutzerpräferenzen */
           <section 
             id="panel-preferences"
@@ -365,10 +449,82 @@ export const SettingsView = () => {
               </div>
             </div>
           </section>
+        ) : (
+          /* Section: Datensicherung & Import/Export */
+          <section 
+            id="panel-backup"
+            role="tabpanel"
+            aria-labelledby="tab-backup"
+            className="settings-section-card"
+          >
+            <div className="settings-section-header">
+              <Database size={22} className="text-indigo-600" />
+              <div>
+                <h3 className="text-lg font-bold">Datensicherung & Import / Export</h3>
+                <p className="section-desc text-base">Erstelle vollständige Sicherungsdateien deiner Anwendungsdaten oder stelle Daten aus Backups wieder her.</p>
+              </div>
+            </div>
+
+            {backupStatusMessage && (
+              <div style={{ margin: '16px 0', padding: '12px 16px', borderRadius: '8px', backgroundColor: backupStatusMessage.includes('Fehler') ? '#fef2f2' : '#f0fdf4', color: backupStatusMessage.includes('Fehler') ? '#991b1b' : '#166534', fontSize: '14px', fontWeight: '500' }}>
+                {backupStatusMessage}
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginTop: '20px' }}>
+              
+              {/* Backup Export Card */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--primary-color)' }}>
+                    <Download size={22} />
+                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>Backup erstellen (JSON)</h4>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 20px 0' }}>
+                    Exportiert alle Kurse, Schüler, Noten, Einstellungen und Termine als strukturierte JSON-Datei zur externen Sicherung.
+                  </p>
+                </div>
+                <button 
+                  onClick={handleExportBackup} 
+                  disabled={isExporting}
+                  className="btn-primary" 
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '14px', borderRadius: '8px' }}
+                >
+                  <Download size={18} />
+                  <span>{isExporting ? 'Erstelle Backup...' : 'Backup herunterladen'}</span>
+                </button>
+              </div>
+
+              {/* Restore Backup Card */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#0284c7' }}>
+                    <Upload size={22} />
+                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>Backup wiederherstellen</h4>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 20px 0' }}>
+                    Spielt Daten aus einer zuvor erstellten Chronograde JSON-Sicherungsdatei wieder in die Datenbank ein.
+                  </p>
+                </div>
+                <label className="btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '14px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center' }}>
+                  <Upload size={18} />
+                  <span>{isRestoring ? 'Wiederherstellung läuft...' : 'Backup-Datei auswählen'}</span>
+                  <input 
+                    type="file" 
+                    accept=".json" 
+                    onChange={handleSelectRestoreFile} 
+                    disabled={isRestoring}
+                    style={{ display: 'none' }} 
+                  />
+                </label>
+              </div>
+
+            </div>
+          </section>
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Comment Confirmation Modal */}
       <DialogModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -377,6 +533,21 @@ export const SettingsView = () => {
         message={`Möchtest du den vorgefertigten Kommentar "${commentToDelete?.text}" wirklich löschen?`}
         type="danger"
         confirmLabel="Löschen"
+        cancelLabel="Abbrechen"
+      />
+
+      {/* Restore JSON Backup Confirmation Modal */}
+      <DialogModal
+        isOpen={isRestoreConfirmModalOpen}
+        onClose={() => {
+          setIsRestoreConfirmModalOpen(false);
+          setRestoreFileContent(null);
+        }}
+        onConfirm={handleConfirmRestore}
+        title="Backup wiederherstellen?"
+        message="Sind Sie sicher, dass Sie die Daten aus der Backup-Datei wiederherstellen möchten? Dieser Vorgang importiert alle Schüler, Kurse und Noten."
+        type="warning"
+        confirmLabel="Wiederherstellen"
         cancelLabel="Abbrechen"
       />
     </div>

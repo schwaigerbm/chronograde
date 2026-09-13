@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Wrench, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Wrench, Trash2, AlertTriangle, Upload } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import type { Student } from '../schema';
 import { StudentEditModal } from './StudentEditModal';
+import { CSVImportModal } from './CSVImportModal';
 
 export const StudentsView = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
   const [showAvatars, setShowAvatars] = useState<boolean>(() => {
     const saved = localStorage.getItem("showAvatars");
     return saved !== 'false';
@@ -118,10 +120,13 @@ export const StudentsView = () => {
       <div className="view-header">
         <div className="title-group">
           <h1 className="main-title">Schüler</h1>
-          <div className="subtitle-wrapper">
+          <div className="subtitle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h2 className="sub-title">Verwaltung aller Schüler</h2>
             <button className="btn-primary btn-sm" onClick={handleOpenAdd}>
               <Plus size={16} /> Hinzufügen
+            </button>
+            <button className="btn-secondary btn-sm" onClick={() => setIsCSVModalOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Upload size={16} /> Importieren (CSV)
             </button>
           </div>
         </div>
@@ -249,6 +254,15 @@ export const StudentsView = () => {
           </div>
         </div>
       )}
+
+      {/* CSV Import Modal */}
+      <CSVImportModal
+        isOpen={isCSVModalOpen}
+        onClose={() => setIsCSVModalOpen(false)}
+        onImportSuccess={() => {
+          // Refresh students if needed
+        }}
+      />
     </div>
   );
 };

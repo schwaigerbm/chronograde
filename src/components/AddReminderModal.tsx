@@ -10,7 +10,7 @@ interface AddReminderModalProps {
   reminderToEdit?: Reminder | null;
   onSave: (
     reminderData: Partial<Reminder> & { title: string; courseId: string; date: string },
-    prepDays?: 1 | 3 | 7 | null,
+    _prepDays?: any,
     existingReminderId?: string
   ) => Promise<void>;
 }
@@ -39,10 +39,8 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
   const [color, setColor] = useState<string>('purple');
   const [date, setDate] = useState<string>('');
   const [dueTime, setDueTime] = useState<string>('07:00');
-  const [prepDays, setPrepDays] = useState<1 | 3 | 7 | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize or pre-fill state
   useEffect(() => {
     if (isOpen) {
       if (reminderToEdit) {
@@ -54,7 +52,6 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
         setColor(reminderToEdit.color || 'purple');
         setDate(reminderToEdit.date || new Date().toISOString().split('T')[0]);
         setDueTime(reminderToEdit.dueTime || '07:00');
-        setPrepDays(reminderToEdit.prepDays || null);
       } else {
         setType('exam');
         setTargetType('course');
@@ -63,12 +60,10 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
         setSelectedStudentId('');
         setTitle('');
         setColor('purple');
-        // Default due date: tomorrow
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         setDate(tomorrow.toISOString().split('T')[0]);
         setDueTime('07:00');
-        setPrepDays(null);
       }
     }
   }, [isOpen, reminderToEdit, courses]);
@@ -104,7 +99,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
           date,
           dueTime,
         },
-        prepDays,
+        null,
         reminderToEdit?.id
       );
 
@@ -119,10 +114,10 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
   return (
     <div className="modal-overlay" style={{ zIndex: 1150 }}>
       <div className="modal-card" style={{ maxWidth: '560px', borderRadius: '16px', overflow: 'hidden' }}>
-        <div className="modal-header" style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="modal-header" style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Calendar size={20} color="var(--primary-color)" /> 
-            {reminderToEdit ? 'Termin / Abgabe bearbeiten' : 'Neuen Termin / Abgabe erstellen'}
+            {reminderToEdit ? 'Termin / Abgabe bearbeiten' : 'Neuen Termin erstellen'}
           </h3>
           <button className="btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
@@ -132,11 +127,10 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
             
             {/* 1. Termin-Typ Wahl */}
             <div>
-              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>Typ des Termins</label>
+              <label className="form-label font-semibold" style={{ marginBottom: '8px', display: 'block' }}>Typ des Termins</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 <button
                   type="button"
-                  className={`btn-secondary btn-xs ${type === 'exam' ? 'active-btn' : ''}`}
                   onClick={() => { setType('exam'); setColor('purple'); }}
                   style={{
                     display: 'flex',
@@ -147,8 +141,9 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
                     borderRadius: '8px',
                     fontWeight: 600,
                     fontSize: '13px',
-                    backgroundColor: type === 'exam' ? '#8b5cf6' : 'white',
-                    color: type === 'exam' ? 'white' : 'var(--text-main)',
+                    backgroundColor: type === 'exam' ? '#8b5cf6' : 'var(--bg-secondary)',
+                    color: type === 'exam' ? 'white' : 'var(--text-primary)',
+                    border: '1px solid',
                     borderColor: type === 'exam' ? '#8b5cf6' : 'var(--border-color)',
                     cursor: 'pointer'
                   }}
@@ -158,7 +153,6 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
 
                 <button
                   type="button"
-                  className={`btn-secondary btn-xs ${type === 'assignment' ? 'active-btn' : ''}`}
                   onClick={() => { setType('assignment'); setColor('emerald'); }}
                   style={{
                     display: 'flex',
@@ -169,8 +163,9 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
                     borderRadius: '8px',
                     fontWeight: 600,
                     fontSize: '13px',
-                    backgroundColor: type === 'assignment' ? '#10b981' : 'white',
-                    color: type === 'assignment' ? 'white' : 'var(--text-main)',
+                    backgroundColor: type === 'assignment' ? '#10b981' : 'var(--bg-secondary)',
+                    color: type === 'assignment' ? 'white' : 'var(--text-primary)',
+                    border: '1px solid',
                     borderColor: type === 'assignment' ? '#10b981' : 'var(--border-color)',
                     cursor: 'pointer'
                   }}
@@ -180,7 +175,6 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
 
                 <button
                   type="button"
-                  className={`btn-secondary btn-xs ${type === 'general' ? 'active-btn' : ''}`}
                   onClick={() => { setType('general'); setColor('blue'); }}
                   style={{
                     display: 'flex',
@@ -191,8 +185,9 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
                     borderRadius: '8px',
                     fontWeight: 600,
                     fontSize: '13px',
-                    backgroundColor: type === 'general' ? '#2563eb' : 'white',
-                    color: type === 'general' ? 'white' : 'var(--text-main)',
+                    backgroundColor: type === 'general' ? '#2563eb' : 'var(--bg-secondary)',
+                    color: type === 'general' ? 'white' : 'var(--text-primary)',
+                    border: '1px solid',
                     borderColor: type === 'general' ? '#2563eb' : 'var(--border-color)',
                     cursor: 'pointer'
                   }}
@@ -204,7 +199,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
 
             {/* 2. Bezeichnung / Titel */}
             <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 600 }}>Titel / Bezeichnung</label>
+              <label className="form-label font-semibold">Titel / Bezeichnung</label>
               <input
                 type="text"
                 className="form-input"
@@ -218,7 +213,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
 
             {/* 3. Bezug (Gesamte Gruppe vs Einzelner Schüler) */}
             <div>
-              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>Bezug (Zielgruppe)</label>
+              <label className="form-label font-semibold" style={{ marginBottom: '8px', display: 'block' }}>Bezug (Zielgruppe)</label>
               <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
                   <input
@@ -276,7 +271,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
 
             {/* 4. Akzentfarbe */}
             <div>
-              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label className="form-label font-semibold" style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Palette size={16} /> Farbakzent wählen
               </label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -309,7 +304,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
             {/* 5. Fälligkeitsdatum & Uhrzeit */}
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
               <div className="form-group">
-                <label className="form-label" style={{ fontWeight: 600 }}>Fälligkeitsdatum</label>
+                <label className="form-label font-semibold">Fälligkeitsdatum</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <Calendar size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
                   <input
@@ -324,7 +319,7 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontWeight: 600 }}>Anzeige ab</label>
+                <label className="form-label font-semibold">Uhrzeit</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <Clock size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
                   <input
@@ -339,47 +334,9 @@ export const AddReminderModal: React.FC<AddReminderModalProps> = ({
               </div>
             </div>
 
-            {/* 6. Vorbereitungs-Erinnerung (Vorlaufzeit) */}
-            <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-              <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
-                Vorbereitungs-Erinnerung (Vorab-Termin in der Liste)
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
-                {[
-                  { days: null, label: 'Keine' },
-                  { days: 1, label: '1 Tag davor' },
-                  { days: 3, label: '3 Tage davor' },
-                  { days: 7, label: '7 Tage davor' },
-                ].map(opt => (
-                  <button
-                    key={String(opt.days)}
-                    type="button"
-                    className={`btn-secondary btn-xs ${prepDays === opt.days ? 'active-btn' : ''}`}
-                    onClick={() => setPrepDays(opt.days as any)}
-                    style={{
-                      padding: '6px 10px',
-                      fontSize: '12px',
-                      borderRadius: '6px',
-                      backgroundColor: prepDays === opt.days ? 'var(--primary-color)' : 'white',
-                      color: prepDays === opt.days ? 'white' : 'var(--text-main)',
-                      borderColor: prepDays === opt.days ? 'var(--primary-color)' : 'var(--border-color)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              {prepDays && (
-                <p style={{ fontSize: '12px', color: '#64748b', margin: '8px 0 0 0', fontStyle: 'italic' }}>
-                  * Es wird automatisch ein zusätzlicher Vorbereitungstermin {prepDays} {prepDays === 1 ? 'Tag' : 'Tage'} vor dem Fälligkeitstag ab 07:00 Uhr in der Terminliste generiert.
-                </p>
-              )}
-            </div>
-
           </div>
 
-          <div className="modal-footer" style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid var(--border-color)' }}>
+          <div className="modal-footer" style={{ padding: '16px 24px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
             <button type="button" className="btn-secondary" onClick={onClose} disabled={isSubmitting}>Abbrechen</button>
             <button type="submit" className="btn-primary" style={{ width: 'auto', marginTop: 0 }} disabled={isSubmitting || !title.trim() || !selectedCourseId || !date}>
               {isSubmitting ? 'Speichere...' : reminderToEdit ? 'Änderungen speichern' : 'Termin anlegen'}

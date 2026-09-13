@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Calendar, User, Check } from 'lucide-react';
+import { AlertTriangle, Calendar, User, Check, X } from 'lucide-react';
 import type { Anomaly } from '../lib/anomalyDetector';
 import type { Reminder } from '../schema';
 
@@ -9,7 +9,7 @@ export interface AnomalyResult {
   courseId: string;
   courseName: string;
   violations: Anomaly[];
-  date: string; // The date of the attendance being saved
+  date: string;
 }
 
 interface AttendanceAnomaliesModalProps {
@@ -26,29 +26,22 @@ export const AttendanceAnomaliesModal = ({
   onConfirm
 }: AttendanceAnomaliesModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [createReminder, setCreateReminder] = useState(true);
   const [reminderDate, setReminderDate] = useState('');
 
-  // Reset index and set default date when queue changes or modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && anomaliesQueue.length > 0) {
       setCurrentIndex(0);
-      setCreateReminder(true);
-      if (anomaliesQueue.length > 0) {
-        // Default reminder date is 1 week (7 days) after the triggering attendance date
-        const triggerDate = new Date(anomaliesQueue[0].date);
-        triggerDate.setDate(triggerDate.getDate() + 7);
-        setReminderDate(triggerDate.toISOString().split('T')[0]);
-      }
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setReminderDate(tomorrow.toISOString().split('T')[0]);
     }
   }, [isOpen, anomaliesQueue]);
 
-  // Update default reminder date when index changes
   useEffect(() => {
     if (isOpen && anomaliesQueue[currentIndex]) {
-      const triggerDate = new Date(anomaliesQueue[currentIndex].date);
-      triggerDate.setDate(triggerDate.getDate() + 7);
-      setReminderDate(triggerDate.toISOString().split('T')[0]);
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setReminderDate(tomorrow.toISOString().split('T')[0]);
     }
   }, [currentIndex, isOpen, anomaliesQueue]);
 
@@ -57,29 +50,36 @@ export const AttendanceAnomaliesModal = ({
   }
 
   const current = anomaliesQueue[currentIndex];
+  const violationsStr = current.violations.map(v => v.message).join(', ');
 
-  const handleNext = async () => {
-    let reminderData: Omit<Reminder, 'id'> | null = null;
-    if (createReminder) {
-      const violationsStr = current.violations.map(v => v.message).join(', ');
-      reminderData = {
-        studentId: current.studentId,
-        studentName: current.studentName,
-        courseId: current.courseId,
-        courseName: current.courseName,
-        anomalyType: violationsStr,
-        date: reminderDate,
-        dueTime: '07:00',
-        resolved: false,
-        createdAt: new Date().toISOString()
-      };
-    }
+  const handleConfirmYes = async () => {
+    const reminderData: Omit<Reminder, 'id'> = {
+      studentId: current.studentId,
+      studentName: current.studentName,
+      courseId: current.courseId,
+      courseName: current.courseName,
+      title: `Abklärung: ${current.studentName}`,
+      anomalyType: violationsStr,
+      type: 'attendance_anomaly',
+      color: 'rose',
+      date: reminderDate,
+      dueTime: '07:00',
+      resolved: false,
+      createdAt: new Date().toISOString()
+    };
 
     await onConfirm(reminderData);
+    advanceQueue();
+  };
 
+  const handleSkipNo = async () => {
+    await onConfirm(null);
+    advanceQueue();
+  };
+
+  const advanceQueue = () => {
     if (currentIndex + 1 < anomaliesQueue.length) {
       setCurrentIndex(prev => prev + 1);
-      setCreateReminder(true);
     } else {
       onClose();
     }
@@ -87,98 +87,72 @@ export const AttendanceAnomaliesModal = ({
 
   return (
     <div className="modal-overlay" style={{ zIndex: 1100 }}>
-      <div className="modal-card" style={{ maxWidth: '500px', borderTop: '4px solid var(--danger-color)' }}>
-        <div className="modal-header">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger-color)' }}>
+      <div className="modal-card" style={{ maxWidth: '520px', borderTop: '4px solid var(--danger-color)' }}>
+        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger-color)', margin: 0, fontSize: '18px' }}>
             <AlertTriangle size={22} /> Fehlzeiten-Auffälligkeit
           </h3>
-          <span style={{ fontSize: '13px', fontWeight: 'bold', background: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: '12px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', background: '#fee2e2', color: '#dc2626', padding: '2px 10px', borderRadius: '12px' }}>
             Schüler {currentIndex + 1} von {anomaliesQueue.length}
           </span>
         </div>
 
-        <div className="modal-body" style={{ padding: '20px 24px' }}>
-          {/* Student Info Card */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
-            <div style={{ background: 'var(--primary-color)', color: 'white', padding: '8px', borderRadius: '50%' }}>
+        <div className="modal-body" style={{ padding: '20px' }}>
+          {/* Student Card */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
+            <div style={{ background: 'var(--primary-color)', color: 'white', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <User size={20} />
             </div>
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--text-main)' }}>{current.studentName}</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Gruppe: {current.courseName}</div>
+              <div style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--text-primary)' }}>{current.studentName}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Gruppe: {current.courseName}</div>
             </div>
           </div>
 
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
-            Für diesen Schüler wurden bei der heutigen Anwesenheitserfassung ({current.date}) folgende Auffälligkeiten festgestellt:
-          </p>
-
-          {/* Anomaly Violations List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-            {current.violations.map((violation, idx) => (
-              <div 
-                key={idx} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'flex-start', 
-                  gap: '8px', 
-                  background: '#fef2f2', 
-                  border: '1px solid #fee2e2', 
-                  padding: '10px 12px', 
-                  borderRadius: '6px',
-                  color: '#991b1b',
-                  fontSize: '15px',
-                  fontWeight: '600'
-                }}
-              >
-                <span style={{ marginTop: '2px' }}>•</span>
-                <span>{violation.message}</span>
-              </div>
-            ))}
+          {/* Question Text */}
+          <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '14px 16px', borderRadius: '8px', marginBottom: '20px' }}>
+            <p style={{ fontSize: '14px', color: '#991b1b', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
+              Für den Schüler <strong>{current.studentName}</strong> liegt eine Auffälligkeit vor (<em>{violationsStr}</em>).
+            </p>
+            <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#7f1d1d', margin: '8px 0 0 0' }}>
+              Soll ein Abklärungstermin mit Fälligkeitsdatum in der Terminliste eingetragen werden?
+            </p>
           </div>
 
-          {/* Reminder Section */}
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', marginBottom: '12px' }}>
-              <input 
-                type="checkbox" 
-                checked={createReminder} 
-                onChange={(e) => setCreateReminder(e.target.checked)}
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-main)' }}>
-                Abklärungserinnerung für den nächsten Termin erstellen
-              </span>
+          {/* Due Date Picker */}
+          <div className="form-group" style={{ marginBottom: '10px' }}>
+            <label className="form-label font-semibold" style={{ fontSize: '13px', display: 'block', marginBottom: '6px' }}>
+              Fälligkeitsdatum für den Abklärungstermin:
             </label>
-
-            {createReminder && (
-              <div className="form-group" style={{ marginLeft: '24px', display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
-                <label className="form-label" style={{ fontSize: '13px' }}>Erinnerungsdatum (Anzeige ab 07:00 Uhr morgens)</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
-                  <input 
-                    type="date" 
-                    className="form-input" 
-                    value={reminderDate}
-                    onChange={(e) => setReminderDate(e.target.value)}
-                    style={{ paddingLeft: '34px', fontSize: '14px' }}
-                  />
-                </div>
-                <span style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
-                  * Der Termin erscheint am gewählten Stichtag ab 07:00 Uhr früh in der Terminliste.
-                </span>
-              </div>
-            )}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Calendar size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
+              <input 
+                type="date" 
+                className="form-input" 
+                value={reminderDate}
+                onChange={(e) => setReminderDate(e.target.value)}
+                style={{ paddingLeft: '34px', fontSize: '14px' }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '14px 24px', background: '#f8fafc', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+        <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '14px 20px', background: 'var(--bg-secondary)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
           <button 
-            className="btn-primary" 
-            onClick={handleNext}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto', padding: '8px 16px', fontSize: '14px', marginLeft: 'auto' }}
+            type="button"
+            className="btn-secondary" 
+            onClick={handleSkipNo}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '13px' }}
           >
-            {currentIndex + 1 < anomaliesQueue.length ? 'Bestätigen & Weiter' : 'Bestätigen & Schließen'} <Check size={16} />
+            <X size={16} /> Nein, überspringen
+          </button>
+          <button 
+            type="button"
+            className="btn-primary" 
+            onClick={handleConfirmYes}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', fontSize: '13px' }}
+          >
+            <Check size={16} /> Ja, Termin eintragen
           </button>
         </div>
       </div>

@@ -124,15 +124,13 @@ export interface Reminder {
   studentName?: string;
   courseId: string;
   courseName: string;
-  type?: 'attendance_anomaly' | 'exam' | 'assignment' | 'general' | 'prep_reminder';
+  type?: 'attendance_anomaly' | 'exam' | 'assignment' | 'general';
   targetType?: 'course' | 'student';
   title?: string;
   color?: string; // 'blue' | 'purple' | 'emerald' | 'amber' | 'rose'
   anomalyType: string; // Detailbeschreibung / Anomaly text
   date: string;        // Due date (YYYY-MM-DD)
   dueTime?: string;    // Fälligkeits-Uhrzeit (Standard: "07:00")
-  prepDays?: 1 | 3 | 7 | null;
-  parentReminderId?: string;
   resolved: boolean;   // Whether the task is completed
   createdAt: string;
 }
