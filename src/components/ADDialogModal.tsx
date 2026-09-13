@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, CheckCircle2, Sparkles, RefreshCw, Trophy, AlertTriangle } from 'lucide-react';
+import { X, Check, CheckCircle2, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
 import type { Course, Student } from '../schema';
 
 interface ADDialogModalProps {
@@ -23,7 +23,6 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
   
   // Rolling & Winner states
   const [currentDisplayStudent, setCurrentDisplayStudent] = useState<{ student: Student; numberIndex: number } | null>(null);
-  const [winner, setWinner] = useState<{ student: Student; numberIndex: number } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const enrolledStudentIds = course.enrolledStudents || [];
@@ -34,7 +33,6 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setPhase('attendance');
-      setWinner(null);
       setCurrentDisplayStudent(null);
       setIsSaving(false);
 
@@ -71,7 +69,6 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
     if (candidates.length === 0) return;
 
     setPhase('rolling');
-    setWinner(null);
 
     // Random winner pick
     const selectedWinner = candidates[Math.floor(Math.random() * candidates.length)];
@@ -95,7 +92,6 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
       } else {
         // Final winner reveal
         setCurrentDisplayStudent(selectedWinner);
-        setWinner(selectedWinner);
         setPhase('winner');
       }
     };
@@ -366,25 +362,6 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
                 </div>
               </div>
 
-              {/* Winner Banner */}
-              {phase === 'winner' && winner && (
-                <div style={{ 
-                  marginTop: '20px', 
-                  padding: '12px 24px', 
-                  background: 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)', 
-                  color: 'white', 
-                  borderRadius: '30px', 
-                  fontWeight: 800, 
-                  fontSize: '15px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)',
-                  animation: 'bounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                }}>
-                  <Trophy size={18} /> Ausgewählt für Stundenwiederholung / Moderation!
-                </div>
-              )}
             </div>
           )}
 
