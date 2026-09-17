@@ -1,4 +1,4 @@
-# Spezifikation: GUI Leistungsbeurteilung (Firebase Service-Architektur)
+# Spezifikation: GUI Leistungsbeurteilung (Standalone Electron SQLite-Architektur)
 
 ## 1. Seitenstruktur & Header
 Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an und bietet die primäre Aktion zum Hinzufügen neuer Beurteilungen.
@@ -14,8 +14,8 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
     * `PDF Export` (Icon: `FileDown`) - Öffnet das Modal zur Spaltenauswahl für den PDF-Export der Gesamtmatrix.
 
 ## 2. Datenanbindung & Architektur
-* **Backend:** Firebase Firestore (Collections: `courses`, `students`, `course_entries`, `grades`).
-* **Service-Layer:** Die GUI kommuniziert **nicht direkt** mit Firebase, sondern ausschließlich über die erweiterte Service-Klasse (z.B. `serviceFirebase`).
+* **Backend:** Lokale SQLite-Datenbank (Tabellen: `courses`, `students`, `course_entries`, `grades`, `attendance_events`, `collaboration_events`).
+* **Service-Layer:** Die GUI kommuniziert **nicht direkt** mit SQLite, sondern ausschließlich über die erweiterte Service-Klasse `sqliteService` via Electron IPC.
 * **Architektur-Vorgabe (WICHTIG):** Vor der Implementierung dieser GUI müssen das Daten-Schema und die Service-Klasse zwingend überprüft und so umgebaut/ergänzt werden, dass sie alle unten beschriebenen Entitäten (Courses, Course Entries mit den verschiedenen Typen, Grades mit Historie/Mehrfacheinträgen) vollumfänglich unterstützen.
 
 ## 3. Daten-Tabelle (Notenübersicht)
@@ -156,7 +156,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
     * Klick auf einen vorgefertigten Kommentar (z.B. `+ Sehr aktiv`): Trägt diesen Eintrag für alle markierten Schüler sofort in die Session ein. Die Auswahl (Checkboxen) wird automatisch geleert, um die nächste Zuweisung zu vereinfachen.
     * Alternativ: Eingabe einer manuellen Notiz und Klick auf einen der Typ-Buttons (`+`, `~`, `-`).
     * Bereits zugewiesene Einträge werden in der Schülerliste direkt neben dem Namen angezeigt und können per Mülleimer-Icon wieder entfernt werden.
-* **Aktionen:** `Speichern` persistiert alle in der Session erfassten Mitarbeitseinträge in Firestore. `Abbrechen` schließt das Modal.
+* **Aktionen:** `Speichern` persistiert alle in der Session erfassten Mitarbeitseinträge in der SQLite-Datenbank. `Abbrechen` schließt das Modal.
 
 * **Massen-Erfassung:** Über das `Plus-Icon` im Header kann weiterhin für die gesamte Klasse gleichzeitig eine Note (z.B. für eine bestimmte Stunde) vergeben werden.
 
@@ -321,13 +321,17 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
 * **Layout:** Großes modales Fenster (Breite: 95vw, Höhe: 90vh, abgerundete Ecken) mit einem abgedunkelten Backdrop, so dass die Notenmatrix im Hintergrund dezent sichtbar bleibt. Das Fenster gliedert sich in:
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr und Steuerelemente (PDF-Export, Schließen).
     * **Zweispaltiges Layout im Body (dashboard-body ohne Scrollbalken, Diagramm permanent sichtbar):**
+        * **Typografie & Schriftgrößen (Gesamtes Schüler-Detail-Dashboard):** Das gesamte Modal der Schüler-Leistungsübersicht (sowohl linke Spalte inkl. SVG-Diagramm als auch rechte Spalte inkl. Kärtchen, Notenstrahl, Notizen & Timeline) wird kompakt formatiert:
+            * **Standard-Schriftgröße:** **12px** für normale Fließtexte, Beschreibungen, Achsenbeschriftungen im Diagramm, Datenwerte, Kärtcheninhalte, Notizen, Sub-Entries und Tooltips.
+            * **Überschriften & wichtige Hervorhebungen:** **13px** für Sektionsüberschriften, Modaltitel, Card-Header und wichtige Titel.
         * **Linke Spalte (ca. 2/3 Breite):** Interaktives SVG-basiertes Liniendiagramm zur Visualisierung des Noten-Trends, permanent und vollständig sichtbar (kein Scrollen links).
-        * **Rechte Spalte (ca. 1/3 Breite):** Vertikal scrollbare Leiste (`overflow-y: auto`), die alle Informationskarten untereinander stapelt:
-            1. **Gesamttrend (Live):** Aktuelle Note mit einem umgekehrten, farbsegmentierten Notenstrahl (von links 1 bis rechts 5) und einer floating Prozent-Nadel (Markerl), die bei Mouse-Hover die Tendenzdetails und "Puzzelstücke" (Verbesserungsvorschläge) als Modal-Overlay einblendet.
-            2. **Mitarbeit-Zusammenfassung:** Verteilung der Mitarbeitseinträge (+, ~, -).
-            3. **Anwesenheits-Zusammenfassung:** Prozentuale Anwesenheitsquote und Stundenanzahl.
-            4. **Meilensteine:** Berechnete Noten für definierte Zwischenstände.
-            5. **Detaillierter Verlauf (Timeline Card):** Eine Karte ganz unten in der Scrollliste, in der alle erfassten Einzelleistungen chronologisch aufgeschlüsselt sind, mit Angabe des Ergebnisses, Kommentaren/Einzelleistungen und des jeweiligen Einrechnungsfaktors.
+        * **Rechte Spalte (ca. 1/3 Breite):** Vertikal scrollbare Leiste (`overflow-y: auto`), die alle Informationskarten untereinander stapelt.
+            * **Karten der rechten Spalte:**
+                1. **Gesamttrend (Live):** Aktuelle Note mit einem umgekehrten, farbsegmentierten Notenstrahl (von links 1 bis rechts 5) und einer floating Prozent-Nadel (Markerl), die bei Mouse-Hover die Tendenzdetails und "Puzzelstücke" (Verbesserungsvorschläge) als Modal-Overlay einblendet.
+                2. **Mitarbeit-Zusammenfassung:** Verteilung der Mitarbeitseinträge (+, ~, -).
+                3. **Anwesenheits-Zusammenfassung:** Prozentuale Anwesenheitsquote und Stundenanzahl.
+                4. **Meilensteine:** Berechnete Noten für definierte Zwischenstände.
+                5. **Detaillierter Verlauf (Timeline Card):** Eine Karte ganz unten in der Scrollliste, in der alle erfassten Einzelleistungen chronologisch aufgeschlüsselt sind, mit Angabe des Ergebnisses, Kommentaren/Einzelleistungen und des jeweiligen Einrechnungsfaktors.
     * **Scrollverhalten:** Der Hauptbereich (`dashboard-body`) selbst ist nicht scrollbar (`overflow: hidden`), während die rechte Spalte eine eigene vertikale Scrollleiste besitzt. So bleibt das große Diagramm links immer vollflächig sichtbar.
 * **Inhalt:**
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr. Ein Button zum Generieren des PDF-Einzelberichts (Datenblatt) ist im Header platziert.
@@ -348,7 +352,7 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
 ---
 
 ## 8. Implementierungshinweise & Testing (gemini.md)
-* **Testing der Service-Layer:** Um die oben genannte `serviceFirebase` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollten in Jest zwingend `beforeAll` und `afterAll` Hooks implementiert werden. Dies gewährleistet, dass Testdaten (wie Mock-Schüler oder generierte Noten) vor den Testläufen sauber angelegt und im Nachgang wieder restlos aus der Firestore-Testumgebung gelöscht (Clean-up) werden.
+* **Testing der Service-Layer:** Um die oben genannte `sqliteService` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollte vor Testläufen eine temporäre SQLite-Testdatenbank verwendet werden. Dies gewährleistet, dass Testdaten vor den Testläufen sauber angelegt und im Nachgang wieder restlos bereinigt werden.
 
 ---
 
@@ -367,4 +371,63 @@ Dieses Feature bündelt die schnelle Erfassung von Anwesenheit und Mitarbeit in 
         *   Es öffnet sich die neue Massenerfassung für die Mitarbeit.
         *   Der Lehrer wählt Schüler per Checkbox aus (Mehrfachauswahl) und weist ihnen durch Klick auf einen vorgefertigten Kommentar (z. B. `+ Sehr aktiv`) direkt die Bewertung zu.
         *   Die Schülerliste zeigt eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen).
-    *   **Speichern & Persistieren:** Ein Klick auf „Speichern“ im letzten Schritt schreibt alle erfassten Anwesenheits- und Mitarbeitseinträge gesammelt über den Service-Layer in Firestore.
+    *   **Speichern & Persistieren:** Ein Klick auf „Speichern“ im letzten Schritt schreibt alle erfassten Anwesenheits- und Mitarbeitseinträge gesammelt über den Service-Layer in die SQLite-Datenbank.
+
+---
+
+## 10. Kurs-Journal & Ansichts-Umschalter (Journal Mode)
+
+Dieses Feature ermöglicht Lehrpersonen das Führen eines strukturierten Kurs-Journals direkt in der Leistungsbeurteilung.
+
+### 10.1 Ansichts-Umschalter (View Switcher)
+* **Position:** Oberhalb/neben dem Aktionsbutton im Header der Notenmatrix.
+* **Optionen:** Segmentierter Umschalter zwischen `Matrix` und `Journal`.
+* **Standardwert:** `Matrix` ist beim Öffnen eines Kurses standardmäßig aktiv.
+
+### 10.2 Header-Aktionen im Journal-Modus
+Wenn die Journal-Ansicht aktiv ist, wird das Standard-Aktionsmenü ("Aktionen") durch folgende Buttons ersetzt:
+* `+ Neuer Eintrag` (Stil: Primär, Icon: `Plus`): Öffnet das Modal zum Erstellen eines neuen Journaleintrags.
+* `PDF Export` (Stil: Sekundär, Icon: `FileDown`): Generiert ein druckfertiges PDF-Dokument aller Journaleinträge des gewählten Kurses und startet den Download.
+
+### 10.3 Modal "Neuer Eintrag / Eintrag bearbeiten" (`JournalEntryModal`)
+* **Auslöser:** Klick auf `+ Neuer Eintrag` oder Klick auf `Bearbeiten` bei einem bestehenden Eintrag.
+* **Eingabefelder:**
+    * **Datum:** Datepicker, voreingestellt auf das aktuelle Tagesdatum (Format `YYYY-MM-DD`).
+    * **Titel / Name:** Textfeld für die Bezeichnung oder das Thema des Eintrags (Pflichtfeld).
+    * **Text / Formatiertes Inhaltfeld:** Interaktiver Rich-Text-Editor mit Werkzeugleiste:
+        * **Fett** (`Bold`)
+        * **Kursiv** (`Italic`)
+        * **Unterstrichen** (`Underline`)
+        * **Aufzählungsliste** (`Unordered List`)
+        * **Formatierung aufheben** (`Clear Formatting`)
+    * **Datei-Uploads:** Ausdrücklich **gesperrt / nicht vorhanden** (keine Dateianhänge möglich).
+* **Aktionen:** `Speichern` speichert den Eintrag über den SQLite Service-Layer in der Datenbank. `Abbrechen` schließt den Dialog ohne Änderungen.
+
+### 10.4 Zweispaltige Journal-Ansicht (`JournalView`)
+Die Journal-Ansicht teilt sich in zwei Bildschirmhälften:
+
+* **Linke Bildschirmhälfte (Eintragsliste im To-Do-Stil):**
+    * **Header / Zähler:** Ganz oben befindet sich ein Eintragszähler mit der genauen Anzahl (z. B. `5 Einträge`).
+    * **Sortierung:** Alle Einträge sind strikt nach dem **Vergabedatum** (absteigend) sortiert.
+    * **Zeilenaufbau:**
+        * Linksbündig: Datum (Format `DD.MM.YYYY`) und Titel/Name des Eintrags.
+        * Rechtsbündig: Aktions-Buttons `Bearbeiten` (Pencil-Icon) und `Löschen` (Trash-Icon).
+    * **Interaktion:** Klick auf eine Zeile markiert diese als aktiv und zeigt die vollständigen Details in der rechten Bildschirmhälfte an.
+
+* **Rechte Bildschirmhälfte (Detail-Vorschau):**
+    * **Inhalt:** Zeigt den Namen/Titel des Eintrags, das Vergabedatum sowie den formatierten Inhaltstext im vollen Umfang an.
+    * **Aktionen:** Buttons `Bearbeiten` und `Löschen` im Header der Detailansicht.
+    * **Empty State:** Wenn noch kein Eintrag ausgewählt ist oder der Kurs keine Einträge besitzt, wird eine informative Meldung ("Wählen Sie einen Eintrag aus der Liste oder erstellen Sie einen neuen Eintrag") angezeigt.
+
+### 10.5 Datenhaltung & SQLite-Schema
+Journaleinträge werden persistent in SQLite gespeichert:
+* **Tabelle:** `journal_entries`
+* **Spalten:**
+    * `id` (TEXT PRIMARY KEY)
+    * `courseId` (TEXT, Fremdschlüssel zu `courses.id`)
+    * `date` (TEXT, YYYY-MM-DD)
+    * `title` (TEXT)
+    * `content` (TEXT, HTML-formatiert)
+    * `createdAt` (TEXT, ISO-Timestamp)
+    * `updatedAt` (TEXT, ISO-Timestamp)
+

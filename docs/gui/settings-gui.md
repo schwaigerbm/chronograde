@@ -26,7 +26,7 @@ Hier können Lehrer vorgefertigte Kommentare für die drei Bewertungszeichen der
     * **Bearbeitungs-Button:** Edit-Icon, das den Text direkt in einem Inline-Eingabefeld oder einem modalen Dialog editierbar macht.
 
 ### 2.2 Datenmodell & Persistence
-Die Einstellungen werden in Firestore in einem zentralen Dokument unter `/settings/collaboration` gespeichert:
+Die Einstellungen werden in der lokalen SQLite-Datenbank in der Tabelle `settings` (Key: `predefined_comments`) gespeichert:
 
 ```typescript
 export interface PredefinedComment {
@@ -40,8 +40,8 @@ export interface PredefinedCommentsSettings {
 }
 ```
 
-* Die Sortierreihenfolge in der UI entspricht exakt der Reihenfolge der Elemente im Array `comments` (nach Typ gefiltert).
-* Änderungen (Hinzufügen, Löschen, Editieren, Verschieben) werden direkt via Service-Layer in Firestore persistiert.
+* Die Sortierreihenfolge in der UI entspricht exakt der Reihenfolge der Elemente im Array `comments` (nach Typ gefiltered).
+* Änderungen (Hinzufügen, Löschen, Editieren, Verschieben) werden direkt via `sqliteService` in der SQLite-Datenbank persistiert.
 
 ---
 
@@ -61,7 +61,7 @@ Wenn der Lehrer in der Matrix auf ein Feld der Mitarbeit klickt (Typ `collaborat
 ---
 
 ## 4. Tab: Benutzerpräferenzen (UI-Präferenzen)
-Hier können Lehrer globale UI-Einstellungen verwalten, die im LocalStorage des Browsers persistiert werden.
+Hier können Lehrer globale UI-Einstellungen verwalten, die in der SQLite-Datenbank (Tabelle `settings`) persistiert werden.
 
 ### 4.1 Benutzeroberfläche (UI)
 * **Tab/Bereichs-Überschrift:** `Benutzerpräferenzen`
@@ -74,7 +74,7 @@ Hier können Lehrer globale UI-Einstellungen verwalten, die im LocalStorage des 
     * *Speicherung:* In SQLite-Datenbank (Tabelle `settings`, Key `enable_ad_dialog`).
     * *Funktion:* Blendet den Button `A & D Dialog >` auf den Gruppen-Karten in der Beurteilungsansicht ein oder aus.
 * **Logik:** 
-  * Änderungen an den Toggles werden sofort in der SQLite-Datenbank / LocalStorage gespeichert und auf die betroffenen Komponenten angewendet (ohne dass ein Speichern-Button gedrückt werden muss).
+  * Änderungen an den Toggles werden sofort in der SQLite-Datenbank gespeichert und auf die betroffenen Komponenten angewendet (ohne dass ein Speichern-Button gedrückt werden muss).
 
 ---
 
@@ -98,5 +98,3 @@ Hier können Lehrer eigene Kategorien für die Termin- und Aufgabenliste anlegen
 * **Kategorie-Liste:**
   * Übersicht aller aktiven Kategorien mit Farb-Badge, Icon, Name und System-Status (z. B. `Fixiert` bei Fehlzeiten).
   * Aktions-Buttons: `Bearbeiten` und `Löschen` (deaktiviert bei fixierten Kategorien).
-
-

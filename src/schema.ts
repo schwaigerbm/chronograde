@@ -144,3 +144,14 @@ export interface Reminder {
   resolved: boolean;   // Whether the task is completed
   createdAt: string;
 }
+
+// 9. KURS-JOURNAL (Journal-Einträge pro Kurs)
+export interface JournalEntry {
+  id: string;
+  courseId: string;
+  date: string;       // YYYY-MM-DD
+  title: string;      // Name / Titel des Eintrags
+  content: string;    // Formatiertes HTML/Text
+  createdAt: string;
+  updatedAt?: string;
+}

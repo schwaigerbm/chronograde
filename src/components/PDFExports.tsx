@@ -7,8 +7,9 @@ import {
   pdf,
   Image
 } from '@react-pdf/renderer';
-import type { Course, Student, CourseEntry, Grade, GradeEntry } from '../schema';
+import type { Course, Student, CourseEntry, Grade, GradeEntry, JournalEntry } from '../schema';
 import { formatDate } from '../lib/utils';
+
 
 // Helper to calculate collaboration percentage
 const getCollaborationPercentage = (entries?: GradeEntry[], cutoffDate?: string): number | null => {
@@ -654,3 +655,94 @@ export const exportStudentReportPDF = async (
     console.error("Error exporting Student PDF:", error);
   }
 };
+
+const stripHtml = (html: string): string => {
+  if (!html) return '';
+  return html
+    .replace(/<br\s*[\/]?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n• ')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+};
+
+export const JournalPDFDocument = ({
+  course,
+  entries
+}: {
+  course: Course;
+  entries: JournalEntry[];
+}) => {
+  return (
+    <Document>
+      <Page size="A4" style={styles.pagePortrait}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.appTitle}>CHRONOGRADE</Text>
+          <Text style={styles.title}>Kurs-Journal: {course.name}</Text>
+          <Text style={styles.subtitle}>Schuljahr: {course.year} | Einträge: {entries.length}</Text>
+          <View style={styles.metaRow}>
+            <Text>Erstellt am: {new Date().toLocaleDateString('de-DE')}</Text>
+          </View>
+        </View>
+
+        {/* Entries List */}
+        {entries.length === 0 ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <Text style={{ fontStyle: 'italic', color: '#64748b' }}>Keine Journaleinträge für diesen Kurs vorhanden.</Text>
+          </View>
+        ) : (
+          entries.map((entry, idx) => (
+            <View 
+              key={entry.id || idx} 
+              style={{ 
+                marginBottom: 12, 
+                padding: 10, 
+                backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff', 
+                borderRadius: 6, 
+                borderWidth: 1, 
+                borderColor: '#e2e8f0' 
+              }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, borderBottomWidth: 1, borderBottomColor: '#cbd5e1', paddingBottom: 4 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>
+                  {entry.title}
+                </Text>
+                <Text style={{ fontSize: 9, color: '#2563eb', fontFamily: 'Helvetica-Bold' }}>
+                  {formatDate(entry.date)}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 9, color: '#334155', lineHeight: 1.4 }}>
+                {stripHtml(entry.content) || '(Kein Text)'}
+              </Text>
+            </View>
+          ))
+        )}
+      </Page>
+    </Document>
+  );
+};
+
+export const exportJournalPDF = async (
+  course: Course,
+  entries: JournalEntry[]
+) => {
+  try {
+    const doc = (
+      <JournalPDFDocument 
+        course={course}
+        entries={entries}
+      />
+    );
+    const blob = await pdf(doc).toBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Chronograde_Journal_${course.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error exporting Journal PDF:", error);
+  }
+};
+

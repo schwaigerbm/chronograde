@@ -473,10 +473,43 @@ function setupIpcHandlers() {
     return true;
   });
 
+  // Journal Entries
+  ipcMain.handle('journal:getByCourse', async (_, courseId) => {
+    const rows = await dbOps.all(`SELECT * FROM journal_entries WHERE courseId = ? ORDER BY date DESC, createdAt DESC`, [courseId]);
+    return rows;
+  });
+
+  ipcMain.handle('journal:save', async (_, entry) => {
+    const now = new Date().toISOString();
+    if (entry.id) {
+      const existing = await dbOps.get(`SELECT * FROM journal_entries WHERE id = ?`, [entry.id]);
+      if (existing) {
+        await dbOps.run(
+          `UPDATE journal_entries SET date = ?, title = ?, content = ?, updatedAt = ? WHERE id = ?`,
+          [entry.date || existing.date, entry.title || existing.title, entry.content || '', now, entry.id]
+        );
+        return entry.id;
+      }
+    }
+
+    const id = entry.id || ('journal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
+    await dbOps.run(
+      `INSERT INTO journal_entries (id, courseId, date, title, content, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, entry.courseId, entry.date || now.split('T')[0], entry.title || '', entry.content || '', now, now]
+    );
+    return id;
+  });
+
+  ipcMain.handle('journal:delete', async (_, id) => {
+    await dbOps.run(`DELETE FROM journal_entries WHERE id = ?`, [id]);
+    return true;
+  });
+
   ipcMain.handle('database:getLoadedPath', async () => {
     return getLoadedDbPath();
   });
 }
+
 
 app.whenReady().then(async () => {
   createSplashWindow();

@@ -1,7 +1,7 @@
 # Spezifikation: Dashboard-Layout & Navigation
 
-## 0. Tresor-Code & Lokale Datenhaltung (Desktop-Version)
-In der Desktop-Auskopplung (Electron) wird der bisherige Firebase-Online-Login durch einen **lokalen Tresor-Code (PIN)** und eine **SQLite-Datenbank im Anwendungsverzeichnis** ersetzt:
+## 0. Tresor-Code & Lokale Datenhaltung (Standalone Electron App)
+Chronograde ist als reine **Standalone Electron Desktop-Anwendung** konzipiert. Die Datensicherung und Authentifizierung erfolgen vollständig offline:
 * **Erstmalige Einrichtung:** Wenn keine SQLite-Datenbankdatei existiert, fordert die App beim Erststart zur Vergabe eines 4- bis 8-stelligen Tresor-Codes auf.
 * **Tresor-Entsperrung:** Bei jedem Anwendungsstart wird der gehashte Tresor-Code über einen eleganten PIN-Entsperrbildschirm abgefragt.
 * **5-Minuten-Inaktivitätssperre:** Nach 5 Minuten ohne Benutzeraktion (Maus/Tastatur) sperrt sich die Anwendung automatisch und kehrt zum Tresor-Bildschirm zurück.
@@ -42,8 +42,6 @@ In diesem Bereich wird das jeweilige Dokument (Spezifikation) gerendert.
 * **Standardansicht:** Beim ersten Laden wird das Modul **Start** ([`attendance-anomalies-gui.md`](file:///c:/Users/user/Documents/chronograde/docs/gui/attendance-anomalies-gui.md) mit `RemindersWidget`) angezeigt.
 * **Modul-Wechsel:** Beim Klick auf "Schüler", "Gruppen", "Beurteilungen" oder "Einstellungen" wird der Inhalt geladen, der in der jeweiligen Spezifikationsdatei unter `docs/gui/` definiert ist.
 
-## 4. Technische Schnittstelle (Service-Router & Abstraktions-Schicht)
+## 4. Technische Schnittstelle (Service-Router & SQLite-Anbindung)
 * Die Navigation steuert einen internen State in React (`activeTab`), der basierend auf der Auswahl die entsprechende View-Komponente lädt.
-* **Abstrahierter Service-Layer:** Alle Komponenten greifen über den vereinheitlichten `firebaseService` auf die Daten zu:
-  * Im **Web-Modus** nutzt `firebaseService` die Cloud Firestore SDK.
-  * Im **Desktop-Modus (Electron)** erkennt `firebaseService` die Electron-Umgebung (`sqliteService.isDesktopAvailable()`) und leitet alle Lese- und Schreiboperationen transparente via IPC an die lokale SQLite-Datenbank (`sqliteService`) weiter.
+* **Abstrahierter Service-Layer (`sqliteService`):** Alle Komponenten greifen über den vereinheitlichten `sqliteService` auf die Daten zu. Dieser leitet alle Lese- und Schreiboperationen transparent via IPC an die lokale SQLite-Datenbank (`electron/database.cjs`) weiter.

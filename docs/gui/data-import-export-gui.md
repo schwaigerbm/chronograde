@@ -32,7 +32,7 @@ Dieses Modul ermöglicht es Lehrkräften, Schülerlisten aus bestehenden Schulve
 ---
 
 ## 3. Technische Integration
-* **Service-Layer:** Erweiterung von `firebaseService` und `sqliteService` um Hilfsfunktionen:
+* **Service-Layer:** Erweiterung von `sqliteService` um Hilfsfunktionen:
   * `importStudentsFromCSV(students: Omit<Student, 'id'>[]): Promise<{ added: number, skipped: number }>`
   * `exportCourseToCSV(courseId: string): Promise<string>`
   * `exportFullBackupJSON(): Promise<string>`

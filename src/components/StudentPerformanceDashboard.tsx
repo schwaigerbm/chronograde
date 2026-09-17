@@ -671,8 +671,8 @@ export const StudentPerformanceDashboard = ({
             {/* Left Column: Diagram */}
             <div className="dashboard-chart-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '480px' }}>
               <div className="dashboard-card chart-card" style={{ height: '100%', margin: 0, display: 'flex', flexDirection: 'column' }}>
-                <h2 className="dashboard-card-title">
-                  <TrendingUp size={18} />
+                <h2 className="dashboard-card-title" style={{ fontSize: '13px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
+                  <TrendingUp size={15} />
                   <span>Leistungsverlauf (Noten-Trend)</span>
                 </h2>
                 <div className="chart-wrapper" style={{ flex: 1, minHeight: '380px' }}>
@@ -706,11 +706,11 @@ export const StudentPerformanceDashboard = ({
                               />
                               <text 
                                 x={paddingX - 12} 
-                                y={y + 6} 
+                                y={y + 4} 
                                 textAnchor="end" 
                                 style={{
-                                  fontSize: '18px',
-                                  fontWeight: '950',
+                                  fontSize: '12px',
+                                  fontWeight: '700',
                                   fill: '#0f172a',
                                   fontFamily: 'sans-serif'
                                 }}
@@ -739,7 +739,7 @@ export const StudentPerformanceDashboard = ({
                           d={linePath} 
                           fill="none" 
                           stroke="#2563eb" 
-                          strokeWidth="4"
+                          strokeWidth="3"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
@@ -763,12 +763,12 @@ export const StudentPerformanceDashboard = ({
                               {/* Rotated Axis Title Label */}
                               <text
                                 x={x}
-                                y={p.title === 'Trend' ? svgHeight - chartBottomGap + 42 : svgHeight - chartBottomGap + 34}
+                                y={p.title === 'Trend' ? svgHeight - chartBottomGap + 40 : svgHeight - chartBottomGap + 32}
                                 textAnchor={p.title === 'Trend' ? 'middle' : 'end'}
-                                transform={p.title === 'Trend' ? '' : `rotate(-35, ${x}, ${svgHeight - chartBottomGap + 34})`}
+                                transform={p.title === 'Trend' ? '' : `rotate(-35, ${x}, ${svgHeight - chartBottomGap + 32})`}
                                 style={{
-                                  fontSize: p.title === 'Trend' ? '22px' : '16px',
-                                  fontWeight: '900',
+                                  fontSize: p.title === 'Trend' ? '13px' : '12px',
+                                  fontWeight: '700',
                                   fill: p.title === 'Trend' ? '#2563eb' : '#0f172a',
                                   fontFamily: 'sans-serif'
                                 }}
@@ -779,11 +779,11 @@ export const StudentPerformanceDashboard = ({
                               {/* Grade Label above the dot */}
                               <text
                                 x={x}
-                                y={y - 16}
+                                y={y - 12}
                                 textAnchor="middle"
                                 style={{
-                                  fontSize: '18px',
-                                  fontWeight: '950',
+                                  fontSize: '12px',
+                                  fontWeight: '800',
                                   fill: getGradeColor(p.grade),
                                   fontFamily: 'sans-serif'
                                 }}
@@ -795,10 +795,10 @@ export const StudentPerformanceDashboard = ({
                               <circle 
                                 cx={x} 
                                 cy={y} 
-                                r="8" 
+                                r="6" 
                                 fill={getGradeColor(p.grade)} 
                                 stroke="#ffffff" 
-                                strokeWidth="3" 
+                                strokeWidth="2" 
                                 className="chart-dot"
                                 style={{ filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.15))' }}
                               />
@@ -806,7 +806,7 @@ export const StudentPerformanceDashboard = ({
                               <circle 
                                 cx={x} 
                                 cy={y} 
-                                r="24" 
+                                r="20" 
                                 fill="transparent" 
                                 style={{ cursor: 'pointer' }}
                                 onMouseEnter={() => {
@@ -837,12 +837,12 @@ export const StudentPerformanceDashboard = ({
                             transform: 'translate(-50%, -100%)'
                           }}
                         >
-                          <div className="tooltip-inner">
-                            <strong className="tooltip-title">{hoveredPoint.title}</strong>
-                            <span className="tooltip-date">{formatDate(hoveredPoint.date)}</span>
-                            <div className="tooltip-stats">
-                              <span className="tooltip-percent">{hoveredPoint.percent}%</span>
-                              <span className="tooltip-grade">Note: {hoveredPoint.grade}</span>
+                          <div className="tooltip-inner" style={{ padding: '8px 12px' }}>
+                            <strong className="tooltip-title" style={{ fontSize: '13px' }}>{hoveredPoint.title}</strong>
+                            <span className="tooltip-date" style={{ fontSize: '12px' }}>{formatDate(hoveredPoint.date)}</span>
+                            <div className="tooltip-stats" style={{ fontSize: '12px' }}>
+                              <span className="tooltip-percent" style={{ fontSize: '12px' }}>{hoveredPoint.percent}%</span>
+                              <span className="tooltip-grade" style={{ fontSize: '12px' }}>Note: {hoveredPoint.grade}</span>
                             </div>
                           </div>
                         </div>
@@ -850,8 +850,8 @@ export const StudentPerformanceDashboard = ({
                     </div>
                   ) : (
                     <div className="chart-empty-state">
-                      <TrendingUp size={48} style={{ opacity: 0.2, marginBottom: '12px' }} />
-                      <p>Diagramm benötigt mindestens 2 bewertete Leistungen im Verlauf</p>
+                      <TrendingUp size={40} style={{ opacity: 0.2, marginBottom: '10px' }} />
+                      <p style={{ fontSize: '12px' }}>Diagramm benötigt mindestens 2 bewertete Leistungen im Verlauf</p>
                     </div>
                   )}
                 </div>
@@ -862,36 +862,36 @@ export const StudentPerformanceDashboard = ({
             <div className="dashboard-stats-stack" style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingRight: '6px', height: '100%', minHeight: 0 }}>
               
               {/* Live Trend Card */}
-              <div className="dashboard-card live-trend-card" style={{ padding: '12px 18px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h2 className="dashboard-card-title" style={{ fontSize: '16px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
-                  <TrendingUp size={18} />
+              <div className="dashboard-card live-trend-card" style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <h2 className="dashboard-card-title" style={{ fontSize: '13px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
+                  <TrendingUp size={15} />
                   <span>Gesamttrend (Live)</span>
                 </h2>
-                <div className="live-trend-content" style={{ gap: '16px' }}>
+                <div className="live-trend-content" style={{ gap: '14px' }}>
                   {liveSummary.grade ? (
                     <>
-                      <div className="live-trend-grade-display" data-grade={liveSummary.grade} style={{ height: '56px', width: '56px', fontSize: '32px' }}>
+                      <div className="live-trend-grade-display" data-grade={liveSummary.grade} style={{ height: '44px', width: '44px', fontSize: '24px' }}>
                         {liveSummary.grade}
                       </div>
                       <div className="live-trend-details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '4px' }}>
-                          <span className="live-trend-label" style={{ fontSize: '16px', fontWeight: 'bold' }}>{getHungarianGradeLabel(liveSummary.grade)}</span>
-                          <span className="live-trend-percent" style={{ fontSize: '16px' }}>{liveSummary.percent}% Schnitt</span>
+                          <span className="live-trend-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>{getHungarianGradeLabel(liveSummary.grade)}</span>
+                          <span className="live-trend-percent" style={{ fontSize: '12px' }}>{liveSummary.percent}% Schnitt</span>
                         </div>
                         
                         {/* Notenstrahl (Grade Scale) */}
                         {tendencyDetails && (
                           <div 
                             className="relative group" 
-                            style={{ marginTop: '24px', cursor: 'help', width: '100%', position: 'relative' }}
+                            style={{ marginTop: '20px', cursor: 'help', width: '100%', position: 'relative' }}
                             onMouseEnter={handleMouseEnter}
                             onMouseLeave={handleMouseLeave}
                           >
                             {/* Scale Bar */}
                             <div 
                               style={{
-                                height: '10px',
-                                borderRadius: '5px',
+                                height: '9px',
+                                borderRadius: '4px',
                                 background: 'linear-gradient(to right, #15803d 0%, #15803d 20%, #16a34a 20%, #16a34a 40%, #3b82f6 40%, #3b82f6 60%, #d97706 60%, #d97706 80%, #ef4444 80%, #ef4444 100%)',
                                 width: '100%',
                                 position: 'relative',
@@ -904,7 +904,7 @@ export const StudentPerformanceDashboard = ({
                                   position: 'absolute',
                                   left: '88%',
                                   top: '0',
-                                  width: '6px',
+                                  width: '5px',
                                   height: '100%',
                                   backgroundColor: '#dbeafe', // Matches trend card gradient right-side color
                                   transform: 'skewX(-25deg)'
@@ -913,7 +913,7 @@ export const StudentPerformanceDashboard = ({
                             </div>
                             
                             {/* Scale Markers (Grade numbers 1 to 5) */}
-                            <div style={{ display: 'flex', position: 'relative', width: '100%', height: '16px', fontSize: '16px', fontWeight: 'bold', color: '#475569', marginTop: '4px' }}>
+                            <div style={{ display: 'flex', position: 'relative', width: '100%', height: '14px', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginTop: '3px' }}>
                               <span style={{ position: 'absolute', left: '10%', transform: 'translateX(-50%)' }}>1</span>
                               <span style={{ position: 'absolute', left: '30%', transform: 'translateX(-50%)' }}>2</span>
                               <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>3</span>
@@ -926,7 +926,7 @@ export const StudentPerformanceDashboard = ({
                               style={{
                                 position: 'absolute',
                                 left: `${getMarkerPosition(liveSummary.percent)}%`,
-                                top: '-32px',
+                                top: '-28px',
                                 transform: 'translateX(-50%)',
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -939,10 +939,10 @@ export const StudentPerformanceDashboard = ({
                                 style={{
                                   backgroundColor: getGradeColor(liveSummary.grade),
                                   color: 'white',
-                                  fontSize: '16px',
+                                  fontSize: '12px',
                                   fontWeight: '900',
-                                  padding: '4px 8px',
-                                  borderRadius: '6px',
+                                  padding: '3px 7px',
+                                  borderRadius: '5px',
                                   boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                                   whiteSpace: 'nowrap',
                                   border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -953,8 +953,8 @@ export const StudentPerformanceDashboard = ({
                               </div>
                               {/* Large downward pointer triangle overlaying the bar */}
                               <svg 
-                                width="16" 
-                                height="14" 
+                                width="14" 
+                                height="12" 
                                 viewBox="0 0 16 14" 
                                 style={{ 
                                   marginTop: '-2px', 
@@ -977,70 +977,70 @@ export const StudentPerformanceDashboard = ({
                     </>
                   ) : (
                     <div className="no-data-alert">
-                      <AlertCircle size={18} />
-                      <span>Keine Daten</span>
+                      <AlertCircle size={15} />
+                      <span style={{ fontSize: '12px' }}>Keine Daten</span>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Collaboration Distribution Card */}
-              <div className="dashboard-card" style={{ padding: '12px 18px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h2 className="dashboard-card-title" style={{ fontSize: '16px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
-                  <Award size={18} />
+              <div className="dashboard-card" style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <h2 className="dashboard-card-title" style={{ fontSize: '13px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
+                  <Award size={15} />
                   <span>Mitarbeit</span>
                 </h2>
                 <div className="stat-card-content">
                   {collaborationStats.totalCollabEntries > 0 ? (
                     <div className="collab-stats-distribution" style={{ gap: '8px' }}>
-                      <div className="collab-dist-item plus" style={{ padding: '8px 6px', borderRadius: '8px' }}>
-                        <span className="collab-dist-symbol" style={{ fontSize: '20px' }}>+</span>
-                        <span className="collab-dist-count" style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>{collaborationStats.plusCount}</span>
+                      <div className="collab-dist-item plus" style={{ padding: '6px 8px', borderRadius: '6px' }}>
+                        <span className="collab-dist-symbol" style={{ fontSize: '16px' }}>+</span>
+                        <span className="collab-dist-count" style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{collaborationStats.plusCount}</span>
                       </div>
-                      <div className="collab-dist-item neutral" style={{ padding: '8px 6px', borderRadius: '8px' }}>
-                        <span className="collab-dist-symbol" style={{ fontSize: '20px' }}>~</span>
-                        <span className="collab-dist-count" style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>{collaborationStats.neutralCount}</span>
+                      <div className="collab-dist-item neutral" style={{ padding: '6px 8px', borderRadius: '6px' }}>
+                        <span className="collab-dist-symbol" style={{ fontSize: '16px' }}>~</span>
+                        <span className="collab-dist-count" style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{collaborationStats.neutralCount}</span>
                       </div>
-                      <div className="collab-dist-item minus" style={{ padding: '8px 6px', borderRadius: '8px' }}>
-                        <span className="collab-dist-symbol" style={{ fontSize: '20px' }}>-</span>
-                        <span className="collab-dist-count" style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>{collaborationStats.minusCount}</span>
+                      <div className="collab-dist-item minus" style={{ padding: '6px 8px', borderRadius: '6px' }}>
+                        <span className="collab-dist-symbol" style={{ fontSize: '16px' }}>-</span>
+                        <span className="collab-dist-count" style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{collaborationStats.minusCount}</span>
                       </div>
                     </div>
                   ) : (
-                    <p className="no-data-text" style={{ fontSize: '16px' }}>Keine Aufzeichnungen</p>
+                    <p className="no-data-text" style={{ fontSize: '12px' }}>Keine Aufzeichnungen</p>
                   )}
                 </div>
               </div>
 
               {/* Attendance Quote Card */}
-              <div className="dashboard-card" style={{ padding: '12px 18px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h2 className="dashboard-card-title" style={{ fontSize: '16px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
-                  <Activity size={18} />
+              <div className="dashboard-card" style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <h2 className="dashboard-card-title" style={{ fontSize: '13px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
+                  <Activity size={15} />
                   <span>Anwesenheit</span>
                 </h2>
                 <div className="stat-card-content">
                   {attendanceStats.hasPresenceData ? (
-                    <div className="attendance-quote-display" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div className="attendance-percentage" data-quote={attendanceStats.percent} style={{ fontSize: '32px', fontWeight: '800', lineHeight: 1 }}>
+                    <div className="attendance-quote-display" style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div className="attendance-percentage" data-quote={attendanceStats.percent} style={{ fontSize: '24px', fontWeight: '800', lineHeight: 1 }}>
                         {attendanceStats.percent}%
                       </div>
-                      <p className="stat-card-subtitle" style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>
+                      <p className="stat-card-subtitle" style={{ margin: 0, fontSize: '12px', fontWeight: '500' }}>
                         Anwesend: {attendanceStats.presentHours} von {attendanceStats.totalHours} Std.
                       </p>
                     </div>
                   ) : (
-                    <p className="no-data-text" style={{ fontSize: '16px' }}>Keine Aufzeichnungen</p>
+                    <p className="no-data-text" style={{ fontSize: '12px' }}>Keine Aufzeichnungen</p>
                   )}
                 </div>
               </div>
 
               {/* Milestones Card */}
-              <div className="dashboard-card" style={{ padding: '12px 18px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h2 className="dashboard-card-title" style={{ fontSize: '16px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
-                  <Award size={18} />
+              <div className="dashboard-card" style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <h2 className="dashboard-card-title" style={{ fontSize: '13px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
+                  <Award size={15} />
                   <span>Meilensteine</span>
                 </h2>
-                <div className="milestones-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="milestones-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {visibleColumns.filter(c => c.type === 'calculated').length > 0 ? (
                     visibleColumns.filter(c => c.type === 'calculated').slice(0, 2).map(ms => {
                       let grade = grades[student.id]?.[ms.id];
@@ -1049,24 +1049,24 @@ export const StudentPerformanceDashboard = ({
                         grade = { value: calculated.grade || undefined };
                       }
                       return (
-                        <div key={ms.id} className="milestone-item" style={{ padding: '6px 12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span className="milestone-name" style={{ fontSize: '16px', fontWeight: '500' }}>{ms.title}</span>
-                          <div className="milestone-badge" data-grade={grade?.value} style={{ width: '28px', height: '28px', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div key={ms.id} className="milestone-item" style={{ padding: '5px 12px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className="milestone-name" style={{ fontSize: '12px', fontWeight: '500' }}>{ms.title}</span>
+                          <div className="milestone-badge" data-grade={grade?.value} style={{ width: '24px', height: '24px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {grade?.value || '-'}
                           </div>
                         </div>
                       );
                     })
                   ) : (
-                    <p className="no-data-text" style={{ fontSize: '16px' }}>Keine Meilensteine</p>
+                    <p className="no-data-text" style={{ fontSize: '12px' }}>Keine Meilensteine</p>
                   )}
                 </div>
               </div>
 
               {/* Timeline Card (Leistungsverlauf im Detail) */}
-              <div className="dashboard-card list-timeline-card" style={{ height: 'auto', overflow: 'visible', flexShrink: 0, margin: 0, padding: '12px 18px' }}>
-                <h2 className="dashboard-card-title" style={{ fontSize: '16px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
-                  <Calendar size={18} />
+              <div className="dashboard-card list-timeline-card" style={{ height: 'auto', overflow: 'visible', flexShrink: 0, margin: 0, padding: '12px 16px' }}>
+                <h2 className="dashboard-card-title" style={{ fontSize: '13px', marginBottom: '8px', paddingBottom: '4px', fontWeight: 'bold' }}>
+                  <Calendar size={15} />
                   <span>Leistungsverlauf im Detail</span>
                 </h2>
                 <div className="timeline-container" style={{ overflowY: 'visible' }}>
@@ -1075,25 +1075,25 @@ export const StudentPerformanceDashboard = ({
                       {historyFeed.map(item => (
                         <div key={item.id} className="timeline-item">
                           {/* Dot indicator */}
-                          <div className="timeline-badge-column">
-                            <span className={`col-type-badge ${getColTypeBadgeClass(item.type)}`} style={{ fontSize: '16px', padding: '4px 8px', fontWeight: 'bold' }}>
+                          <div className="timeline-badge-column" style={{ width: '75px', paddingTop: '4px' }}>
+                            <span className={`col-type-badge ${getColTypeBadgeClass(item.type)}`} style={{ fontSize: '10px', padding: '3px 7px', fontWeight: 'bold' }}>
                               {getColTypeLabel(item.type)}
                             </span>
                           </div>
                           
                           {/* Details content */}
-                          <div className="timeline-content-card">
+                          <div className="timeline-content-card" style={{ padding: '10px 14px' }}>
                              <div className="timeline-card-header">
                               <div>
-                                <h3 className="timeline-item-title" style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{item.title}</h3>
-                                <span className="timeline-item-date" style={{ fontSize: '16px', color: '#64748b' }}>{formatDate(item.date)}</span>
+                                <h3 className="timeline-item-title" style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 2px 0' }}>{item.title}</h3>
+                                <span className="timeline-item-date" style={{ fontSize: '12px', color: '#64748b' }}>{formatDate(item.date)}</span>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                <div className="timeline-item-result-badge" data-type={item.type} style={{ fontSize: '15px', fontWeight: '900', padding: '5px 10px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+                                <div className="timeline-item-result-badge" data-type={item.type} style={{ fontSize: '12px', fontWeight: '900', padding: '4px 8px' }}>
                                   {item.displayValue}
                                 </div>
                                 {item.type !== 'calculated' && item.type !== 'presenceSum' && item.type !== 'groupAssignment' && (
-                                  <span style={{ fontSize: '16px', color: '#64748b', fontWeight: '700' }}>
+                                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>
                                     {item.calc ? `Einrechnungsfaktor: ${item.calcFactor}%` : 'Nicht gewertet'}
                                   </span>
                                 )}
@@ -1102,32 +1102,32 @@ export const StudentPerformanceDashboard = ({
 
                             {/* Predefined Comment/Note */}
                             {item.note && (
-                              <div className="timeline-item-note" style={{ fontSize: '16px', padding: '10px 14px', marginTop: '10px' }}>
-                                <MessageSquare size={15} style={{ marginTop: '2px', marginRight: '6px', flexShrink: 0 }} />
+                              <div className="timeline-item-note" style={{ fontSize: '12px', padding: '8px 12px', marginTop: '8px' }}>
+                                <MessageSquare size={14} style={{ marginTop: '1px', marginRight: '5px', flexShrink: 0 }} />
                                 <p className="note-text" style={{ margin: 0 }}>{item.note}</p>
                               </div>
                             )}
 
                             {/* Subentries (Presence / Collaboration lists) */}
                             {item.subEntries && item.subEntries.length > 0 && (
-                              <div className="timeline-sub-entries" style={{ marginTop: '12px', paddingTop: '10px' }}>
-                                <span className="sub-entries-header" style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>Erfasste Einzelleistungen:</span>
-                                <div className="sub-entries-list" style={{ gap: '8px' }}>
+                              <div className="timeline-sub-entries" style={{ marginTop: '10px', paddingTop: '8px' }}>
+                                <span className="sub-entries-header" style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '6px' }}>Erfasste Einzelleistungen:</span>
+                                <div className="sub-entries-list" style={{ gap: '6px' }}>
                                   {item.subEntries.map(sub => {
                                     let isPositive = sub.value === '+' || sub.value === 'check';
                                     let isNegative = sub.value === '-';
                                     
                                     return (
-                                      <div key={sub.id} className="sub-entry-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', margin: '4px 0' }}>
-                                        <span className="sub-entry-date" style={{ fontSize: '16px', width: '80px', flexShrink: 0 }}>{formatDate(sub.date)}</span>
-                                        <div className={`sub-entry-indicator ${isPositive ? 'positive' : isNegative ? 'negative' : 'neutral'}`} style={{ width: '26px', height: '26px', fontSize: '16px', flexShrink: 0 }}>
+                                      <div key={sub.id} className="sub-entry-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', margin: '3px 0' }}>
+                                        <span className="sub-entry-date" style={{ fontSize: '12px', width: '70px', flexShrink: 0 }}>{formatDate(sub.date)}</span>
+                                        <div className={`sub-entry-indicator ${isPositive ? 'positive' : isNegative ? 'negative' : 'neutral'}`} style={{ width: '22px', height: '22px', fontSize: '12px', flexShrink: 0 }}>
                                           {item.type === 'presenceSum' ? (
-                                            isPositive ? <CheckCircle size={18} /> : <XCircle size={18} />
+                                            isPositive ? <CheckCircle size={15} /> : <XCircle size={15} />
                                           ) : (
-                                            <span className="sub-entry-symbol" style={{ fontSize: '16px', fontWeight: 'bold' }}>{sub.value}</span>
+                                            <span className="sub-entry-symbol" style={{ fontSize: '12px', fontWeight: 'bold' }}>{sub.value}</span>
                                           )}
                                         </div>
-                                        <span className="sub-entry-note" style={{ fontSize: '16px', marginLeft: '8px', fontWeight: '500' }}>
+                                        <span className="sub-entry-note" style={{ fontSize: '12px', marginLeft: '6px', fontWeight: '500' }}>
                                           {sub.note || (item.type === 'presenceSum' ? (isPositive ? 'Anwesend' : 'Abwesend') : 'Kein Kommentar')}
                                           {sub.hours ? ` (${sub.hours} Std.)` : ''}
                                         </span>
@@ -1143,7 +1143,7 @@ export const StudentPerformanceDashboard = ({
                     </div>
                   ) : (
                     <div className="timeline-empty-state">
-                      <p>Keine Einträge für diesen Schüler vorhanden.</p>
+                      <p style={{ fontSize: '12px' }}>Keine Einträge für diesen Schüler vorhanden.</p>
                     </div>
                   )}
                 </div>
@@ -1166,34 +1166,34 @@ export const StudentPerformanceDashboard = ({
             left: `${hoverPosition.x}px`,
             top: `${hoverPosition.y - 8}px`,
             transform: 'translate(-50%, -100%)',
-            width: '320px',
+            width: '300px',
             backgroundColor: 'white',
             border: '1px solid #e2e8f0',
-            borderRadius: '12px',
+            borderRadius: '10px',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
-            padding: '16px',
+            padding: '14px',
             color: '#1e293b',
             zIndex: 99999, // Float on top of everything!
             pointerEvents: 'none' // Avoid flickering on scroll/mouse move
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Puzzle size={16} style={{ color: tendencyDetails.type === 'up' ? '#16a34a' : tendencyDetails.type === 'down' ? '#dc2626' : '#2563eb' }} />
-            <span style={{ fontWeight: '700', fontSize: '16px', color: '#1e293b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <Puzzle size={15} style={{ color: tendencyDetails.type === 'up' ? '#16a34a' : tendencyDetails.type === 'down' ? '#dc2626' : '#2563eb' }} />
+            <span style={{ fontWeight: '700', fontSize: '13px', color: '#1e293b' }}>
               {tendencyDetails.message}
             </span>
           </div>
-          <p style={{ margin: 0, fontSize: '16px', color: '#64748b', lineHeight: '1.4', marginBottom: tendencyDetails.suggestions.length > 0 ? '8px' : '0', textAlign: 'left' }}>
+          <p style={{ margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.4', marginBottom: tendencyDetails.suggestions.length > 0 ? '6px' : '0', textAlign: 'left' }}>
             {tendencyDetails.description}
           </p>
           
           {tendencyDetails.suggestions.length > 0 && (
-            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '8px', textAlign: 'left' }}>
-              <span style={{ display: 'block', fontWeight: '700', fontSize: '16px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '6px', marginTop: '6px', textAlign: 'left' }}>
+              <span style={{ display: 'block', fontWeight: '700', fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
                 Mögliche Puzzelstücke zur Verbesserung:
               </span>
               {tendencyDetails.suggestions.map((sug, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '16px', color: '#475569', lineHeight: '1.3', marginBottom: '4px' }}>
+                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', fontSize: '12px', color: '#475569', lineHeight: '1.3', marginBottom: '3px' }}>
                   <span style={{ color: tendencyDetails.type === 'up' ? '#16a34a' : tendencyDetails.type === 'down' ? '#dc2626' : '#2563eb', fontWeight: 'bold' }}>•</span>
                   <span>{sug}</span>
                 </div>
@@ -1208,8 +1208,8 @@ export const StudentPerformanceDashboard = ({
               top: '100%',
               left: '50%',
               transform: 'translateX(-50%) translateY(-6px) rotate(45deg)',
-              width: '12px',
-              height: '12px',
+              width: '10px',
+              height: '10px',
               backgroundColor: 'white',
               borderRight: '1px solid #e2e8f0',
               borderBottom: '1px solid #e2e8f0'

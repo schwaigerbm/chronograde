@@ -1,4 +1,4 @@
-import type { Course, Student, Grade, PredefinedComment, Reminder, ReminderCategory } from '../schema';
+import type { Course, Student, Grade, PredefinedComment, Reminder, ReminderCategory, JournalEntry } from '../schema';
 
 declare global {
   interface Window {
@@ -32,6 +32,9 @@ declare global {
       saveReminderCategories: (categories: ReminderCategory[]) => Promise<boolean>;
       getSetting: (key: string) => Promise<any>;
       saveSetting: (key: string, value: any) => Promise<boolean>;
+      getJournalEntries: (courseId: string) => Promise<JournalEntry[]>;
+      saveJournalEntry: (entry: Partial<JournalEntry> & { courseId: string; title: string }) => Promise<string>;
+      deleteJournalEntry: (id: string) => Promise<boolean>;
       getLoadedDbPath: () => Promise<string>;
     };
   }
@@ -43,6 +46,12 @@ const studentsSubscribers = new Set<() => void>();
 const gradesSubscribers = new Set<() => void>();
 const remindersSubscribers = new Set<() => void>();
 const predefinedCommentsSubscribers = new Set<() => void>();
+const journalSubscribers = new Set<(courseId: string) => void>();
+
+function triggerJournalRefresh(courseId: string) {
+  journalSubscribers.forEach(fn => fn(courseId));
+}
+
 
 function triggerCoursesRefresh() {
   coursesSubscribers.forEach(fn => fn(false));
@@ -462,5 +471,60 @@ export const sqliteService = {
     }
     localStorage.setItem(`chronograde_${key}`, JSON.stringify(value));
     return true;
+  },
+
+  // Journal Entries
+  getJournalEntries: async (courseId: string): Promise<JournalEntry[]> => {
+    if (window.electronAPI) {
+      return await window.electronAPI.getJournalEntries(courseId);
+    }
+    return [];
+  },
+
+  subscribeToJournalEntries: (courseId: string, callback: (entries: JournalEntry[]) => void) => {
+    let lastJson = '';
+    const fetchJournal = async () => {
+      if (window.electronAPI) {
+        try {
+          const entries = await window.electronAPI.getJournalEntries(courseId);
+          const json = JSON.stringify(entries || []);
+          if (json !== lastJson) {
+            lastJson = json;
+            callback(entries || []);
+          }
+        } catch (err) {
+          console.error('Error fetching journal entries:', err);
+        }
+      }
+    };
+    fetchJournal();
+    const interval = setInterval(fetchJournal, 1000);
+    const subFn = (cId: string) => {
+      if (cId === courseId) fetchJournal();
+    };
+    journalSubscribers.add(subFn);
+    return () => {
+      clearInterval(interval);
+      journalSubscribers.delete(subFn);
+    };
+  },
+
+  saveJournalEntry: async (entry: Partial<JournalEntry> & { courseId: string; title: string }) => {
+    if (window.electronAPI) {
+      const res = await window.electronAPI.saveJournalEntry(entry);
+      triggerJournalRefresh(entry.courseId);
+      return res;
+    }
+    return 'mock_journal_id';
+  },
+
+  deleteJournalEntry: async (id: string, courseId: string) => {
+    if (window.electronAPI) {
+      const res = await window.electronAPI.deleteJournalEntry(id);
+      triggerJournalRefresh(courseId);
+      return res;
+    }
+    return true;
   }
 };
+

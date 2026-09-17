@@ -38,7 +38,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveReminderCategories: (categories) => ipcRenderer.invoke('settings:saveReminderCategories', categories),
   getSetting: (key) => ipcRenderer.invoke('settings:get', key),
   saveSetting: (key, value) => ipcRenderer.invoke('settings:save', { key, value }),
-  
+
+  // Journal
+  getJournalEntries: (courseId) => ipcRenderer.invoke('journal:getByCourse', courseId),
+  saveJournalEntry: (entry) => ipcRenderer.invoke('journal:save', entry),
+  deleteJournalEntry: (id) => ipcRenderer.invoke('journal:delete', id),
+
   // Database Info
   getLoadedDbPath: () => ipcRenderer.invoke('database:getLoadedPath')
 });
+

@@ -147,7 +147,18 @@ function initDatabase(app, customPath) {
           db.run(`ALTER TABLE reminders ADD COLUMN categoryId TEXT`, () => {});
         });
 
-        // 6. Settings Table
+        // 6. Journal Entries Table
+        db.run(`CREATE TABLE IF NOT EXISTS journal_entries (
+          id TEXT PRIMARY KEY,
+          courseId TEXT,
+          date TEXT,
+          title TEXT,
+          content TEXT,
+          createdAt TEXT,
+          updatedAt TEXT
+        )`);
+
+        // 7. Settings Table
         db.run(`CREATE TABLE IF NOT EXISTS settings (
           key TEXT PRIMARY KEY,
           value TEXT
@@ -155,6 +166,7 @@ function initDatabase(app, customPath) {
           if (err) reject(err);
           else resolve(db);
         });
+
       });
     });
   });

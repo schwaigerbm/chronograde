@@ -39,6 +39,12 @@ import { EvaluationEntryModal } from './EvaluationEntryModal';
 import { ManualEntryModal } from './ManualEntryModal';
 import { EnrollmentModal } from './EnrollmentModal';
 import { QuickEntryModal } from './QuickEntryModal';
+import { JournalView } from './JournalView';
+import { JournalEntryModal } from './JournalEntryModal';
+import { exportJournalPDF } from './PDFExports';
+import { sqliteService } from '../services/sqliteService';
+import type { JournalEntry } from '../schema';
+
 
 interface GradesMatrixProps {
   course: Course;
@@ -85,8 +91,38 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   // Cell Hover Tracking for Quick Entry
   const [hoveredCell, setHoveredCell] = useState<{ studentId: string, column: CourseEntry } | null>(null);
 
+  // View Mode: 'matrix' (default) or 'journal'
+  const [viewMode, setViewMode] = useState<'matrix' | 'journal'>('matrix');
+  const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
+  const [editingJournalEntry, setEditingJournalEntry] = useState<JournalEntry | null>(null);
+  const [journalEntriesForExport, setJournalEntriesForExport] = useState<JournalEntry[]>([]);
+
+  const handleSaveJournalEntry = async (data: { date: string; title: string; content: string }) => {
+    await sqliteService.saveJournalEntry({
+      id: editingJournalEntry?.id,
+      courseId: course.id,
+      date: data.date,
+      title: data.title,
+      content: data.content
+    });
+    setEditingJournalEntry(null);
+  };
+
+  const handleDeleteJournalEntry = (entry: JournalEntry) => {
+    showDialog({
+      title: 'Journaleintrag löschen?',
+      message: `Möchten Sie den Eintrag "${entry.title}" wirklich löschen?`,
+      type: 'danger',
+      confirmLabel: 'Löschen',
+      onConfirm: async () => {
+        await sqliteService.deleteJournalEntry(entry.id, course.id);
+      }
+    });
+  };
+
   // Student Dashboard Overlay State
   const [selectedStudentForDashboard, setSelectedStudentForDashboard] = useState<Student | null>(null);
+
 
   // Enrollment Modal States
   const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
@@ -839,89 +875,162 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         <div className="title-group">
           <h1 className="main-title">Leistungsbeurteilung</h1>
           <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <h2 className="sub-title" style={{ margin: 0 }}>{course.name}</h2>
-            </div>
-            <div className="dropdown-container">
-              <button 
-                className="btn-secondary btn-sm"
-                onClick={() => setIsActionsDropdownOpen(!isActionsDropdownOpen)}
-                style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Aktionen</span>
-                <ChevronDown size={16} />
-              </button>
               
-              {isActionsDropdownOpen && (
-                <>
-                  <div 
-                    className="dropdown-overlay" 
-                    onClick={() => setIsActionsDropdownOpen(false)}
-                  />
-                  <div className="dropdown-menu">
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsQuickEntryModalOpen(true);
-                      }}
-                    >
-                      <Zap size={16} />
-                      <span>Schnelleingabe</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsAddColumnModalOpen(true);
-                      }}
-                    >
-                      <Plus size={16} />
-                      <span>Beurteilungsspalte hinzufügen</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setTrendSettingsInitialTab('layout');
-                        setIsTrendSettingsModalOpen(true);
-                      }}
-                    >
-                      <Settings size={16} />
-                      <span>Ansicht konfigurieren</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsEnrollmentModalOpen(true);
-                      }}
-                    >
-                      <Users size={16} />
-                      <span>Gruppe ändern</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsPDFColumnSelectModalOpen(true);
-                      }}
-                    >
-                      <FileDown size={16} />
-                      <span>PDF Export</span>
-                    </button>
-                  </div>
-                </>
-              )}
+              {/* Segmented View Switcher: Matrix vs Journal */}
+              <div style={{
+                display: 'flex',
+                backgroundColor: '#f1f5f9',
+                padding: '3px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('matrix')}
+                  style={{
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: viewMode === 'matrix' ? '#ffffff' : 'transparent',
+                    color: viewMode === 'matrix' ? 'var(--primary-color)' : '#64748b',
+                    boxShadow: viewMode === 'matrix' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Matrix
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('journal')}
+                  style={{
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: viewMode === 'journal' ? '#ffffff' : 'transparent',
+                    color: viewMode === 'journal' ? 'var(--primary-color)' : '#64748b',
+                    boxShadow: viewMode === 'journal' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Journal
+                </button>
+              </div>
             </div>
+
+            {viewMode === 'matrix' ? (
+              <div className="dropdown-container">
+                <button 
+                  className="btn-secondary btn-sm"
+                  onClick={() => setIsActionsDropdownOpen(!isActionsDropdownOpen)}
+                  style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <span>Aktionen</span>
+                  <ChevronDown size={16} />
+                </button>
+                
+                {isActionsDropdownOpen && (
+                  <>
+                    <div 
+                      className="dropdown-overlay" 
+                      onClick={() => setIsActionsDropdownOpen(false)}
+                    />
+                    <div className="dropdown-menu">
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsQuickEntryModalOpen(true);
+                        }}
+                      >
+                        <Zap size={16} />
+                        <span>Schnelleingabe</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsAddColumnModalOpen(true);
+                        }}
+                      >
+                        <Plus size={16} />
+                        <span>Beurteilungsspalte hinzufügen</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setTrendSettingsInitialTab('layout');
+                          setIsTrendSettingsModalOpen(true);
+                        }}
+                      >
+                        <Settings size={16} />
+                        <span>Ansicht konfigurieren</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsEnrollmentModalOpen(true);
+                        }}
+                      >
+                        <Users size={16} />
+                        <span>Gruppe ändern</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsPDFColumnSelectModalOpen(true);
+                        }}
+                      >
+                        <FileDown size={16} />
+                        <span>PDF Export</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  className="btn-primary btn-sm"
+                  onClick={() => {
+                    setEditingJournalEntry(null);
+                    setIsJournalModalOpen(true);
+                  }}
+                  style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Plus size={16} />
+                  <span>Neuer Eintrag</span>
+                </button>
+                <button
+                  className="btn-secondary btn-sm"
+                  onClick={() => exportJournalPDF(course, journalEntriesForExport)}
+                  style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <FileDown size={16} />
+                  <span>PDF Export</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="matrix-scroll-area">
-        <table className="data-table matrix-table">
-          <thead>
-            <tr>
+      {viewMode === 'matrix' ? (
+        <div className="matrix-scroll-area">
+          <table className="data-table matrix-table">
+            <thead>
+              <tr>
+
               <th className="sticky-col student-header">
                 <div className="header-content">
                   <div className="header-level-1">SCHÜLER</div>
@@ -1219,6 +1328,32 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           </tbody>
         </table>
       </div>
+      ) : (
+        <JournalView 
+          course={course}
+          onEditEntry={(entry) => {
+            setEditingJournalEntry(entry);
+            setIsJournalModalOpen(true);
+          }}
+          onDeleteEntry={handleDeleteJournalEntry}
+          onEntriesLoaded={setJournalEntriesForExport}
+          onOpenNewModal={() => {
+            setEditingJournalEntry(null);
+            setIsJournalModalOpen(true);
+          }}
+        />
+      )}
+
+      <JournalEntryModal 
+        isOpen={isJournalModalOpen}
+        onClose={() => {
+          setIsJournalModalOpen(false);
+          setEditingJournalEntry(null);
+        }}
+        onSave={handleSaveJournalEntry}
+        initialData={editingJournalEntry}
+      />
+
 
       <AddColumnModal 
         isOpen={isAddColumnModalOpen}
