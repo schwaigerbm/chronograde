@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Bold, Italic, Underline, List, RotateCcw, Save } from 'lucide-react';
 import type { JournalEntry } from '../schema';
 
@@ -67,26 +68,28 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
     }
   };
 
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
+  return createPortal(
+    <div className="modal-overlay" style={{ zIndex: 1500 }} onClick={onClose}>
       <div 
-        className="modal-content"
+        className="modal-card"
         onClick={e => e.stopPropagation()} 
-        style={{ maxWidth: '680px', width: '90%' }}
+        style={{ maxWidth: '680px', width: '90%', padding: '24px' }}
       >
         <div className="modal-header">
-          <h2>{initialData?.id ? 'Journaleintrag bearbeiten' : 'Neuer Journaleintrag'}</h2>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>
+            {initialData?.id ? 'Journaleintrag bearbeiten' : 'Neuer Journaleintrag'}
+          </h3>
           <button className="btn-icon" onClick={onClose} type="button">
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ marginTop: '16px' }}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: 0 }}>
             {/* Datum & Titel */}
             <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
               <div style={{ width: '160px' }}>
-                <label className="form-label">Datum</label>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'block' }}>Datum</label>
                 <input
                   type="date"
                   className="form-input"
@@ -96,7 +99,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label className="form-label">Name / Titel</label>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'block' }}>Name / Titel</label>
                 <input
                   type="text"
                   className="form-input"
@@ -111,7 +114,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
 
             {/* Rich Text Formatierung Werkzeugleiste */}
             <div>
-              <label className="form-label" style={{ marginBottom: '6px' }}>Text / Notizen</label>
+              <label className="form-label" style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '6px', display: 'block' }}>Text / Notizen</label>
               
               <div style={{
                 border: '1px solid var(--border-color)',
@@ -196,7 +199,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
             </div>
           </div>
 
-          <div className="modal-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <div className="modal-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: 0 }}>
             <button
               type="button"
               className="btn-secondary"
@@ -217,6 +220,8 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+

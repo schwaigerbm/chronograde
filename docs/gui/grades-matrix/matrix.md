@@ -389,8 +389,9 @@ Wenn die Journal-Ansicht aktiv ist, wird das Standard-Aktionsmenü ("Aktionen") 
 * `+ Neuer Eintrag` (Stil: Primär, Icon: `Plus`): Öffnet das Modal zum Erstellen eines neuen Journaleintrags.
 * `PDF Export` (Stil: Sekundär, Icon: `FileDown`): Generiert ein druckfertiges PDF-Dokument aller Journaleinträge des gewählten Kurses und startet den Download.
 
-### 10.3 Modal "Neuer Eintrag / Eintrag bearbeiten" (`JournalEntryModal`)
-* **Auslöser:** Klick auf `+ Neuer Eintrag` oder Klick auf `Bearbeiten` bei einem bestehenden Eintrag.
+### 10.3 Modaler Dialog "Neuer Eintrag / Eintrag bearbeiten" (`JournalEntryModal`)
+* **Darstellung (WICHTIG):** Sowohl das Erstellen als auch das Bearbeiten eines Journaleintrags erfolgt **ausschließlich über einen zentrierten modalen Dialog (`Modal`)** mit abgedunkeltem Hintergrund-Overlay (`Backdrop`) über dem gesamten Bildschirm – **keinesfalls inline oder unterhalb der Liste/Detailansicht eingebettet**.
+* **Auslöser:** Klick auf `+ Neuer Eintrag` im Header oder Klick auf `Bearbeiten` bei einem bestehenden Eintrag.
 * **Eingabefelder:**
     * **Datum:** Datepicker, voreingestellt auf das aktuelle Tagesdatum (Format `YYYY-MM-DD`).
     * **Titel / Name:** Textfeld für die Bezeichnung oder das Thema des Eintrags (Pflichtfeld).
@@ -403,7 +404,12 @@ Wenn die Journal-Ansicht aktiv ist, wird das Standard-Aktionsmenü ("Aktionen") 
     * **Datei-Uploads:** Ausdrücklich **gesperrt / nicht vorhanden** (keine Dateianhänge möglich).
 * **Aktionen:** `Speichern` speichert den Eintrag über den SQLite Service-Layer in der Datenbank. `Abbrechen` schließt den Dialog ohne Änderungen.
 
-### 10.4 Zweispaltige Journal-Ansicht (`JournalView`)
+### 10.4 Modaler Bestätigungs-Dialog bei Löschen (`DialogModal`)
+* **Lösch-Workflow (WICHTIG):** Bei Klick auf `Löschen` (sowohl in der Eintragsliste links als auch in der Detailansicht rechts) wird **immer ein modaler Nachfragedialog (`DialogModal`)** als Overlay in der Bildschirmmitte eingeblendet.
+* **Inhalt:** Hinweis mit Warn-Icon, Titel "Journaleintrag löschen?" und der Frage "Möchten Sie den Eintrag '[Titel]' wirklich löschen?".
+* **Bestätigung:** Erst nach Klick auf `Löschen` im Bestätigung-Modal wird der Eintrag unwiderruflich aus der SQLite-Datenbank gelöscht. Klick auf `Abbrechen` bricht den Löschvorgang ab.
+
+### 10.5 Zweispaltige Journal-Ansicht (`JournalView`)
 Die Journal-Ansicht teilt sich in zwei Bildschirmhälften:
 
 * **Linke Bildschirmhälfte (Eintragsliste im To-Do-Stil):**
@@ -419,7 +425,7 @@ Die Journal-Ansicht teilt sich in zwei Bildschirmhälften:
     * **Aktionen:** Buttons `Bearbeiten` und `Löschen` im Header der Detailansicht.
     * **Empty State:** Wenn noch kein Eintrag ausgewählt ist oder der Kurs keine Einträge besitzt, wird eine informative Meldung ("Wählen Sie einen Eintrag aus der Liste oder erstellen Sie einen neuen Eintrag") angezeigt.
 
-### 10.5 Datenhaltung & SQLite-Schema
+### 10.6 Datenhaltung & SQLite-Schema
 Journaleinträge werden persistent in SQLite gespeichert:
 * **Tabelle:** `journal_entries`
 * **Spalten:**
@@ -430,4 +436,5 @@ Journaleinträge werden persistent in SQLite gespeichert:
     * `content` (TEXT, HTML-formatiert)
     * `createdAt` (TEXT, ISO-Timestamp)
     * `updatedAt` (TEXT, ISO-Timestamp)
+
 
