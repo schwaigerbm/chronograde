@@ -53,7 +53,9 @@ export interface Course {
   priority: number;    // int: Zum Ordnen in der Seitenleiste/Übersicht
   archived: boolean;   // true = wird im Dashboard nicht mehr angezeigt
   showTrend?: boolean; // Sichtbarkeit der Sticky TREND Spalte
+  showStudentNumber?: boolean; // Sichtbarkeit der 1-basierten laufenden Nummer in der Schülerspalte
   roundingRule?: 'commercial' | 'studentFriendly'; // Globale Rundungsregel für den Trend
+
   isTrendColorEnabled?: boolean; // Farbmodus (Heatmap) für den Trend aktiv
   collaborationCalcMode?: 'linear' | 'weighted'; // Berechnungsmodus für die Mitarbeit
   columns: CourseEntry[]; 

@@ -98,11 +98,14 @@ function initDatabase(app, customPath) {
           timetableDay TEXT,
           timetableSlot TEXT,
           attendanceAnomalySettings TEXT,
-          deregisteredStudents TEXT
+          deregisteredStudents TEXT,
+          showStudentNumber INTEGER
         )`, () => {
           // Migration check for existing databases
           db.run(`ALTER TABLE courses ADD COLUMN deregisteredStudents TEXT`, () => {});
+          db.run(`ALTER TABLE courses ADD COLUMN showStudentNumber INTEGER`, () => {});
         });
+
 
         // 3. Students Table
         db.run(`CREATE TABLE IF NOT EXISTS students (

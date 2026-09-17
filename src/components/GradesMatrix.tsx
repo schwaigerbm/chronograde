@@ -1162,7 +1162,9 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                 <tr key={student.id} className={isDeregistered ? 'deregistered-row' : ''}>
                   <td className={`sticky-col ${isDeregistered ? 'deregistered-sticky-col' : ''}`}>
                     <div className="student-cell-content has-avatar-tooltip">
-                      <span className="student-number" style={isDeregistered ? { color: '#64748b' } : undefined}>{index + 1}</span>
+                      {course.showStudentNumber !== false && (
+                        <span className="student-number" style={isDeregistered ? { color: '#64748b' } : undefined}>{index + 1}</span>
+                      )}
                       <span className="student-lastname" style={isDeregistered ? { textDecoration: 'line-through', color: '#64748b' } : undefined}>{student.lastName}</span>
                       <span className="student-firstname" style={isDeregistered ? { textDecoration: 'line-through', color: '#64748b' } : undefined}>{student.firstName}</span>
                       <button 
@@ -1414,14 +1416,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         isTrendColorEnabled={!!course.isTrendColorEnabled}
         collaborationCalcMode={course.collaborationCalcMode || 'weighted'}
         showTrend={course.showTrend}
+        showStudentNumber={course.showStudentNumber}
         initialTab={trendSettingsInitialTab}
-        onSave={(updatedCols, rule, colorEnabled, collabMode, showTrendVal) => 
+        onSave={(updatedCols, rule, colorEnabled, collabMode, showTrendVal, showStudentNumVal) => 
           handleUpdateCourseSettings({ 
             columns: updatedCols, 
             roundingRule: rule, 
             isTrendColorEnabled: colorEnabled, 
             collaborationCalcMode: collabMode,
-            showTrend: showTrendVal
+            showTrend: showTrendVal,
+            showStudentNumber: showStudentNumVal
           })
         }
         showDialog={showDialog}

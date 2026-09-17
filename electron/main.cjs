@@ -105,6 +105,7 @@ function setupIpcHandlers() {
       ...r,
       archived: Boolean(r.archived),
       showTrend: r.showTrend !== 0,
+      showStudentNumber: r.showStudentNumber !== 0,
       isTrendColorEnabled: r.isTrendColorEnabled !== 0,
       columns: r.columns ? JSON.parse(r.columns) : [],
       enrolledStudents: r.enrolledStudents ? JSON.parse(r.enrolledStudents) : [],
@@ -123,6 +124,7 @@ function setupIpcHandlers() {
         const priority = course.priority !== undefined ? course.priority : existing.priority;
         const archivedInt = course.archived !== undefined ? (course.archived ? 1 : 0) : existing.archived;
         const showTrendInt = course.showTrend !== undefined ? (course.showTrend ? 1 : 0) : existing.showTrend;
+        const showStudentNumberInt = course.showStudentNumber !== undefined ? (course.showStudentNumber ? 1 : 0) : existing.showStudentNumber;
         const roundingRule = course.roundingRule !== undefined ? course.roundingRule : existing.roundingRule;
         const isTrendColorEnabledInt = course.isTrendColorEnabled !== undefined ? (course.isTrendColorEnabled ? 1 : 0) : existing.isTrendColorEnabled;
         const collaborationCalcMode = course.collaborationCalcMode !== undefined ? course.collaborationCalcMode : existing.collaborationCalcMode;
@@ -138,13 +140,13 @@ function setupIpcHandlers() {
             name = ?, year = ?, classId = ?, priority = ?, archived = ?, 
             showTrend = ?, roundingRule = ?, isTrendColorEnabled = ?, 
             collaborationCalcMode = ?, columns = ?, enrolledStudents = ?, deregisteredStudents = ?,
-            timetableDay = ?, timetableSlot = ?, attendanceAnomalySettings = ?
+            timetableDay = ?, timetableSlot = ?, attendanceAnomalySettings = ?, showStudentNumber = ?
            WHERE id = ?`,
           [
             name, year, classId, priority, archivedInt,
             showTrendInt, roundingRule, isTrendColorEnabledInt,
             collaborationCalcMode, columnsJson, enrolledStudentsJson, deregisteredStudentsJson,
-            timetableDay, timetableSlot, anomalyJson,
+            timetableDay, timetableSlot, anomalyJson, showStudentNumberInt,
             course.id
           ]
         );
@@ -154,6 +156,7 @@ function setupIpcHandlers() {
 
     const archivedInt = course.archived ? 1 : 0;
     const showTrendInt = course.showTrend !== false ? 1 : 0;
+    const showStudentNumberInt = course.showStudentNumber !== false ? 1 : 0;
     const isTrendColorEnabledInt = course.isTrendColorEnabled !== false ? 1 : 0;
     const columnsJson = JSON.stringify(course.columns || []);
     const enrolledStudentsJson = JSON.stringify(course.enrolledStudents || []);
@@ -165,17 +168,18 @@ function setupIpcHandlers() {
       `INSERT INTO courses (
         id, name, year, classId, priority, archived, showTrend, roundingRule, 
         isTrendColorEnabled, collaborationCalcMode, columns, enrolledStudents, deregisteredStudents,
-        timetableDay, timetableSlot, attendanceAnomalySettings
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        timetableDay, timetableSlot, attendanceAnomalySettings, showStudentNumber
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id, course.name || '', course.year || '', course.classId || '', course.priority || 0, archivedInt,
         showTrendInt, course.roundingRule || 'commercial', isTrendColorEnabledInt,
         course.collaborationCalcMode || 'weighted', columnsJson, enrolledStudentsJson, deregisteredStudentsJson,
-        course.timetableDay || null, course.timetableSlot || null, anomalyJson
+        course.timetableDay || null, course.timetableSlot || null, anomalyJson, showStudentNumberInt
       ]
     );
     return id;
   });
+
 
   ipcMain.handle('courses:delete', async (_, courseId) => {
     await dbOps.run(`DELETE FROM courses WHERE id = ?`, [courseId]);

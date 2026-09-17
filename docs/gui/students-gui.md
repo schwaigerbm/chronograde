@@ -45,8 +45,11 @@ Der Schüler-Dialog ist als eigenständige, wiederverwendbare React-Komponente (
 * **Profilbild-Sektion:**
     * Zeigt eine runde Bild-Vorschau (Avatar) des Schülers.
     * Bei vorhandenem Bild gibt es ein kleines Kreuz-Icon, um das Bild zu löschen.
-    * Button `Foto auswählen` (mit Kamera-Icon) zum Auswählen eines neuen Bildes.
-    * Das ausgewählte Bild wird direkt in der Anwendung auf maximal **120x120 Pixel** herunterskaliert, mit einer JPEG-Qualität von **70 %** komprimiert und als Base64-Daten-URL im Feld `photoBase64` gespeichert.
+    * Button `Foto auswählen` (mit Kamera-Icon) zum Auswählen eines lokalen Bildes.
+    * Button **`Aus Zwischenablage einfügen`** (mit Clipboard-Icon) zum direkten Übernehmen eines aus dem Klassenbuch oder Web kopierten Bildes.
+    * **Tastatur-Shortcut:** Drücken von `Ctrl+V` bei geöffnetem Schüler-Modal liest automatisch ein in der Zwischenablage befindliches Bild aus und setzt dieses als Profilbild.
+    * Das ausgewählte/eingefügte Bild wird direkt in der Anwendung auf maximal **120x120 Pixel** herunterskaliert, mit einer JPEG-Qualität von **70 %** komprimiert und als Base64-Daten-URL im Feld `photoBase64` gespeichert.
+
 * **Felder:**
     * Input: `Vorname` (erhält beim Öffnen automatisch den Fokus)
     * Input: `Nachname`

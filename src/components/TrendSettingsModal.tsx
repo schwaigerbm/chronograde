@@ -1,7 +1,7 @@
 // src/components/TrendSettingsModal.tsx
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X as XIcon, TrendingUp, Info, Lock, Unlock, Scale, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
+import { X as XIcon, TrendingUp, Hash, Info, Lock, Unlock, Scale, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
 import { calculateAverage } from '../lib/averageCalculator';
 import { firebaseService } from '../services/firebaseService';
 import type { CourseEntry, Student, Grade } from '../schema';
@@ -17,13 +17,15 @@ export interface TrendSettingsModalProps {
   isTrendColorEnabled: boolean;
   collaborationCalcMode: 'linear' | 'weighted';
   showTrend?: boolean;
+  showStudentNumber?: boolean;
   initialTab?: 'layout' | 'trend';
   onSave: (
     updatedCols: CourseEntry[], 
     roundingRule: 'commercial' | 'studentFriendly',
     isTrendColorEnabled: boolean,
     collaborationCalcMode: 'linear' | 'weighted',
-    showTrend: boolean
+    showTrend: boolean,
+    showStudentNumber: boolean
   ) => void;
   showDialog: (config: any) => void;
 }
@@ -39,6 +41,7 @@ export const TrendSettingsModal = ({
   isTrendColorEnabled,
   collaborationCalcMode,
   showTrend,
+  showStudentNumber,
   initialTab,
   onSave,
   showDialog
@@ -46,6 +49,7 @@ export const TrendSettingsModal = ({
   const [activeTab, setActiveTab] = useState<'layout' | 'trend'>('layout');
   const [localColumns, setLocalColumns] = useState<CourseEntry[]>([]);
   const [localShowTrend, setLocalShowTrend] = useState<boolean>(showTrend !== false);
+  const [localShowStudentNumber, setLocalShowStudentNumber] = useState<boolean>(showStudentNumber !== false);
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [localRoundingRule, setLocalRoundingRule] = useState<'commercial' | 'studentFriendly'>(roundingRule);
@@ -57,6 +61,8 @@ export const TrendSettingsModal = ({
     if (isOpen) {
       setActiveTab(initialTab || 'layout');
       setLocalShowTrend(showTrend !== false);
+      setLocalShowStudentNumber(showStudentNumber !== false);
+
       const active = columns.filter(c => c.calc && c.type !== 'calculated' && c.type !== 'presenceSum' && c.type !== 'groupAssignment');
       const total = active.reduce((sum, c) => sum + (c.calcFactor || 0), 0);
       
@@ -260,7 +266,7 @@ export const TrendSettingsModal = ({
         type: 'success',
         isAlert: true
       });
-      onSave(updatedColumns, localRoundingRule, localIsTrendColorEnabled, localCollaborationCalcMode, localShowTrend); // Triggert Update in der Matrix
+      onSave(updatedColumns, localRoundingRule, localIsTrendColorEnabled, localCollaborationCalcMode, localShowTrend, localShowStudentNumber); // Triggert Update in der Matrix
       onClose();
     } catch (err) {
       console.error("Fehler beim Erstellen des Snapshots:", err);
@@ -414,7 +420,7 @@ export const TrendSettingsModal = ({
             aria-labelledby="tab-layout"
             className="modal-body p-6"
           >
-            <div className="toggle-box" style={{ marginBottom: '24px' }}>
+            <div className="toggle-box" style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <TrendingUp size={20} className="text-indigo-600" />
                 <div>
@@ -427,6 +433,24 @@ export const TrendSettingsModal = ({
                   type="checkbox" 
                   checked={localShowTrend} 
                   onChange={() => setLocalShowTrend(!localShowTrend)} 
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+
+            <div className="toggle-box" style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Hash size={20} className="text-indigo-600" />
+                <div>
+                  <div className="option-label font-semibold text-base">Laufende Nummer anzeigen</div>
+                  <div className="option-desc text-base text-muted">1-basierte Nummerierung (1, 2, 3...) in der Schülerspalte ein-/ausblenden</div>
+                </div>
+              </div>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={localShowStudentNumber} 
+                  onChange={() => setLocalShowStudentNumber(!localShowStudentNumber)} 
                 />
                 <span className="slider"></span>
               </label>
@@ -706,7 +730,7 @@ export const TrendSettingsModal = ({
                 ...c,
                 isLocked: c.calc ? !!lockedColIds[c.id] : false
               }));
-              onSave(sanitizedCols, localRoundingRule, localIsTrendColorEnabled, localCollaborationCalcMode, localShowTrend);
+              onSave(sanitizedCols, localRoundingRule, localIsTrendColorEnabled, localCollaborationCalcMode, localShowTrend, localShowStudentNumber);
             }} 
             disabled={isProcessing}
           >
