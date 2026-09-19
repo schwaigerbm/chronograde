@@ -489,11 +489,14 @@ export const firebaseService = {
     const allStudents = await firebaseService.getStudents();
     const allReminders = await firebaseService.getReminders();
     const allComments = await firebaseService.getPredefinedComments();
+    const evaluationTemplates = await sqliteService.getEvaluationTemplates();
 
     const gradesByCourse: Record<string, Record<string, Record<string, Grade>>> = {};
+    const journalEntriesByCourse: Record<string, any[]> = {};
     for (const course of allCourses) {
       if (sqliteService.isDesktopAvailable()) {
         gradesByCourse[course.id] = await sqliteService.getAllGradesForCourse(course.id);
+        journalEntriesByCourse[course.id] = await sqliteService.getJournalEntries(course.id);
       }
     }
 
@@ -504,6 +507,8 @@ export const firebaseService = {
       students: allStudents,
       reminders: allReminders,
       settings: allComments,
+      evaluationTemplates,
+      journalEntries: journalEntriesByCourse,
       grades: gradesByCourse
     };
 
@@ -545,6 +550,21 @@ export const firebaseService = {
       }
     }
 
+    if (Array.isArray(data.evaluationTemplates)) {
+      await sqliteService.saveEvaluationTemplates(data.evaluationTemplates);
+    }
+
+    if (data.journalEntries && typeof data.journalEntries === 'object') {
+      for (const courseId of Object.keys(data.journalEntries)) {
+        const entries = data.journalEntries[courseId];
+        if (Array.isArray(entries)) {
+          for (const entry of entries) {
+            await sqliteService.saveJournalEntry(entry);
+          }
+        }
+      }
+    }
+
     if (data.grades && typeof data.grades === 'object') {
       for (const courseId of Object.keys(data.grades)) {
         const courseGrades = data.grades[courseId];
@@ -568,4 +588,5 @@ export const firebaseService = {
     return { courses: coursesCount, students: studentsCount, reminders: remindersCount };
   }
 };
+
 

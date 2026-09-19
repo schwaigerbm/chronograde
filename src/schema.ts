@@ -157,3 +157,17 @@ export interface JournalEntry {
   createdAt: string;
   updatedAt?: string;
 }
+
+// 10. BEURTEILUNGSVORLAGEN (Evaluation Templates)
+export interface CourseEntryTemplate {
+  id: string;
+  name: string;          // Name der Vorlage (z.B. "Standard-Schularbeit 40 Pkt")
+  description?: string;   // Beschreibung der Vorlage
+  type: 'evaluation' | 'manual' | 'collaborationSum' | 'presenceSum';
+  title: string;          // Spaltentitel (z.B. "1. Schularbeit")
+  calcFactor: number;     // Gewichtung (z.B. 100%)
+  calcType: 'percent' | 'grade' | 'sign';
+  subTasks?: SubTask[];   // Teilaufgaben
+  gradingKey?: EvaluationGradingKey; // Notenschlüssel
+  createdAt: string;
+}

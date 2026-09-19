@@ -219,8 +219,29 @@ async function isVaultConfigured() {
   return Boolean(row && row.value);
 }
 
+function closeDatabase() {
+  return new Promise((resolve) => {
+    if (db) {
+      db.close((err) => {
+        if (err) console.error('Error closing database:', err);
+        db = null;
+        resolve();
+      });
+    } else {
+      resolve();
+    }
+  });
+}
+
+async function switchDatabase(app, customPath) {
+  await closeDatabase();
+  return await initDatabase(app, customPath);
+}
+
 module.exports = {
   initDatabase,
+  closeDatabase,
+  switchDatabase,
   isDbExists,
   getDbPath,
   getSavedDbPath,
@@ -231,3 +252,4 @@ module.exports = {
   verifyVaultCode,
   isVaultConfigured
 };
+

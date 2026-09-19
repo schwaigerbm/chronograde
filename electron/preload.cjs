@@ -44,7 +44,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveJournalEntry: (entry) => ipcRenderer.invoke('journal:save', entry),
   deleteJournalEntry: (id) => ipcRenderer.invoke('journal:delete', id),
 
-  // Database Info
-  getLoadedDbPath: () => ipcRenderer.invoke('database:getLoadedPath')
+  // Database Info & Management
+  getLoadedDbPath: () => ipcRenderer.invoke('database:getLoadedPath'),
+  selectDatabaseFile: () => ipcRenderer.invoke('database:selectFile'),
+  createNewDatabaseFile: () => ipcRenderer.invoke('database:createNew'),
+  copyDatabaseFile: () => ipcRenderer.invoke('database:copyCurrent')
 });
+
 

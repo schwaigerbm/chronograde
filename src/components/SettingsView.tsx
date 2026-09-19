@@ -11,12 +11,20 @@ import {
   Users,
   Database,
   Download,
-  Upload
+  Upload,
+  FolderOpen,
+  PlusCircle,
+  Copy,
+  FileSpreadsheet,
+  FileCode,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { firebaseService, DEFAULT_REMINDER_CATEGORIES } from '../services/firebaseService';
 import { sqliteService } from '../services/sqliteService';
-import type { PredefinedComment, ReminderCategory } from '../schema';
+import type { PredefinedComment, ReminderCategory, CourseEntryTemplate } from '../schema';
 import { DialogModal } from './DialogModal';
+import { CSVImportModal } from './CSVImportModal';
 
 export const SettingsView = () => {
   const [activeTab, setActiveTab] = useState<'evaluation' | 'categories' | 'preferences' | 'backup'>('evaluation');
@@ -26,10 +34,29 @@ export const SettingsView = () => {
   });
   
   const [enableADDialog, setEnableADDialog] = useState<boolean>(true);
+  const [loadedDbPath, setLoadedDbPath] = useState<string>('');
+  const [evaluationTemplates, setEvaluationTemplates] = useState<CourseEntryTemplate[]>([]);
+
+  // CSV Import Modal state
+  const [isCSVImportModalOpen, setIsCSVImportModalOpen] = useState(false);
+
+  // Template Import Modal state (Merge vs Overwrite)
+  const [templateImportConfig, setTemplateImportConfig] = useState<{
+    isOpen: boolean;
+    type: 'comments' | 'evaluations';
+    jsonContent: string;
+  }>({ isOpen: false, type: 'comments', jsonContent: '' });
 
   useEffect(() => {
     sqliteService.getSetting<boolean>('enable_ad_dialog', true).then(setEnableADDialog);
+    sqliteService.getLoadedDbPath().then(setLoadedDbPath);
+    sqliteService.getEvaluationTemplates().then(setEvaluationTemplates);
   }, []);
+
+  const refreshDbPath = async () => {
+    const p = await sqliteService.getLoadedDbPath();
+    setLoadedDbPath(p);
+  };
 
   const handleToggleADDialog = async (checked: boolean) => {
     setEnableADDialog(checked);
@@ -49,6 +76,10 @@ export const SettingsView = () => {
   const [catToDelete, setCatToDelete] = useState<ReminderCategory | null>(null);
   const [isCatDeleteModalOpen, setIsCatDeleteModalOpen] = useState(false);
 
+  // Template to delete state
+  const [templateToDelete, setTemplateToDelete] = useState<CourseEntryTemplate | null>(null);
+  const [isTemplateDeleteModalOpen, setIsTemplateDeleteModalOpen] = useState(false);
+
   // Backup & Restore states
   const [isExporting, setIsExporting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -59,7 +90,6 @@ export const SettingsView = () => {
   const handleToggleAvatars = (checked: boolean) => {
     setShowAvatars(checked);
     localStorage.setItem('showAvatars', String(checked));
-    // Dispatch event to notify other components instantly
     window.dispatchEvent(new Event('storage_showAvatars'));
   };
 
@@ -158,7 +188,6 @@ export const SettingsView = () => {
     const targetIndex = sameTypeIndices[targetPosition].i;
 
     const updatedComments = [...comments];
-    // Swap elements
     const temp = updatedComments[index];
     updatedComments[index] = updatedComments[targetIndex];
     updatedComments[targetIndex] = temp;
@@ -221,6 +250,143 @@ export const SettingsView = () => {
   const plusComments = comments.map((c, i) => ({ c, i })).filter(item => item.c.type === '+');
   const neutralComments = comments.map((c, i) => ({ c, i })).filter(item => item.c.type === '~');
   const minusComments = comments.map((c, i) => ({ c, i })).filter(item => item.c.type === '-');
+
+  // --- SQLITE DATABASE FILE ACTIONS ---
+  const handleSelectDatabase = async () => {
+    setBackupStatusMessage(null);
+    const res = await sqliteService.selectDatabaseFile();
+    if (res.success && res.path) {
+      setLoadedDbPath(res.path);
+      setBackupStatusMessage(`Erfolgreich zu SQLite-Datenbank gewechselt: ${res.path}`);
+    } else if (res.error) {
+      setBackupStatusMessage(`Fehler beim Datenbankwechsel: ${res.error}`);
+    }
+  };
+
+  const handleCreateNewDatabase = async () => {
+    setBackupStatusMessage(null);
+    const res = await sqliteService.createNewDatabaseFile();
+    if (res.success && res.path) {
+      setLoadedDbPath(res.path);
+      setBackupStatusMessage(`Neue SQLite-Datenbank erstellt und geladen: ${res.path}`);
+    } else if (res.error) {
+      setBackupStatusMessage(`Fehler beim Erstellen der Datenbank: ${res.error}`);
+    }
+  };
+
+  const handleCopyDatabase = async () => {
+    setBackupStatusMessage(null);
+    const res = await sqliteService.copyDatabaseFile();
+    if (res.success && res.path) {
+      setBackupStatusMessage(`Datenbank-Kopie erfolgreich gespeichert unter: ${res.path}`);
+    } else if (res.error) {
+      setBackupStatusMessage(`Fehler beim Kopieren der Datenbank: ${res.error}`);
+    }
+  };
+
+  // --- TEMPLATES IMPORT & EXPORT ACTIONS ---
+  const handleExportEvaluationTemplates = async () => {
+    try {
+      const jsonStr = await sqliteService.exportEvaluationTemplatesJSON();
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beurteilungsvorlagen_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setBackupStatusMessage("Beurteilungsvorlagen erfolgreich exportiert!");
+    } catch (err: any) {
+      setBackupStatusMessage(`Fehler beim Exportieren der Beurteilungsvorlagen: ${err.message || err}`);
+    }
+  };
+
+  const handleSelectEvaluationTemplateFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBackupStatusMessage(null);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      if (!text) return;
+      setTemplateImportConfig({
+        isOpen: true,
+        type: 'evaluations',
+        jsonContent: text
+      });
+    };
+    reader.readAsText(file, 'UTF-8');
+    e.target.value = '';
+  };
+
+  const handleExportComments = async () => {
+    try {
+      const jsonStr = await sqliteService.exportPredefinedCommentsJSON();
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mitarbeitskommentare_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setBackupStatusMessage("Mitarbeitskommentare erfolgreich exportiert!");
+    } catch (err: any) {
+      setBackupStatusMessage(`Fehler beim Exportieren der Kommentare: ${err.message || err}`);
+    }
+  };
+
+  const handleSelectCommentsFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBackupStatusMessage(null);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      if (!text) return;
+      setTemplateImportConfig({
+        isOpen: true,
+        type: 'comments',
+        jsonContent: text
+      });
+    };
+    reader.readAsText(file, 'UTF-8');
+    e.target.value = '';
+  };
+
+  const handleExecuteTemplateImport = async (mode: 'merge' | 'overwrite') => {
+    const { type, jsonContent } = templateImportConfig;
+    setTemplateImportConfig(prev => ({ ...prev, isOpen: false }));
+    try {
+      if (type === 'comments') {
+        const res = await sqliteService.importPredefinedCommentsJSON(jsonContent, mode);
+        setBackupStatusMessage(`Mitarbeitskommentare erfolgreich importiert! (${res.imported} Einträge)`);
+        const updated = await sqliteService.getPredefinedComments();
+        setComments(updated);
+      } else {
+        const res = await sqliteService.importEvaluationTemplatesJSON(jsonContent, mode);
+        setBackupStatusMessage(`Beurteilungsvorlagen erfolgreich importiert! (${res.imported} Vorlagen)`);
+        const updated = await sqliteService.getEvaluationTemplates();
+        setEvaluationTemplates(updated);
+      }
+    } catch (err: any) {
+      setBackupStatusMessage(`Fehler beim Importieren: ${err.message || err}`);
+    }
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+    const updated = evaluationTemplates.filter(t => t.id !== templateToDelete.id);
+    await sqliteService.saveEvaluationTemplates(updated);
+    setEvaluationTemplates(updated);
+    setIsTemplateDeleteModalOpen(false);
+    setTemplateToDelete(null);
+  };
 
   const renderCommentList = (groupedItems: { c: PredefinedComment; i: number }[], label: string, colorClass: string) => {
     return (
@@ -352,6 +518,7 @@ export const SettingsView = () => {
       }
     };
     reader.readAsText(file, 'UTF-8');
+    e.target.value = '';
   };
 
   const handleConfirmRestore = async () => {
@@ -362,6 +529,9 @@ export const SettingsView = () => {
       const res = await firebaseService.restoreFullBackupJSON(restoreFileContent);
       setBackupStatusMessage(`Wiederherstellung erfolgreich! (${res.students} Schüler, ${res.courses} Kurse, ${res.reminders} Termine geladen)`);
       setRestoreFileContent(null);
+      refreshDbPath();
+      const updatedTpls = await sqliteService.getEvaluationTemplates();
+      setEvaluationTemplates(updatedTpls);
     } catch (err: any) {
       console.error("Restore error:", err);
       setBackupStatusMessage(`Fehler bei der Wiederherstellung: ${err.message || err}`);
@@ -375,7 +545,7 @@ export const SettingsView = () => {
       <div className="view-header">
         <div className="title-group">
           <h1 className="main-title">Einstellungen</h1>
-          <h2 className="sub-title">System-Konfiguration</h2>
+          <h2 className="sub-title">System-Konfiguration & Datenverwaltung</h2>
         </div>
       </div>
 
@@ -424,7 +594,7 @@ export const SettingsView = () => {
             className="custom-tab-button"
             onClick={() => setActiveTab('backup')}
           >
-            Datensicherung & Import
+            Daten- &amp; Datenbank-Hub
           </button>
         </nav>
       </div>
@@ -438,11 +608,27 @@ export const SettingsView = () => {
             aria-labelledby="tab-evaluation"
             className="settings-section-card"
           >
-            <div className="settings-section-header">
-              <MessageSquare size={22} className="text-indigo-600" />
-              <div>
-                <h3 className="text-lg font-bold">Mitarbeitskommentare</h3>
-                <p className="section-desc text-base">Verwalte vorgefertigte Notizen für die Leistungsbeurteilung (+, ~, -) in der Notenmatrix.</p>
+            <div className="settings-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <MessageSquare size={22} className="text-indigo-600" />
+                <div>
+                  <h3 className="text-lg font-bold">Mitarbeitskommentare</h3>
+                  <p className="section-desc text-base">Verwalte vorgefertigte Notizen für die Leistungsbeurteilung (+, ~, -) in der Notenmatrix.</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn-secondary text-xs" 
+                  onClick={handleExportComments}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Download size={14} /> Export (JSON)
+                </button>
+                <label className="btn-secondary text-xs" style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <Upload size={14} /> Import (JSON)
+                  <input type="file" accept=".json" onChange={handleSelectCommentsFile} style={{ display: 'none' }} />
+                </label>
               </div>
             </div>
 
@@ -506,7 +692,7 @@ export const SettingsView = () => {
             <div className="settings-section-header">
               <MessageSquare size={22} className="text-indigo-600" />
               <div>
-                <h3 className="text-lg font-bold">Termin- & Aufgabenkategorien</h3>
+                <h3 className="text-lg font-bold">Termin- &amp; Aufgabenkategorien</h3>
                 <p className="section-desc text-base">Verwalte Kategorien (Farbe, Name) für die Terminliste. „Fehlzeiten“ ist eine fixe System-Kategorie.</p>
               </div>
             </div>
@@ -662,7 +848,7 @@ export const SettingsView = () => {
               <div className="switch-container">
                 <div className="switch-label-group">
                   <label htmlFor="ad-dialog-toggle" className="switch-title">„A &amp; D Dialog &gt;“ Button auf Gruppen-Karten anzeigen</label>
-                  <span className="switch-description">Blendet den Button für Anwesenheits-Schnellerfassung & Zufallsgenerator unter „Matrix öffnen“ auf allen Gruppenkarten ein oder aus.</span>
+                  <span className="switch-description">Blendet den Button für Anwesenheits-Schnellerfassung &amp; Zufallsgenerator unter „Matrix öffnen“ auf allen Gruppenkarten ein oder aus.</span>
                 </div>
                 <label className="custom-switch">
                   <input
@@ -677,7 +863,7 @@ export const SettingsView = () => {
             </div>
           </section>
         ) : (
-          /* Section: Datensicherung & Import/Export */
+          /* Section: Daten- & Datenbank-Hub */
           <section 
             id="panel-backup"
             role="tabpanel"
@@ -687,8 +873,8 @@ export const SettingsView = () => {
             <div className="settings-section-header">
               <Database size={22} className="text-indigo-600" />
               <div>
-                <h3 className="text-lg font-bold">Datensicherung & Import / Export</h3>
-                <p className="section-desc text-base">Erstelle vollständige Sicherungsdateien deiner Anwendungsdaten oder stelle Daten aus Backups wieder her.</p>
+                <h3 className="text-lg font-bold">Daten- &amp; Datenbank-Hub</h3>
+                <p className="section-desc text-base">Verwalte aktive SQLite-Datenbankdateien, importiere &amp; exportiere Beurteilungsvorlagen sowie Sicherungsdateien.</p>
               </div>
             </div>
 
@@ -698,52 +884,156 @@ export const SettingsView = () => {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', marginTop: '20px' }}>
               
-              {/* Backup Export Card */}
-              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--primary-color)' }}>
-                    <Download size={22} />
-                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>Backup erstellen (JSON)</h4>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 20px 0' }}>
-                    Exportiert alle Kurse, Schüler, Noten, Einstellungen und Termine als strukturierte JSON-Datei zur externen Sicherung.
-                  </p>
+              {/* 1. SEKTION: SQLite Datenbank-Verwaltung */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--primary-color)' }}>
+                  <Database size={22} />
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>1. SQLite Datenbank-Verwaltung</h4>
                 </div>
-                <button 
-                  onClick={handleExportBackup} 
-                  disabled={isExporting}
-                  className="btn-primary" 
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '14px', borderRadius: '8px' }}
-                >
-                  <Download size={18} />
-                  <span>{isExporting ? 'Erstelle Backup...' : 'Backup herunterladen'}</span>
-                </button>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                  Zeigt die aktuell aktive SQLite-Datenbankdatei an und ermöglicht das fliegende Wechseln oder Erstellen neuer Datenbanken.
+                </p>
+                <div style={{ background: 'var(--bg-app)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '16px', wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '12px' }}>
+                  <strong>Aktive Datei:</strong> {loadedDbPath || 'Lade Pfad...'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  <button onClick={handleSelectDatabase} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}>
+                    <FolderOpen size={16} /> Andere SQLite-Datei öffnen...
+                  </button>
+                  <button onClick={handleCreateNewDatabase} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}>
+                    <PlusCircle size={16} /> Neue SQLite-Datei erstellen...
+                  </button>
+                  <button onClick={handleCopyDatabase} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}>
+                    <Copy size={16} /> Datenbank-Kopie speichern unter...
+                  </button>
+                </div>
               </div>
 
-              {/* Restore Backup Card */}
-              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#0284c7' }}>
-                    <Upload size={22} />
-                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>Backup wiederherstellen</h4>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 20px 0' }}>
-                    Spielt Daten aus einer zuvor erstellten Chronograde JSON-Sicherungsdatei wieder in die Datenbank ein.
-                  </p>
+              {/* 2. SEKTION: Vorlagen-Verwaltung */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#7e22ce' }}>
+                  <Layers size={22} />
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>2. Vorlagen-Verwaltung (Beurteilungen &amp; Kommentare)</h4>
                 </div>
-                <label className="btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '14px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center' }}>
-                  <Upload size={18} />
-                  <span>{isRestoring ? 'Wiederherstellung läuft...' : 'Backup-Datei auswählen'}</span>
-                  <input 
-                    type="file" 
-                    accept=".json" 
-                    onChange={handleSelectRestoreFile} 
-                    disabled={isRestoring}
-                    style={{ display: 'none' }} 
-                  />
-                </label>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                  Exportiere oder importiere Vorlagensets für Prüfungen und Auswertungen sowie vorgefertigte Mitarbeitsnotizen.
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                  
+                  {/* Sub-card: Beurteilungsvorlagen */}
+                  <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>
+                        <Sparkles size={16} className="text-purple-600" />
+                        Beurteilungsvorlagen ({evaluationTemplates.length})
+                      </div>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                        Wiederverwendbare Auswertungsschemata für Schularbeiten &amp; Tests mit Teilaufgaben &amp; Notenschlüssel.
+                      </p>
+                      
+                      {evaluationTemplates.length > 0 && (
+                        <div style={{ maxHeight: '120px', overflowY: 'auto', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {evaluationTemplates.map(tpl => (
+                            <div key={tpl.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '6px 10px', borderRadius: '6px', fontSize: '12px' }}>
+                              <span>{tpl.name}</span>
+                              <button className="btn-icon-sm text-danger" onClick={() => { setTemplateToDelete(tpl); setIsTemplateDeleteModalOpen(true); }} title="Vorlage löschen">
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={handleExportEvaluationTemplates} className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px' }}>
+                        <Download size={14} /> Export (JSON)
+                      </button>
+                      <label className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                        <Upload size={14} /> Import (JSON)
+                        <input type="file" accept=".json" onChange={handleSelectEvaluationTemplateFile} style={{ display: 'none' }} />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Sub-card: Mitarbeitskommentare-Vorlagen */}
+                  <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>
+                        <MessageSquare size={16} className="text-indigo-600" />
+                        Mitarbeitskommentare-Vorlagen ({comments.length})
+                      </div>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                        Vorlagen-Sets für vorgefertigte Notizen der Mitarbeit (`+`, `~`, `-`).
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={handleExportComments} className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px' }}>
+                        <Download size={14} /> Export (JSON)
+                      </button>
+                      <label className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                        <Upload size={14} /> Import (JSON)
+                        <input type="file" accept=".json" onChange={handleSelectCommentsFile} style={{ display: 'none' }} />
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* 3. SEKTION: Vollständiges System-Backup */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#0284c7' }}>
+                  <FileCode size={22} />
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>3. Vollständiges System-Backup (JSON Backup &amp; Restore)</h4>
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                  Sichere deine gesamten Daten (Kurse, Schüler, Noten, Termine, Journal, Vorlagen) in einer Backup-Datei oder stelle sie wieder her.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  <button 
+                    onClick={handleExportBackup} 
+                    disabled={isExporting}
+                    className="btn-primary" 
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}
+                  >
+                    <Download size={16} />
+                    <span>{isExporting ? 'Erstelle Backup...' : 'Komplett-Backup herunterladen (JSON)'}</span>
+                  </button>
+                  <label className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>
+                    <Upload size={16} />
+                    <span>{isRestoring ? 'Wiederherstellung läuft...' : 'Komplett-Backup wiederherstellen (JSON)'}</span>
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      onChange={handleSelectRestoreFile} 
+                      disabled={isRestoring}
+                      style={{ display: 'none' }} 
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* 4. SEKTION: CSV Import & Export */}
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', background: 'var(--bg-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#16a34a' }}>
+                  <FileSpreadsheet size={22} />
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>4. CSV Import &amp; Export (Schüler &amp; Noten)</h4>
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                  Importiere Schülerlisten per CSV aus Untis/Sokrates oder exportiere Kursnoten für Excel.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  <button 
+                    onClick={() => setIsCSVImportModalOpen(true)}
+                    className="btn-secondary" 
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}
+                  >
+                    <Upload size={16} /> Schülerliste importieren (CSV)...
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -763,6 +1053,21 @@ export const SettingsView = () => {
         cancelLabel="Abbrechen"
       />
 
+      {/* Delete Evaluation Template Confirmation Modal */}
+      <DialogModal
+        isOpen={isTemplateDeleteModalOpen}
+        onClose={() => {
+          setIsTemplateDeleteModalOpen(false);
+          setTemplateToDelete(null);
+        }}
+        onConfirm={handleDeleteTemplate}
+        title="Beurteilungsvorlage löschen"
+        message={`Möchtest du die Vorlage "${templateToDelete?.name}" wirklich löschen?`}
+        type="danger"
+        confirmLabel="Löschen"
+        cancelLabel="Abbrechen"
+      />
+
       {/* Restore JSON Backup Confirmation Modal */}
       <DialogModal
         isOpen={isRestoreConfirmModalOpen}
@@ -772,10 +1077,27 @@ export const SettingsView = () => {
         }}
         onConfirm={handleConfirmRestore}
         title="Backup wiederherstellen?"
-        message="Sind Sie sicher, dass Sie die Daten aus der Backup-Datei wiederherstellen möchten? Dieser Vorgang importiert alle Schüler, Kurse und Noten."
+        message="Sind Sie sicher, dass Sie die Daten aus der Backup-Datei wiederherstellen möchten? Dieser Vorgang importiert alle Schüler, Kurse, Noten und Vorlagen."
         type="warning"
         confirmLabel="Wiederherstellen"
         cancelLabel="Abbrechen"
+      />
+
+      {/* Template Import Mode Modal (Merge vs Overwrite) */}
+      <DialogModal
+        isOpen={templateImportConfig.isOpen}
+        onClose={() => setTemplateImportConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => handleExecuteTemplateImport('merge')}
+        title={templateImportConfig.type === 'comments' ? 'Mitarbeitskommentare importieren' : 'Beurteilungsvorlagen importieren'}
+        message={
+          templateImportConfig.type === 'comments'
+            ? 'Möchten Sie die importierten Kommentare zu der bestehenden Liste hinzufügen (Zusammenführen) oder die bestehende Liste ersetzen?'
+            : 'Möchten Sie die importierten Beurteilungsvorlagen zu der bestehenden Vorlagenliste hinzufügen oder bestehende Vorlagen ersetzen?'
+        }
+        type="info"
+        confirmLabel="Zusammenführen (Hinzufügen)"
+        cancelLabel="Ersetzen (Überschreiben)"
+        onCancel={() => handleExecuteTemplateImport('overwrite')}
       />
 
       {/* Delete Category Confirmation Modal */}
@@ -791,6 +1113,16 @@ export const SettingsView = () => {
         type="danger"
         confirmLabel="Löschen"
         cancelLabel="Abbrechen"
+      />
+
+      {/* CSV Import Modal */}
+      <CSVImportModal
+        isOpen={isCSVImportModalOpen}
+        onClose={() => setIsCSVImportModalOpen(false)}
+        onImportSuccess={() => {
+          setIsCSVImportModalOpen(false);
+          setBackupStatusMessage("Schülerliste erfolgreich per CSV importiert!");
+        }}
       />
     </div>
   );

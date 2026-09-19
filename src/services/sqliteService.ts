@@ -1,4 +1,4 @@
-import type { Course, Student, Grade, PredefinedComment, Reminder, ReminderCategory, JournalEntry } from '../schema';
+import type { Course, Student, Grade, PredefinedComment, Reminder, ReminderCategory, JournalEntry, CourseEntryTemplate } from '../schema';
 
 declare global {
   interface Window {
@@ -36,9 +36,13 @@ declare global {
       saveJournalEntry: (entry: Partial<JournalEntry> & { courseId: string; title: string }) => Promise<string>;
       deleteJournalEntry: (id: string) => Promise<boolean>;
       getLoadedDbPath: () => Promise<string>;
+      selectDatabaseFile: () => Promise<{ success: boolean; path?: string; cancelled?: boolean; error?: string }>;
+      createNewDatabaseFile: () => Promise<{ success: boolean; path?: string; cancelled?: boolean; error?: string }>;
+      copyDatabaseFile: () => Promise<{ success: boolean; path?: string; cancelled?: boolean; error?: string }>;
     };
   }
 }
+
 
 // Subscriber registry for instant UI reactivity on writes
 const coursesSubscribers = new Set<(archived: boolean) => void>();
@@ -525,6 +529,139 @@ export const sqliteService = {
       return res;
     }
     return true;
+  },
+
+  // Database File Management
+  selectDatabaseFile: async () => {
+    if (window.electronAPI?.selectDatabaseFile) {
+      const res = await window.electronAPI.selectDatabaseFile();
+      if (res.success) {
+        triggerCoursesRefresh();
+        triggerStudentsRefresh();
+        triggerGradesRefresh();
+        triggerRemindersRefresh();
+        triggerPredefinedCommentsRefresh();
+      }
+      return res;
+    }
+    return { success: false, error: 'Nicht im Desktop-Modus verfügbar' };
+  },
+
+  createNewDatabaseFile: async () => {
+    if (window.electronAPI?.createNewDatabaseFile) {
+      const res = await window.electronAPI.createNewDatabaseFile();
+      if (res.success) {
+        triggerCoursesRefresh();
+        triggerStudentsRefresh();
+        triggerGradesRefresh();
+        triggerRemindersRefresh();
+        triggerPredefinedCommentsRefresh();
+      }
+      return res;
+    }
+    return { success: false, error: 'Nicht im Desktop-Modus verfügbar' };
+  },
+
+  copyDatabaseFile: async () => {
+    if (window.electronAPI?.copyDatabaseFile) {
+      return await window.electronAPI.copyDatabaseFile();
+    }
+    return { success: false, error: 'Nicht im Desktop-Modus verfügbar' };
+  },
+
+  // Evaluation Templates
+  getEvaluationTemplates: async (): Promise<CourseEntryTemplate[]> => {
+    return await sqliteService.getSetting<CourseEntryTemplate[]>('evaluation_templates', []);
+  },
+
+  saveEvaluationTemplates: async (templates: CourseEntryTemplate[]): Promise<boolean> => {
+    return await sqliteService.saveSetting<CourseEntryTemplate[]>('evaluation_templates', templates);
+  },
+
+  exportEvaluationTemplatesJSON: async (): Promise<string> => {
+    const templates = await sqliteService.getEvaluationTemplates();
+    return JSON.stringify({
+      type: 'chronograde_evaluation_templates',
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      templates
+    }, null, 2);
+  },
+
+  importEvaluationTemplatesJSON: async (jsonStr: string, mode: 'merge' | 'overwrite' = 'merge'): Promise<{ imported: number }> => {
+    const parsed = JSON.parse(jsonStr);
+    const incoming: CourseEntryTemplate[] = Array.isArray(parsed) ? parsed : (parsed.templates || []);
+    if (!Array.isArray(incoming)) throw new Error('Ungültiges Vorlagen-Format.');
+
+    const current = mode === 'overwrite' ? [] : await sqliteService.getEvaluationTemplates();
+    const existingIds = new Set(current.map(t => t.id));
+    let imported = 0;
+
+    const merged = [...current];
+    for (const t of incoming) {
+      if (t.name && t.type) {
+        const item: CourseEntryTemplate = {
+          id: t.id && !existingIds.has(t.id) ? t.id : 'tpl_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5),
+          name: t.name,
+          description: t.description || '',
+          type: t.type,
+          title: t.title || t.name,
+          calcFactor: t.calcFactor ?? 100,
+          calcType: t.calcType || 'grade',
+          subTasks: t.subTasks || [],
+          gradingKey: t.gradingKey || { grade1MinPoints: 18, grade2MinPoints: 16, grade3MinPoints: 13, grade4MinPoints: 10 },
+          createdAt: t.createdAt || new Date().toISOString()
+        };
+        merged.push(item);
+        existingIds.add(item.id);
+        imported++;
+      }
+    }
+
+    await sqliteService.saveEvaluationTemplates(merged);
+    return { imported };
+  },
+
+  // Collaboration Comments Templates Export / Import
+  exportPredefinedCommentsJSON: async (): Promise<string> => {
+    const comments = await sqliteService.getPredefinedComments();
+    return JSON.stringify({
+      type: 'chronograde_collaboration_comments',
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      comments
+    }, null, 2);
+  },
+
+  importPredefinedCommentsJSON: async (jsonStr: string, mode: 'merge' | 'overwrite' = 'merge'): Promise<{ imported: number }> => {
+    const parsed = JSON.parse(jsonStr);
+    const incoming: PredefinedComment[] = Array.isArray(parsed) ? parsed : (parsed.comments || []);
+    if (!Array.isArray(incoming)) throw new Error('Ungültiges Kommentare-Format.');
+
+    const current = mode === 'overwrite' ? [] : await sqliteService.getPredefinedComments();
+    const existingTexts = new Set(current.map(c => `${c.type}:${c.text.trim().toLowerCase()}`));
+    let imported = 0;
+
+    const merged = [...current];
+    for (const c of incoming) {
+      if (c.text && c.type && ['+', '~', '-'].includes(c.type)) {
+        const key = `${c.type}:${c.text.trim().toLowerCase()}`;
+        if (mode === 'overwrite' || !existingTexts.has(key)) {
+          const item: PredefinedComment = {
+            id: c.id || 'comment_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5),
+            text: c.text.trim(),
+            type: c.type
+          };
+          merged.push(item);
+          existingTexts.add(key);
+          imported++;
+        }
+      }
+    }
+
+    await sqliteService.savePredefinedComments(merged);
+    return { imported };
   }
 };
+
 

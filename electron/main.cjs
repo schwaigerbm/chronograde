@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { 
   initDatabase, 
+  switchDatabase,
   getDbPath,
   getSavedDbPath,
   saveDbPath,
@@ -12,6 +13,7 @@ const {
   verifyVaultCode, 
   isVaultConfigured 
 } = require('./database.cjs');
+
 
 let mainWindow;
 let splashWindow;
@@ -512,7 +514,68 @@ function setupIpcHandlers() {
   ipcMain.handle('database:getLoadedPath', async () => {
     return getLoadedDbPath();
   });
+
+  ipcMain.handle('database:selectFile', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Vorhandene Chronograde SQLite-Datenbank öffnen',
+      filters: [{ name: 'SQLite Datenbank', extensions: ['sqlite', 'db'] }],
+      properties: ['openFile']
+    });
+
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+      return { success: false, cancelled: true };
+    }
+
+    const selectedPath = result.filePaths[0];
+    await switchDatabase(app, selectedPath);
+    return { success: true, path: selectedPath };
+  });
+
+  ipcMain.handle('database:createNew', async () => {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Neue Chronograde SQLite-Datenbank erstellen',
+      defaultPath: getDbPath(app),
+      filters: [{ name: 'SQLite Datenbank', extensions: ['sqlite', 'db'] }]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, cancelled: true };
+    }
+
+    const newPath = result.filePath;
+    if (fs.existsSync(newPath)) {
+      try { fs.unlinkSync(newPath); } catch(e){}
+    }
+    await switchDatabase(app, newPath);
+    return { success: true, path: newPath };
+  });
+
+  ipcMain.handle('database:copyCurrent', async () => {
+    const currentPath = getLoadedDbPath();
+    if (!currentPath || !fs.existsSync(currentPath)) {
+      return { success: false, error: 'Keine aktive Datenbankdatei gefunden.' };
+    }
+
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Datenbank-Kopie speichern unter',
+      defaultPath: path.join(app.getPath('documents'), `chronograde_backup_${new Date().toISOString().split('T')[0]}.sqlite`),
+      filters: [{ name: 'SQLite Datenbank', extensions: ['sqlite', 'db'] }]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, cancelled: true };
+    }
+
+    try {
+      fs.copyFileSync(currentPath, result.filePath);
+      return { success: true, path: result.filePath };
+    } catch (err) {
+      console.error('Error copying database file:', err);
+      return { success: false, error: err.message || String(err) };
+    }
+  });
 }
+
 
 
 app.whenReady().then(async () => {
