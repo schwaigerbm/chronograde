@@ -34,9 +34,9 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
 
   useEffect(() => {
     if (isOpen && course) {
-      sqliteService.getGrades(course.id).then(res => {
+      sqliteService.getGradesForCourse(course.id).then((res: Record<string, Record<string, Grade>>) => {
         setLoadedGrades(res || {});
-      }).catch(err => console.error("Error loading grades in ADDialogModal:", err));
+      }).catch((err: any) => console.error("Error loading grades in ADDialogModal:", err));
     }
   }, [isOpen, course]);
 

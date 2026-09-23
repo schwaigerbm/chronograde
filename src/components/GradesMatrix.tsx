@@ -97,22 +97,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [editingJournalEntry, setEditingJournalEntry] = useState<JournalEntry | null>(null);
   const [journalEntriesForExport, setJournalEntriesForExport] = useState<JournalEntry[]>([]);
 
-  // Matrix Group Filter
-  const [selectedMatrixGroupFilter, setSelectedMatrixGroupFilter] = useState<string>('all');
-
-  const availableGroups = useMemo(() => {
-    const groups = new Set<string>();
-    students.forEach(s => {
-      if (s.groupAssignment) groups.add(s.groupAssignment);
-    });
-    return Array.from(groups).sort();
-  }, [students]);
-
-  const displayedMatrixStudents = useMemo(() => {
-    if (selectedMatrixGroupFilter === 'all') return students;
-    return students.filter(s => s.groupAssignment === selectedMatrixGroupFilter);
-  }, [students, selectedMatrixGroupFilter]);
-
   const handleSaveJournalEntry = async (data: { id?: string; groupId?: string; date: string; title: string; content: string }): Promise<string> => {
     const savedId = await sqliteService.saveJournalEntry({
       id: data.id || editingJournalEntry?.id,
