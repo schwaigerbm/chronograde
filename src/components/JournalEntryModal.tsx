@@ -6,17 +6,20 @@ import type { JournalEntry } from '../schema';
 interface JournalEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { id?: string; date: string; title: string; content: string }) => Promise<string | void>;
+  onSave: (data: { id?: string; groupId?: string; date: string; title: string; content: string }) => Promise<string | void>;
   initialData?: Partial<JournalEntry> | null;
+  availableGroups?: string[];
 }
 
 export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialData
+  initialData,
+  availableGroups = []
 }) => {
   const [entryId, setEntryId] = useState<string | undefined>(initialData?.id);
+  const [groupId, setGroupId] = useState<string | undefined>(initialData?.groupId);
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [title, setTitle] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
@@ -24,12 +27,17 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
 
   const entryIdRef = useRef<string | undefined>(entryId);
+  const groupIdRef = useRef<string | undefined>(groupId);
   const dateRef = useRef<string>(date);
   const titleRef = useRef<string>(title);
 
   useEffect(() => {
     entryIdRef.current = entryId;
   }, [entryId]);
+
+  useEffect(() => {
+    groupIdRef.current = groupId;
+  }, [groupId]);
 
   useEffect(() => {
     dateRef.current = date;
@@ -44,6 +52,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
       setLastAutoSaveTime(null);
       if (initialData) {
         setEntryId(initialData.id);
+        setGroupId(initialData.groupId);
         setDate(initialData.date || new Date().toISOString().split('T')[0]);
         setTitle(initialData.title || '');
         if (editorRef.current) {
@@ -51,6 +60,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
         }
       } else {
         setEntryId(undefined);
+        setGroupId(undefined);
         setDate(new Date().toISOString().split('T')[0]);
         setTitle('');
         if (editorRef.current) {
@@ -72,6 +82,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
         const contentHtml = editorRef.current?.innerHTML || '';
         const savedId = await onSave({
           id: entryIdRef.current,
+          groupId: groupIdRef.current,
           date: dateRef.current,
           title: currentTitle,
           content: contentHtml
@@ -111,6 +122,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
       const contentHtml = editorRef.current?.innerHTML || '';
       await onSave({
         id: entryId,
+        groupId,
         date,
         title: title.trim(),
         content: contentHtml
@@ -141,9 +153,9 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
 
         <form onSubmit={handleSubmit} style={{ marginTop: '16px' }}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: 0 }}>
-            {/* Datum & Titel */}
+            {/* Datum, Gruppe & Titel */}
             <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
-              <div style={{ width: '160px' }}>
+              <div style={{ width: '150px' }}>
                 <label className="form-label" style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'block' }}>Datum</label>
                 <input
                   type="date"
@@ -153,6 +165,22 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
                   required
                 />
               </div>
+              {availableGroups.length > 0 && (
+                <div style={{ width: '140px' }}>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'block' }}>Gruppe</label>
+                  <select
+                    className="form-select"
+                    value={groupId || ''}
+                    onChange={e => setGroupId(e.target.value || undefined)}
+                    style={{ width: '100%', height: '38px', borderRadius: '6px', fontSize: '13px', padding: '0 8px' }}
+                  >
+                    <option value="">Alle / Keine</option>
+                    {availableGroups.map(g => (
+                      <option key={g} value={g}>Gruppe {g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div style={{ flex: 1 }}>
                 <label className="form-label" style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'block' }}>Name / Titel</label>
                 <input

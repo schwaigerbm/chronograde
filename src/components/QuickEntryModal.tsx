@@ -8,6 +8,8 @@ interface QuickEntryModalProps {
   onClose: () => void;
   course: Course;
   students: Student[];
+  availableGroups?: string[];
+  studentGroupMap?: Record<string, string>;
   onSave: (data: {
     attendance?: {
       columnId: string;
@@ -23,7 +25,7 @@ interface QuickEntryModalProps {
   }) => void;
 }
 
-export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: QuickEntryModalProps) => {
+export const QuickEntryModal = ({ isOpen, onClose, course, students, availableGroups = [], studentGroupMap = {}, onSave }: QuickEntryModalProps) => {
   const presenceCol = course.columns.find(col => col.type === 'presenceSum' && col.isVisible !== false);
   const collabCol = course.columns.find(col => col.type === 'collaborationSum' && col.isVisible !== false);
 
@@ -32,6 +34,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
   // Attendance States
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceHours, setAttendanceHours] = useState<number>(1);
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [attendanceEntries, setAttendanceEntries] = useState<Record<string, 'check' | 'x' | 'unset'>>({});
 
   // Collaboration States
@@ -88,8 +91,18 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
     });
   };
 
+  const displayedAttendanceStudents = selectedGroup === 'all'
+    ? students
+    : students.filter(s => (studentGroupMap[s.id] || '') === selectedGroup);
+
   const handleSetAllAttendance = (value: 'check' | 'x' | 'unset') => {
-    setAttendanceEntries(Object.fromEntries(students.map(s => [s.id, value])));
+    setAttendanceEntries(prev => {
+      const next = { ...prev };
+      displayedAttendanceStudents.forEach(s => {
+        next[s.id] = value;
+      });
+      return next;
+    });
   };
 
   const handleNextStep = () => {
@@ -282,6 +295,23 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                 </button>
               </div>
 
+              {availableGroups.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', background: '#f1f5f9', padding: '8px 12px', borderRadius: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569', margin: 0 }}>Gruppe filtern:</label>
+                  <select 
+                    className="form-select" 
+                    style={{ padding: '4px 8px', fontSize: '13px', borderRadius: '6px', maxWidth: '180px' }}
+                    value={selectedGroup}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                  >
+                    <option value="all">Alle Gruppen ({students.length})</option>
+                    {availableGroups.map(g => (
+                      <option key={g} value={g}>Gruppe {g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '16px' }}>
                 <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
                   Klicken Sie auf die Schülerzeilen, um zwischen Anwesend (Häkchen), Abwesend (X) und Nicht gesetzt zu wechseln.
@@ -324,7 +354,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map((student, index) => (
+                    {displayedAttendanceStudents.map((student, index) => (
                       <tr key={student.id} onClick={() => toggleAttendance(student.id)} style={{ cursor: 'pointer' }}>
                         <td>{index + 1}</td>
                         <td style={{ fontSize: '13px' }}>{student.lastName}, {student.firstName}</td>

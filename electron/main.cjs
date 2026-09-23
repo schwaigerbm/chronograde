@@ -487,12 +487,13 @@ function setupIpcHandlers() {
 
   ipcMain.handle('journal:save', async (_, entry) => {
     const now = new Date().toISOString();
+    const groupIdVal = entry.groupId || null;
     if (entry.id) {
       const existing = await dbOps.get(`SELECT * FROM journal_entries WHERE id = ?`, [entry.id]);
       if (existing) {
         await dbOps.run(
-          `UPDATE journal_entries SET date = ?, title = ?, content = ?, updatedAt = ? WHERE id = ?`,
-          [entry.date || existing.date, entry.title || existing.title, entry.content || '', now, entry.id]
+          `UPDATE journal_entries SET groupId = ?, date = ?, title = ?, content = ?, updatedAt = ? WHERE id = ?`,
+          [groupIdVal, entry.date || existing.date, entry.title || existing.title, entry.content || '', now, entry.id]
         );
         return entry.id;
       }
@@ -500,8 +501,8 @@ function setupIpcHandlers() {
 
     const id = entry.id || ('journal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
     await dbOps.run(
-      `INSERT INTO journal_entries (id, courseId, date, title, content, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, entry.courseId, entry.date || now.split('T')[0], entry.title || '', entry.content || '', now, now]
+      `INSERT INTO journal_entries (id, courseId, groupId, date, title, content, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, entry.courseId, groupIdVal, entry.date || now.split('T')[0], entry.title || '', entry.content || '', now, now]
     );
     return id;
   });

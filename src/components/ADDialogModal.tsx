@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Check, CheckCircle2, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
-import type { Course, Student } from '../schema';
+import type { Course, Student, Grade } from '../schema';
+import { sqliteService } from '../services/sqliteService';
 
 interface ADDialogModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: Course;
   students: Student[];
+  availableGroups?: string[];
+  studentGroupMap?: Record<string, string>;
   onSaveAttendance?: (date: string, hours: number, attendance: Record<string, 'check' | 'x'>) => Promise<void>;
 }
 
@@ -15,19 +18,58 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
   onClose,
   course,
   students,
+  availableGroups: propAvailableGroups,
+  studentGroupMap: propStudentGroupMap,
   onSaveAttendance
 }) => {
   const [phase, setPhase] = useState<'attendance' | 'rolling' | 'winner'>('attendance');
   const [attendance, setAttendance] = useState<Record<string, 'check' | 'x'>>({});
   const [date] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [loadedGrades, setLoadedGrades] = useState<Record<string, Record<string, Grade>>>({});
   
   // Rolling & Winner states
   const [currentDisplayStudent, setCurrentDisplayStudent] = useState<{ student: Student; numberIndex: number } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (isOpen && course) {
+      sqliteService.getGrades(course.id).then(res => {
+        setLoadedGrades(res || {});
+      }).catch(err => console.error("Error loading grades in ADDialogModal:", err));
+    }
+  }, [isOpen, course]);
+
+  const { computedAvailableGroups, computedStudentGroupMap } = useMemo(() => {
+    const groupCol = course.columns.find(c => c.type === 'groupAssignment');
+    if (!groupCol || !loadedGrades) return { computedAvailableGroups: [], computedStudentGroupMap: {} };
+
+    const map: Record<string, string> = {};
+    const set = new Set<string>();
+
+    Object.entries(loadedGrades).forEach(([studentId, colMap]) => {
+      const val = colMap[groupCol.id]?.value;
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        const gStr = String(val).trim();
+        map[studentId] = gStr;
+        set.add(gStr);
+      }
+    });
+
+    const available = Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return { computedAvailableGroups: available, computedStudentGroupMap: map };
+  }, [course.columns, loadedGrades]);
+
+  const availableGroups = (propAvailableGroups && propAvailableGroups.length > 0) ? propAvailableGroups : computedAvailableGroups;
+  const studentGroupMap = (propStudentGroupMap && Object.keys(propStudentGroupMap).length > 0) ? propStudentGroupMap : computedStudentGroupMap;
+
   const enrolledStudentIds = course.enrolledStudents || [];
   const activeStudents = students
     .filter(s => enrolledStudentIds.includes(s.id) && !course.deregisteredStudents?.includes(s.id));
+
+  const filteredActiveStudents = selectedGroup === 'all'
+    ? activeStudents
+    : activeStudents.filter(s => (studentGroupMap[s.id] || '') === selectedGroup);
 
   // Initialize attendance (default: all present)
   useEffect(() => {
@@ -35,6 +77,7 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
       setPhase('attendance');
       setCurrentDisplayStudent(null);
       setIsSaving(false);
+      setSelectedGroup('all');
 
       const initial: Record<string, 'check' | 'x'> = {};
       activeStudents.forEach(s => {
@@ -54,14 +97,16 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
   };
 
   const setAllAttendance = (status: 'check' | 'x') => {
-    const updated: Record<string, 'check' | 'x'> = {};
-    activeStudents.forEach(s => {
-      updated[s.id] = status;
+    setAttendance(prev => {
+      const updated = { ...prev };
+      filteredActiveStudents.forEach(s => {
+        updated[s.id] = status;
+      });
+      return updated;
     });
-    setAttendance(updated);
   };
 
-  const presentStudentsWithNumbers = activeStudents
+  const presentStudentsWithNumbers = filteredActiveStudents
     .map((student, idx) => ({ student, numberIndex: idx + 1 }))
     .filter(item => attendance[item.student.id] === 'check');
 
@@ -163,10 +208,27 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
           {phase === 'attendance' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
+              {availableGroups.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569', margin: 0 }}>Gruppe filtern:</label>
+                  <select 
+                    className="form-select" 
+                    style={{ padding: '4px 8px', fontSize: '13px', borderRadius: '6px', maxWidth: '180px' }}
+                    value={selectedGroup}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                  >
+                    <option value="all">Alle Gruppen ({activeStudents.length})</option>
+                    {availableGroups.map(g => (
+                      <option key={g} value={g}>Gruppe {g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Quick Actions Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Schnellauswahl für {activeStudents.length} Schüler:
+                  Schnellauswahl für {filteredActiveStudents.length} Schüler:
                 </span>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
@@ -190,7 +252,7 @@ export const ADDialogModal: React.FC<ADDialogModalProps> = ({
 
               {/* Student Attendance List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {activeStudents.map((s, index) => {
+                {filteredActiveStudents.map((s, index) => {
                   const isPresent = attendance[s.id] === 'check';
                   const registerNumber = index + 1;
 

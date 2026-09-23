@@ -151,6 +151,7 @@ export interface Reminder {
 export interface JournalEntry {
   id: string;
   courseId: string;
+  groupId?: string;   // Gruppenzuordnung (z.B. "1", "2", ... oder null/undefined für alle)
   date: string;       // YYYY-MM-DD
   title: string;      // Name / Titel des Eintrags
   content: string;    // Formatiertes HTML/Text

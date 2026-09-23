@@ -5,7 +5,7 @@ Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an 
 
 * **Hauptüberschrift (H1):** `Leistungsbeurteilung`
 * **Unterüberschrift (H2):** `[Name der Gruppe / Course]`
-* **Gruppen-Schnellauswahl:** (Entfernt) Die Gruppen-Schnellauswahl wurde entfernt. Der Wechsel von Gruppen/Kursen erfolgt ausschließlich über die Sidebar/Hauptnavigation.
+* **Gruppen-Filter (Matrix):** Falls der Kurs eine Spalte vom Typ `groupAssignment` (Gruppenzuordnung) enthält, wird in der Kopfzeile der Notenmatrix ein **Gruppen-Filter-Dropdown** (`Alle Gruppen`, `Gruppe 1`, `Gruppe 2`, ...) angeboten. Bei Auswahl einer spezifischen Gruppe werden in der Matrix nur die Zeilen dieser Gruppe dargestellt; bei Auswahl von `Alle Gruppen` wird wieder der gesamte Klassenbestand angezeigt.
 * **Aktions-Menü (Dropdown):** In der Kopfzeile platziert (Label: `Aktionen`, Icon: `ChevronDown`). Bietet folgende Aktionen:
     * `Schnelleingabe` (Icon: `Zap`) - Startet einen kombinierten Workflow zur schnellen Erfassung von Anwesenheit und Mitarbeit nacheinander.
     * `Beurteilungsspalte hinzufügen` (Icon: `Plus`) - Öffnet das Multi-Step-Modal zum Hinzufügen einer Beurteilungsspalte.
@@ -396,6 +396,7 @@ Wenn die Journal-Ansicht aktiv ist, wird das Standard-Aktionsmenü ("Aktionen") 
 * **Eingabefelder:**
     * **Datum:** Datepicker, voreingestellt auf das aktuelle Tagesdatum (Format `YYYY-MM-DD`).
     * **Titel / Name:** Textfeld für die Bezeichnung oder das Thema des Eintrags (Pflichtfeld).
+    * **Gruppenzuordnung:** Falls eine Spalte vom Typ `groupAssignment` (Gruppenzuordnung) im Kurs existiert, wird ein Dropdown-Feld zur Auswahl der zugehörigen Gruppe (`Alle / Keines`, `Gruppe 1`, `Gruppe 2`, ...) angeboten.
     * **Text / Formatiertes Inhaltfeld:** Interaktiver Rich-Text-Editor mit Werkzeugleiste:
         * **Fett** (`Bold`)
         * **Kursiv** (`Italic`)
@@ -419,10 +420,12 @@ Wenn die Journal-Ansicht aktiv ist, wird das Standard-Aktionsmenü ("Aktionen") 
 Die Journal-Ansicht teilt sich in zwei Bildschirmhälften:
 
 * **Linke Bildschirmhälfte (Eintragsliste im To-Do-Stil):**
-    * **Header / Zähler:** Ganz oben befindet sich ein Eintragszähler mit der genauen Anzahl (z. B. `5 Einträge`).
-    * **Sortierung:** Alle Einträge sind strikt nach dem **Vergabedatum** (absteigend) sortiert.
+    * **Header & Filter/Sortier-Leiste:**
+        * Ganz oben befindet sich ein Eintragszähler mit der genauen Anzahl (z. B. `5 Einträge`).
+        * **Gruppen-Filter:** Dropdown-Menü zur Filterung der Einträge nach zugewiesener Gruppe (`Alle Gruppen`, `Gruppe 1`, `Gruppe 2`, ...).
+        * **Sortierung & Richtung:** Dropdown zur Auswahl des Sortierkriteriums (`Datum`, `Gruppenzuordnung`) sowie ein Toggle-Button für die Sortierrichtung (Aufsteigend `⬆` / Absteigend `⬇`).
     * **Zeilenaufbau:**
-        * Linksbündig: Datum (Format `DD.MM.YYYY`) und Titel/Name des Eintrags.
+        * Linksbündig: Datum (Format `DD.MM.YYYY`), optionales Gruppen-Badge (z. B. `Gr. 1`) und Titel/Name des Eintrags.
         * Rechtsbündig: Aktions-Buttons `Bearbeiten` (Pencil-Icon) und `Löschen` (Trash-Icon).
     * **Interaktion:** Klick auf eine Zeile markiert diese als aktiv und zeigt die vollständigen Details in der rechten Bildschirmhälfte an.
 

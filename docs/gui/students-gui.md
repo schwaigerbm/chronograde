@@ -21,14 +21,16 @@ Die Kopfzeile dient der Identifikation der Ansicht und bietet die primäre Aktio
 ## 3. Suche & Filterung
 * **Typ:** Live-Suche (Echtzeit-Filterung während der Eingabe).
 * **Verhalten:** Die Tabelle filtert die über `sqliteService` bereitgestellten Daten sofort basierend auf den Übereinstimmungen im Vor- oder Nachnamen.
-* **Avatar-Sichtbarkeit:** Die Anzeige der Profilbilder (Avatare) richtet sich nach der globalen Benutzerpräferenz in den Einstellungen (`showAvatars`). Ein lokaler Toggle im Suchbereich entfällt.
+* **Avatar-Sichtbarkeit & Hover-Vorschau:**
+  * Die Anzeige der Profilbilder (Avatare) richtet sich nach der globalen Benutzerpräferenz in den Einstellungen (`showAvatars`).
+  * **Große Vorschau (ca. 50 % vergrößert):** Beim Fahren über den Namen oder **direkt über den runden Avatar-Kreis** öffnet sich ein eleganter Vorschau-Tooltip mit dem groß skalierten Profilbild (144x144 Pixel).
 
 ## 4. Daten-Tabelle
 Anzeige der Schülerdatensätze aus der Tabelle `students` via `sqliteService`.
 
 | Foto (Optional) | Vorname | Nachname | Aktionen |
 | :--- | :--- | :--- | :--- |
-| [Avatar] | [Vorname] | [Nachname] | 🔧 (Bearbeiten) 🗑️ (Löschen) |
+| [Avatar (mit Hover-Vorschau)] | [Vorname] | [Nachname] | 🔧 (Bearbeiten) 🗑️ (Löschen) |
 
 ### Aktions-Icons:
 * **Schraubenschlüssel-Icon:** Öffnet den Bearbeitungs-Dialog.

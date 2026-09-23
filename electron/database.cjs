@@ -154,12 +154,15 @@ function initDatabase(app, customPath) {
         db.run(`CREATE TABLE IF NOT EXISTS journal_entries (
           id TEXT PRIMARY KEY,
           courseId TEXT,
+          groupId TEXT,
           date TEXT,
           title TEXT,
           content TEXT,
           createdAt TEXT,
           updatedAt TEXT
-        )`);
+        )`, () => {
+          db.run(`ALTER TABLE journal_entries ADD COLUMN groupId TEXT`, () => {});
+        });
 
         // 7. Settings Table
         db.run(`CREATE TABLE IF NOT EXISTS settings (

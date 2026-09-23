@@ -60,18 +60,22 @@ Auf der **Start**-Seite wird das Modul als kombinierter **Terminkalender mit str
 
 ---
 
-## 5. Anwesenheit & Zufalls-Erfassung („A & D Dialog“)
+## 5. Anwesenheit & Zufalls-Erfassung („A & D Dialog“) sowie Gruppenfilter
 Auf allen Gruppen-Karten in der Beurteilungsübersicht befindet sich **unterhalb** des Links `Matrix öffnen >` der Button `A & D Dialog >` (sofern in den Einstellungen aktiviert).
 
-### 5.1 Ablauf & Phasen
+### 5.1 Gruppen-Filterung bei Anwesenheitserfassungen
+* Bei allen Anwesenheitserfassungs-Modals (`AttendanceModal`, Schnelleingabe `QuickEntryModal` und `ADDialogModal`) wird – sofern der Kurs mindestens eine Spalte vom Typ `groupAssignment` (Gruppenzuordnung) enthält – ein **Gruppen-Filter-Dropdown** angeboten (`Alle Gruppen`, `Gruppe 1`, `Gruppe 2`, ...).
+* Bei Auswahl einer spezifischen Gruppe werden nur die dieser Gruppe zugeordneten Schüler in der Erfassungsliste angezeigt.
+
+### 5.2 Ablauf & Phasen des A & D Dialogs
 1. **Phase 1: Anwesenheits-Schnellerfassung**
    * Es öffnet sich ein Schnellerfassungs-Modal für die gewählte Gruppe.
-   * Sämtliche Schüler der Gruppe werden mit ihrer laufenden Klassenbuchnummer (`#1`, `#2`, `#3`...), ihrem Namen und Profilbild aufgelistet.
+   * Sämtliche Schüler der Gruppe (bzw. der gefilterten Untergruppe) werden mit ihrer laufenden Klassenbuchnummer (`#1`, `#2`, `#3`...), ihrem Namen und Profilbild aufgelistet.
    * Über einfache Toggle-Buttons kann der Status schnell auf Anwesend (`'p'`) oder Abwesend (`'x'`) gesetzt werden (Standard: Alle anwesend).
    * Klick auf `Anwesenheit speichern & Zufalls-Generator starten 🎲` speichert die Anwesenheit ab und startet Phase 2.
 
 2. **Phase 2: Spektakulärer Zufallszahlengenerator (Slot / Lotto-Roller)**
-   * **Kandidaten-Pool:** Ausschließlich diejenigen Klassenbuchnummern der Schüler, die in Phase 1 als **anwesend** (`'p'`) erfasst wurden.
+   * **Kandidaten-Pool:** Ausschließlich diejenigen Klassenbuchnummern der Schüler, die in Phase 1 als **anwesend** (`'p'`) erfasst wurden (unter Berücksichtigung des optional gewählten Gruppenfilters).
    * **Animation:** Animiertes Durchrollen aller anwesenden Klassenbuchnummern (Lotto- / Slot-Machine-Roller) mit dynamischer Beschleunigung und dramatischem Abbremsen.
    * **Ergebnis & Siegerehrung:** Nach dem Stopp erstrahlt die gewählte Klassenbuchnummer mit Gold-Effekt und Partikel-Animation. Es werden der Name des gezogenen Schülers, dessen Klassenbuchnummer sowie Profilbild hervorgehoben dargestellt (ideal für zufällige Stundenwiederholungen oder Moderatoren).
    * **Aktionen:** `🎲 Erneut drehen` oder `Schließen`.

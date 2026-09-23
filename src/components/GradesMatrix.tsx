@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Plus, 
@@ -97,10 +97,27 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [editingJournalEntry, setEditingJournalEntry] = useState<JournalEntry | null>(null);
   const [journalEntriesForExport, setJournalEntriesForExport] = useState<JournalEntry[]>([]);
 
-  const handleSaveJournalEntry = async (data: { id?: string; date: string; title: string; content: string }): Promise<string> => {
+  // Matrix Group Filter
+  const [selectedMatrixGroupFilter, setSelectedMatrixGroupFilter] = useState<string>('all');
+
+  const availableGroups = useMemo(() => {
+    const groups = new Set<string>();
+    students.forEach(s => {
+      if (s.groupAssignment) groups.add(s.groupAssignment);
+    });
+    return Array.from(groups).sort();
+  }, [students]);
+
+  const displayedMatrixStudents = useMemo(() => {
+    if (selectedMatrixGroupFilter === 'all') return students;
+    return students.filter(s => s.groupAssignment === selectedMatrixGroupFilter);
+  }, [students, selectedMatrixGroupFilter]);
+
+  const handleSaveJournalEntry = async (data: { id?: string; groupId?: string; date: string; title: string; content: string }): Promise<string> => {
     const savedId = await sqliteService.saveJournalEntry({
       id: data.id || editingJournalEntry?.id,
       courseId: course.id,
+      groupId: data.groupId,
       date: data.date,
       title: data.title,
       content: data.content
@@ -122,6 +139,34 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
 
   // Student Dashboard Overlay State
   const [selectedStudentForDashboard, setSelectedStudentForDashboard] = useState<Student | null>(null);
+
+  // Group Assignment mapping computation
+  const { availableGroups, studentGroupMap } = useMemo(() => {
+    const groupCol = course.columns.find(c => c.type === 'groupAssignment');
+    if (!groupCol || !grades) return { availableGroups: [], studentGroupMap: {} };
+
+    const map: Record<string, string> = {};
+    const groupSet = new Set<string>();
+
+    Object.entries(grades).forEach(([studentId, colMap]) => {
+      const val = colMap[groupCol.id]?.value;
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        const gStr = String(val).trim();
+        map[studentId] = gStr;
+        groupSet.add(gStr);
+      }
+    });
+
+    const available = Array.from(groupSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return { availableGroups: available, studentGroupMap: map };
+  }, [course.columns, grades]);
+
+  const [selectedMatrixGroupFilter, setSelectedMatrixGroupFilter] = useState<string>('all');
+
+  const displayedMatrixStudents = useMemo(() => {
+    if (selectedMatrixGroupFilter === 'all') return students;
+    return students.filter(s => (studentGroupMap[s.id] || '') === selectedMatrixGroupFilter);
+  }, [students, selectedMatrixGroupFilter, studentGroupMap]);
 
 
   // Enrollment Modal States
@@ -926,7 +971,26 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
             </div>
 
             {viewMode === 'matrix' ? (
-              <div className="dropdown-container">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {availableGroups.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <Users size={14} style={{ color: '#64748b' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Gruppe:</span>
+                    <select
+                      className="form-select"
+                      value={selectedMatrixGroupFilter}
+                      onChange={(e) => setSelectedMatrixGroupFilter(e.target.value)}
+                      style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: 'white', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      <option value="all">Alle Gruppen ({students.length})</option>
+                      {availableGroups.map(g => (
+                        <option key={g} value={g}>Gruppe {g}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="dropdown-container">
                 <button 
                   className="btn-secondary btn-sm"
                   onClick={() => setIsActionsDropdownOpen(!isActionsDropdownOpen)}
@@ -997,6 +1061,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     </div>
                   </>
                 )}
+              </div>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1152,7 +1217,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
             </tr>
           </thead>
           <tbody>
-            {students.map((student, index) => {
+            {displayedMatrixStudents.map((student, index) => {
               const isDeregistered = Boolean(course.deregisteredStudents?.includes(student.id));
               const liveSummary = isDeregistered
                 ? { grade: null, percent: null, breakdown: [] }
@@ -1333,6 +1398,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       ) : (
         <JournalView 
           course={course}
+          availableGroups={availableGroups}
           onEditEntry={(entry) => {
             setEditingJournalEntry(entry);
             setIsJournalModalOpen(true);
@@ -1354,6 +1420,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         }}
         onSave={handleSaveJournalEntry}
         initialData={editingJournalEntry}
+        availableGroups={availableGroups}
       />
 
 
@@ -1377,6 +1444,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         isOpen={isAttendanceModalOpen}
         onClose={() => setIsAttendanceModalOpen(false)}
         students={students}
+        availableGroups={availableGroups}
+        studentGroupMap={studentGroupMap}
         onSave={handleSaveAttendance}
       />
 
@@ -1402,6 +1471,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsQuickEntryModalOpen(false)}
         course={course}
         students={students}
+        availableGroups={availableGroups}
+        studentGroupMap={studentGroupMap}
         onSave={handleSaveQuickEntry}
       />
 

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, Calendar, FileText, PlusCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Pencil, Trash2, Calendar, FileText, PlusCircle, ArrowUp, ArrowDown, Users } from 'lucide-react';
 import type { Course, JournalEntry } from '../schema';
 import { sqliteService } from '../services/sqliteService';
 import { formatDate } from '../lib/utils';
 
 interface JournalViewProps {
   course: Course;
+  availableGroups?: string[];
   onEditEntry: (entry: JournalEntry) => void;
   onDeleteEntry: (entry: JournalEntry) => void;
   onEntriesLoaded?: (entries: JournalEntry[]) => void;
@@ -14,6 +15,7 @@ interface JournalViewProps {
 
 export const JournalView: React.FC<JournalViewProps> = ({
   course,
+  availableGroups = [],
   onEditEntry,
   onDeleteEntry,
   onEntriesLoaded,
@@ -23,20 +25,17 @@ export const JournalView: React.FC<JournalViewProps> = ({
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Filter & Sort state
+  const [groupFilter, setGroupFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<'date' | 'group'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   useEffect(() => {
     setLoading(true);
     const unsubscribe = sqliteService.subscribeToJournalEntries(course.id, (loadedEntries) => {
-      // Sort by date descending
-      const sorted = [...loadedEntries].sort((a, b) => {
-        if (a.date !== b.date) {
-          return b.date.localeCompare(a.date);
-        }
-        return (b.createdAt || '').localeCompare(a.createdAt || '');
-      });
-
-      setEntries(sorted);
+      setEntries(loadedEntries);
       if (onEntriesLoaded) {
-        onEntriesLoaded(sorted);
+        onEntriesLoaded(loadedEntries);
       }
       setLoading(false);
     });
@@ -44,16 +43,43 @@ export const JournalView: React.FC<JournalViewProps> = ({
     return () => unsubscribe();
   }, [course.id]);
 
+  const filteredAndSortedEntries = useMemo(() => {
+    let result = [...entries];
+
+    if (groupFilter !== 'all') {
+      result = result.filter(e => e.groupId === groupFilter);
+    }
+
+    result.sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'date') {
+        comparison = (a.date || '').localeCompare(b.date || '');
+      } else if (sortField === 'group') {
+        const gA = a.groupId || '';
+        const gB = b.groupId || '';
+        comparison = gA.localeCompare(gB, undefined, { numeric: true });
+      }
+
+      if (comparison === 0) {
+        comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
+      }
+
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return result;
+  }, [entries, groupFilter, sortField, sortOrder]);
+
   // Keep selected entry valid
   useEffect(() => {
-    if (entries.length > 0) {
-      if (!selectedEntryId || !entries.some(e => e.id === selectedEntryId)) {
-        setSelectedEntryId(entries[0].id);
+    if (filteredAndSortedEntries.length > 0) {
+      if (!selectedEntryId || !filteredAndSortedEntries.some(e => e.id === selectedEntryId)) {
+        setSelectedEntryId(filteredAndSortedEntries[0].id);
       }
     } else {
       setSelectedEntryId(null);
     }
-  }, [entries, selectedEntryId]);
+  }, [filteredAndSortedEntries, selectedEntryId]);
 
   const selectedEntry = entries.find(e => e.id === selectedEntryId) || null;
 
@@ -80,21 +106,55 @@ export const JournalView: React.FC<JournalViewProps> = ({
         overflow: 'hidden',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
       }}>
-        {/* Header Zähler */}
+        {/* Header Zähler & Filter-Leiste */}
         <div style={{
-          padding: '14px 16px',
+          padding: '12px 14px',
           borderBottom: '1px solid var(--border-color)',
           backgroundColor: '#f8fafc',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          flexDirection: 'column',
+          gap: '8px'
         }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {entries.length} {entries.length === 1 ? 'Eintrag' : 'Einträge'}
-          </span>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>
-            Sortiert nach Datum
-          </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {filteredAndSortedEntries.length} {filteredAndSortedEntries.length === 1 ? 'Eintrag' : 'Einträge'}
+            </span>
+            <button 
+              type="button"
+              className="btn-secondary btn-xs"
+              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              style={{ padding: '2px 8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+              title={`Sortierrichtung: ${sortOrder === 'desc' ? 'Absteigend' : 'Aufsteigend'}`}
+            >
+              {sortOrder === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+              <span>{sortOrder === 'desc' ? 'Absteigend' : 'Aufsteigend'}</span>
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {availableGroups.length > 0 && (
+              <select
+                className="form-select"
+                value={groupFilter}
+                onChange={e => setGroupFilter(e.target.value)}
+                style={{ flex: 1, padding: '4px 6px', fontSize: '12px', borderRadius: '6px' }}
+              >
+                <option value="all">Alle Gruppen</option>
+                {availableGroups.map(g => (
+                  <option key={g} value={g}>Gruppe {g}</option>
+                ))}
+              </select>
+            )}
+            <select
+              className="form-select"
+              value={sortField}
+              onChange={e => setSortField(e.target.value as 'date' | 'group')}
+              style={{ flex: availableGroups.length > 0 ? 1 : '100%', padding: '4px 6px', fontSize: '12px', borderRadius: '6px' }}
+            >
+              <option value="date">Nach Datum</option>
+              {availableGroups.length > 0 && <option value="group">Nach Gruppe</option>}
+            </select>
+          </div>
         </div>
 
         {/* Eintrags-Liste */}
@@ -103,7 +163,7 @@ export const JournalView: React.FC<JournalViewProps> = ({
           overflowY: 'auto',
           padding: '8px'
         }}>
-          {entries.length === 0 ? (
+          {filteredAndSortedEntries.length === 0 ? (
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -116,8 +176,8 @@ export const JournalView: React.FC<JournalViewProps> = ({
             }}>
               <FileText size={36} style={{ opacity: 0.4 }} />
               <div>
-                <p style={{ margin: 0, fontWeight: 600, color: '#334155' }}>Noch keine Eintrags-Daten</p>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px' }}>Klicken Sie oben auf "+ Neuer Eintrag", um den ersten Journaleintrag hinzuzufügen.</p>
+                <p style={{ margin: 0, fontWeight: 600, color: '#334155' }}>Keine Eintrags-Daten</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px' }}>Es wurden keine passenden Journaleinträge gefunden.</p>
               </div>
               <button 
                 className="btn-secondary btn-sm"
@@ -129,7 +189,7 @@ export const JournalView: React.FC<JournalViewProps> = ({
               </button>
             </div>
           ) : (
-            entries.map(entry => {
+            filteredAndSortedEntries.map(entry => {
               const isSelected = entry.id === selectedEntryId;
               return (
                 <div
@@ -154,6 +214,21 @@ export const JournalView: React.FC<JournalViewProps> = ({
                       <span style={{ fontSize: '11px', fontWeight: 700, color: isSelected ? 'var(--primary-color)' : '#64748b' }}>
                         {formatDate(entry.date)}
                       </span>
+                      {entry.groupId && (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          backgroundColor: isSelected ? 'var(--primary-color)' : '#e2e8f0',
+                          color: isSelected ? 'white' : '#475569',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px'
+                        }}>
+                          <Users size={10} /> Gr. {entry.groupId}
+                        </span>
+                      )}
                     </div>
                     <span style={{
                       fontSize: '13px',

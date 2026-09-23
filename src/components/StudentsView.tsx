@@ -163,25 +163,42 @@ export const StudentsView = () => {
             ) : visibleStudents.map(student => (
               <tr key={student.id}>
                 {showAvatars && (
-                  <td>
-                    <div className="avatar-preview-container" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <td className="has-avatar-tooltip">
+                    <div className="avatar-preview-container" style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                       {student.photoBase64 ? (
-                        <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                       ) : (
                         <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>
                           {student.firstName[0]}{student.lastName[0]}
                         </span>
                       )}
+                      {student.photoBase64 && (
+                        <div className="student-avatar-tooltip">
+                          <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                        </div>
+                      )}
                     </div>
                   </td>
                 )}
-                <td>{student.firstName}</td>
-                <td>
+                <td className="has-avatar-tooltip" style={{ position: 'relative' }}>
+                  {student.firstName}
+                  {student.photoBase64 && (
+                    <div className="student-avatar-tooltip">
+                      <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                    </div>
+                  )}
+                </td>
+                <td className="has-avatar-tooltip" style={{ position: 'relative' }}>
                   {student.lastName}
                   {student.excludeFromPublicStats && (
                     <span style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#fee2e2', color: '#991b1b', marginLeft: '6px', fontWeight: 'bold' }}>
                       Privat
                     </span>
+                  )}
+                  {student.photoBase64 && (
+                    <div className="student-avatar-tooltip">
+                      <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                    </div>
                   )}
                 </td>
                 <td className="text-right actions-cell">
