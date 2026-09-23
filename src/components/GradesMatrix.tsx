@@ -97,15 +97,15 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   const [editingJournalEntry, setEditingJournalEntry] = useState<JournalEntry | null>(null);
   const [journalEntriesForExport, setJournalEntriesForExport] = useState<JournalEntry[]>([]);
 
-  const handleSaveJournalEntry = async (data: { date: string; title: string; content: string }) => {
-    await sqliteService.saveJournalEntry({
-      id: editingJournalEntry?.id,
+  const handleSaveJournalEntry = async (data: { id?: string; date: string; title: string; content: string }): Promise<string> => {
+    const savedId = await sqliteService.saveJournalEntry({
+      id: data.id || editingJournalEntry?.id,
       courseId: course.id,
       date: data.date,
       title: data.title,
       content: data.content
     });
-    setEditingJournalEntry(null);
+    return savedId;
   };
 
   const handleDeleteJournalEntry = (entry: JournalEntry) => {

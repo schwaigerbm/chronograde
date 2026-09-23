@@ -403,7 +403,12 @@ Wenn die Journal-Ansicht aktiv ist, wird das Standard-Aktionsmenü ("Aktionen") 
         * **Aufzählungsliste** (`Unordered List`)
         * **Formatierung aufheben** (`Clear Formatting`)
     * **Datei-Uploads:** Ausdrücklich **gesperrt / nicht vorhanden** (keine Dateianhänge möglich).
-* **Aktionen:** `Speichern` speichert den Eintrag über den SQLite Service-Layer in der Datenbank. `Abbrechen` schließt den Dialog ohne Änderungen.
+* **Automatische Speicherfunktion (Auto-Save):**
+    * **Intervall:** Alle 4 Sekunden erfolgt eine automatische Speicherung im Hintergrund.
+    * **Bedingung:** Die automatische Speicherung wird nur ausgeführt, wenn das Feld **"Titel / Name" (Betreff/Überschrift)** ausgefüllt ist (`title.trim() !== ''`).
+    * **Verhalten:** Bei neu angelegten Einträgen wird beim ersten Auto-Save die generierte ID übernommen, sodass Folge-Auto-Saves denselben Eintrag aktualisieren.
+    * **Statusanzeige:** Im Modal-Dialog zeigt ein visueller Status-Indikator (z. B. "Automatisch gespeichert um HH:MM:SS") den Zeitpunkt des letzten erfolgreichen Auto-Saves an.
+* **Aktionen:** `Speichern` speichert den Eintrag manuell über den SQLite Service-Layer in der Datenbank und schließt den Dialog. `Abbrechen` schließt den Dialog.
 
 ### 10.4 Modaler Bestätigungs-Dialog bei Löschen (`DialogModal`)
 * **Lösch-Workflow (WICHTIG):** Bei Klick auf `Löschen` (sowohl in der Eintragsliste links als auch in der Detailansicht rechts) wird **immer ein modaler Nachfragedialog (`DialogModal`)** als Overlay in der Bildschirmmitte eingeblendet.

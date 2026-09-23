@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Bold, Italic, Underline, List, RotateCcw, Save } from 'lucide-react';
+import { X, Bold, Italic, Underline, List, RotateCcw, Save, CheckCircle2, Clock } from 'lucide-react';
 import type { JournalEntry } from '../schema';
 
 interface JournalEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { date: string; title: string; content: string }) => Promise<void>;
+  onSave: (data: { id?: string; date: string; title: string; content: string }) => Promise<string | void>;
   initialData?: Partial<JournalEntry> | null;
 }
 
@@ -16,20 +16,41 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
   onSave,
   initialData
 }) => {
+  const [entryId, setEntryId] = useState<string | undefined>(initialData?.id);
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [title, setTitle] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+
+  const entryIdRef = useRef<string | undefined>(entryId);
+  const dateRef = useRef<string>(date);
+  const titleRef = useRef<string>(title);
+
+  useEffect(() => {
+    entryIdRef.current = entryId;
+  }, [entryId]);
+
+  useEffect(() => {
+    dateRef.current = date;
+  }, [date]);
+
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
 
   useEffect(() => {
     if (isOpen) {
+      setLastAutoSaveTime(null);
       if (initialData) {
+        setEntryId(initialData.id);
         setDate(initialData.date || new Date().toISOString().split('T')[0]);
         setTitle(initialData.title || '');
         if (editorRef.current) {
           editorRef.current.innerHTML = initialData.content || '';
         }
       } else {
+        setEntryId(undefined);
         setDate(new Date().toISOString().split('T')[0]);
         setTitle('');
         if (editorRef.current) {
@@ -38,6 +59,39 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
       }
     }
   }, [isOpen, initialData]);
+
+  // Auto-Save Effect: saves every 4 seconds if title/subject is filled out
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const interval = setInterval(async () => {
+      const currentTitle = titleRef.current.trim();
+      if (!currentTitle) return;
+
+      try {
+        const contentHtml = editorRef.current?.innerHTML || '';
+        const savedId = await onSave({
+          id: entryIdRef.current,
+          date: dateRef.current,
+          title: currentTitle,
+          content: contentHtml
+        });
+
+        if (savedId && typeof savedId === 'string') {
+          setEntryId(savedId);
+          entryIdRef.current = savedId;
+        }
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setLastAutoSaveTime(timeStr);
+      } catch (err) {
+        console.error('Auto-save failed:', err);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, onSave]);
 
   if (!isOpen) return null;
 
@@ -56,6 +110,7 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
     try {
       const contentHtml = editorRef.current?.innerHTML || '';
       await onSave({
+        id: entryId,
         date,
         title: title.trim(),
         content: contentHtml
@@ -199,24 +254,40 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
             </div>
           </div>
 
-          <div className="modal-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: 0 }}>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={onClose}
-              disabled={isSaving}
-            >
-              Abbrechen
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isSaving || !title.trim()}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <Save size={16} />
-              <span>{isSaving ? 'Speichere...' : 'Speichern'}</span>
-            </button>
+          <div className="modal-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0 }}>
+            <div style={{ fontSize: '12px' }}>
+              {lastAutoSaveTime ? (
+                <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                  <CheckCircle2 size={14} />
+                  Automatisch gespeichert um {lastAutoSaveTime}
+                </span>
+              ) : title.trim() ? (
+                <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Clock size={14} />
+                  Auto-Speichern aktiv (alle 4s)
+                </span>
+              ) : null}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onClose}
+                disabled={isSaving}
+              >
+                Abbrechen
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={isSaving || !title.trim()}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Save size={16} />
+                <span>{isSaving ? 'Speichere...' : 'Speichern'}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -224,4 +295,3 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
     document.body
   );
 };
-

@@ -5,6 +5,7 @@ interface DialogModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm?: () => void;
+  onCancel?: () => void;
   title: string;
   message: string;
   type?: 'info' | 'warning' | 'danger' | 'success';
@@ -17,6 +18,7 @@ export const DialogModal = ({
   isOpen, 
   onClose, 
   onConfirm, 
+  onCancel,
   title, 
   message, 
   type = 'info',
@@ -66,12 +68,16 @@ export const DialogModal = ({
           {!isAlert && (
             <button 
               className="btn-secondary" 
-              onClick={onClose} 
+              onClick={() => {
+                if (onCancel) onCancel();
+                onClose();
+              }} 
               style={{ flex: 1, height: '40px', padding: '0 16px', fontSize: '14px', marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {cancelLabel}
             </button>
           )}
+
           <button 
             className={getConfirmBtnClass()} 
             onClick={() => {
