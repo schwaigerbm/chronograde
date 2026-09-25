@@ -106,13 +106,21 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
         * Bietet einen Schieberegler (Slider, 0 - 100%) und eine Direkteingabe (Number-Input) nebeneinander.
         * Beide Eingabemöglichkeiten sind synchronisiert. Der Wert der Direkteingabe wird auf den Bereich 0 - 100 beschränkt.
     * **Beurteilungstyp "Zeichen" (`sign`):**
-        * Anzeige von drei großen, sauberen Symbolen (`+`, `~`, `-`) als Schaltflächen.
+        * Anzeige von drei großen, sauberen Symbolen (`+`, `~`, `-`) als Schaltflächen zur Auswahl des Bewertungszeichens.
+        * **Erweiterte optionale Angaben (muss nicht angegeben werden):**
+            * **Datum (`date`):** Optionale Eingabe eines spezifischen Datums (Standard: aktuelles Erfassungsdatum `YYYY-MM-DD`).
+            * **Uhrzeit (`time`):** Optionale Eingabe einer Uhrzeit im Format `HH:mm`.
+            * **Kommentar / Notiz (`note`):** Optionales Freitextfeld für Anmerkungen oder Notizen zu dieser Zeichenbewertung.
+            * **Schnellauswahl vorgefertigter Kommentare:** Falls in den Einstellungen vorgefertigte Kommentare für das selektierte Zeichen (`+`, `~`, `-`) hinterlegt sind, werden diese als klickbare Vorlagen (Badges) angeboten. Ein Klick übernimmt den Text direkt in das Notizfeld.
+        * **Speichern & Löschen:**
+            * Klick auf ein Zeichen speichert dieses sofort oder ermöglicht die Anpassung der optionalen Zusatzfelder (Datum, Uhrzeit, Notiz) mit anschließendem Speichern über den Bestätigungs-Button.
+            * Der Button "Eintrag löschen" entfernt den Bewertungseintrag inklusive Datum, Uhrzeit und Notiz.
     * Das Modal enthält zusätzlich:
         * Einen Button "Eintrag löschen" (oder ähnlich), um den aktuellen Wert zu entfernen.
-        * Eine "Abbrechen" (Stil: Sekundär) Schaltfläche im Footer (keine globale "Speichern" Schaltfläche).
-        * **Sofortiges Speichern und Schließen:**
-            * Bei Auswahl einer Note oder eines Zeichens wird der Wert sofort gespeichert und das Modal schließt sich.
-            * Bei Prozenten wird das Modal geschlossen und der Wert gespeichert, sobald der Schieberegler losgelassen wird (MouseUp/TouchEnd) oder die Eingabe im Textfeld bestätigt wird (durch Drücken der Enter-Taste oder Klick auf ein Bestätigungssymbol neben der Eingabe).
+        * Eine "Abbrechen" (Stil: Sekundär) Schaltfläche im Footer.
+        * **Speicherverhalten:**
+            * Bei Auswahl einer Note oder bei Zeichen ohne weitere Modifikationen wird der Wert sofort gespeichert und das Modal schließt sich. Bei Angabe optionaler Felder (Datum, Uhrzeit, Kommentar) wird der Wert per Klick auf "Speichern" gesichert.
+            * Bei Prozenten wird das Modal geschlossen und der Wert gespeichert, sobald der Schieberegler losgelassen wird (MouseUp/TouchEnd) oder die Eingabe im Textfeld bestätigt wird.
 * **Keyboard-Navigation (Vollständige Matrix-Navigation):**
     * Mit den Pfeiltasten (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`) kann der Fokus frei durch alle Zellen der Tabelle navigiert werden.
     * Drücken von **`Tab`** oder **`Enter`** in einer aktiven Zelle speichert den Wert und springt **vertikal nach unten zum nächsten Schüler in derselben Spalte** (nächste Zeile).
@@ -309,13 +317,21 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
     * Falls die Trend-Spalte im Kurs aktiv ist, wird eine separate Option angeboten, um den **Gesamt-Trend** im PDF ein- oder auszublenden.
     * Es gibt Schnellwahl-Aktionen wie "Alle auswählen" und "Auswahl aufheben".
     * Der Benutzer bestätigt mit dem Button "PDF generieren" (Stil: Primär) oder bricht die Aktion ab.
-* **Layout:** Querformat A4.
-* **Inhalt:**
-    * Briefkopf mit dem Kursnamen, Schuljahr und Datum des Exports. Es werden **keine** Angaben zur Klasse oder Lehrperson aufgedruckt.
-    * Eine saubere, skalierte Tabelle aller aktiven Schüler und der **ausgewählten** Beurteilungsspalten.
-    * Die Tabelle verwendet zur visuellen Strukturierung ein **Streifenmuster (Zebra-Striping)** mit abwechselnden Hintergrundfarben für die Zeilen.
-    * Enthält auch die berechneten Noten/Prozentwerte und die Meilensteine sowie optional die Trend-Spalte (sofern im Auswahldialog ausgewählt).
-    * Kopfzeilen-Texte der Matrix-Spalten werden zur Platzersparnis geneigt oder kompakt dargestellt.
+* **Layout:** Querformat A4 (`size="A4" orientation="landscape"`).
+* **Inhalt & Vektor-Konstruktion:**
+    * **Briefkopf (Header):** App-Titel ("CHRONOGRADE"), Kursname, Schuljahr und Datum des Exports. Es werden **keine** Angaben zur Klasse oder Lehrperson aufgedruckt.
+    * **Strukturierte Notenmatrix-Tabelle:**
+        * Tabellenkopf mit dynamischer Spaltenbreitenanpassung je nach Anzahl ausgewählter Beurteilungsspalten.
+        * Kompakte Kopfzeilen-Texte der Beurteilungsspalten mit klarem Titel.
+        * **Schülerliste:** Nummerierung (`#`), Name (`[Nachname], [Vorname]`), Noten-/Prozentwerte aller gewählten Spalten sowie optional der Gesamttrend (`TREND`).
+        * **Zebra-Striping:** Abwechselnde Hintergrundfarben für Zeilen (`#ffffff` / `#f8fafc`) zur übersichtlichen Lesbarkeit.
+        * **Abgemeldete Schüler:** Optisch dezent hervorgehoben (ausgegraut, mit Statusanzeige).
+    * **Fehlerfreie Render-Vorgaben (@react-pdf/renderer):**
+        * Verwendung rein numerischer Style-Eigenschaften (keine unparsebaren CSS-Shorthands wie `border: '1px solid ...'` oder `padding: '5 8'`), um ein leeres/graues Renderer-Ergebnis zu verhindern.
+        * Dynamische Schriftgrößen- und Zellabstand-Skalierung bei hoher Spaltenanzahl.
+        * Fußzeile mit automatischer Seitennummerierung ("Seite X von Y").
+
+
 
 ### 7.2 Große modale Anzeige der Schülerleistungen & Detail-Dashboard
 * **Aktion:** Ein Klick auf ein Analyse-Icon (TrendingUp/LineChart-Symbol, Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`) öffnet eine große, zentrierte Overlay-Ansicht (Modal) mit den detaillierten Leistungen des Schülers.
@@ -348,7 +364,11 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
         * **Mitarbeit-Einzeleinträge:** Bei "Linear mit der Zeit in den Trend einrechnen" erzeugt jeder einzelne erfasste Mitarbeitseintrag (+, ~, -) einen eigenen zeitlichen Datenpunkt auf der Verlaufskurve. Im Standardmodus ("Als gesamte Mitarbeitsnote am Schluss einrechnen") werden keine separaten Mitarbeits-Punkte auf der Verlaufskurve gezeichnet.
         * **Farbliche Markierung:** Die einzelnen Trendpunkte (Datenpunkte) auf der Verlaufslinie sind farblich passend zu der berechneten Note an diesem Stichtag markiert (Note 1 & 2 in Grüntönen, Note 3 in Blau, Note 4 in Orange und Note 5 in Rot).
         * **Direkte Beschriftung:** Die berechnete Note wird direkt über jedem Kurvenpunkt als Zahl (1-5) gerendert. Unterhalb der X-Achsenlinie wird der jeweilige Leistungs- oder Mitarbeitstitel (z. B. "SA 1", "Mitarbeit (+)") gedreht dargestellt, um Überlappungen zu vermeiden.
-    * **Detaillierter Verlauf (Chronologische Liste):** Eine tabellarische oder Feed-basierte Auflistung aller erfassten Noten, Zeichen, Mitarbeitseinträge und Anwesenheiten des Schülers im Kurs, sortiert nach Datum (absteigend), inklusive zugehöriger Kommentare/Notizen.
+    * **Detaillierter Verlauf (Chronologische Liste & Tooltips):** 
+        * Eine chronologische Auflistung aller erfassten Noten, Zeichen, Mitarbeitseinträge und Anwesenheiten des Schülers im Kurs.
+        * **Darstellung von Zeichen-Beurteilungen (`sign`):** Für Beurteilungsspalten vom Typ `sign` (`+`, `~`, `-`) werden im Verlauf das konkrete Erfassungsdatum, die Uhrzeit (falls erfasst) sowie der zugehörige Kommentar/Notiz vollständig angezeigt.
+        * **Hover & Tooltip in der Notenmatrix:** Beim Fahren über Zeichen-Zellen in der Notenmatrix zeigt der Tooltip neben dem Zeichen auch das Datum, die Uhrzeit (falls vorhanden) und den erfassten Kommentar an.
+        * **PDF-Reports & Auswertungen:** In gedruckten Berichten (z. B. Leistungsdatenblatt / PDFExports) werden für Beurteilungen vom Typ `sign` das Zeichen, das genaue Datum inkl. Uhrzeit und die Notiz in der Aufstellung der Einzelbeurteilungen ausgedruckt.
 
 ---
 

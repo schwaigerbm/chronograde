@@ -306,6 +306,7 @@ export const StudentPerformanceDashboard = ({
       id: string;
       title: string;
       date: string;
+      time?: string;
       type: CourseEntry['type'];
       displayValue: string;
       note?: string;
@@ -354,9 +355,7 @@ export const StudentPerformanceDashboard = ({
               displayValue = `${grade.value}%`;
             }
           } else if (col.calcType === 'sign') {
-            const s = grade.value;
-            const g = s === '+' ? 1 : s === '~' ? 4 : 5;
-            displayValue = `Note ${g} (${s})`;
+            displayValue = `Zeichen ${grade.value}`;
           } else {
             displayValue = String(grade.value);
           }
@@ -367,14 +366,15 @@ export const StudentPerformanceDashboard = ({
         displayValue = '-';
       }
 
-      const dateStr = col.type === 'calculated' 
+      const dateStr = grade.date || (col.type === 'calculated' 
         ? (col.cutoffDate || '') 
-        : (col.date || '');
+        : (col.date || ''));
 
       feed.push({
         id: col.id,
         title: col.title,
         date: dateStr,
+        time: grade.time,
         type: col.type,
         displayValue,
         note: grade.note,
@@ -1086,7 +1086,9 @@ export const StudentPerformanceDashboard = ({
                              <div className="timeline-card-header">
                               <div>
                                 <h3 className="timeline-item-title" style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 2px 0' }}>{item.title}</h3>
-                                <span className="timeline-item-date" style={{ fontSize: '12px', color: '#64748b' }}>{formatDate(item.date)}</span>
+                                <span className="timeline-item-date" style={{ fontSize: '12px', color: '#64748b' }}>
+                                  {formatDate(item.date)}{item.time ? `, ${item.time} Uhr` : ''}
+                                </span>
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
                                 <div className="timeline-item-result-badge" data-type={item.type} style={{ fontSize: '12px', fontWeight: '900', padding: '4px 8px' }}>

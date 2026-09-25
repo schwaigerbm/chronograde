@@ -113,36 +113,56 @@ const calculateAverage = (
 // PDF Styles
 const styles = StyleSheet.create({
   // Common
-  pageLandscape: { padding: 30, fontSize: 8, fontFamily: 'Helvetica', orientation: 'landscape' },
-  pagePortrait: { padding: 40, fontSize: 10, fontFamily: 'Helvetica' },
-  header: { marginBottom: 15, borderBottom: '2px solid #2563eb', paddingBottom: 10 },
-  appTitle: { fontSize: 10, color: '#2563eb', fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', marginBottom: 2 },
-  title: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginBottom: 4 },
-  subtitle: { fontSize: 10, color: '#64748b' },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, fontSize: 8, color: '#475569' },
+  pageLandscape: { 
+    paddingTop: 25, 
+    paddingBottom: 35, 
+    paddingHorizontal: 25, 
+    fontSize: 8, 
+    fontFamily: 'Helvetica', 
+    backgroundColor: '#ffffff' 
+  },
+  pagePortrait: { 
+    paddingTop: 30, 
+    paddingBottom: 40, 
+    paddingHorizontal: 35, 
+    fontSize: 10, 
+    fontFamily: 'Helvetica', 
+    backgroundColor: '#ffffff' 
+  },
+  header: { 
+    marginBottom: 12, 
+    borderBottomWidth: 2, 
+    borderBottomColor: '#2563eb', 
+    borderBottomStyle: 'solid', 
+    paddingBottom: 8 
+  },
+  appTitle: { fontSize: 9, color: '#2563eb', fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', marginBottom: 2 },
+  title: { fontSize: 16, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginBottom: 3 },
+  subtitle: { fontSize: 9, color: '#64748b' },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6, fontSize: 8, color: '#475569' },
   
   // Table styles
-  table: { width: '100%', borderStyle: 'solid', borderColor: '#e2e8f0', borderWidth: 1, borderRadius: 6, overflow: 'hidden' },
-  tableRow: { flexDirection: 'row', borderBottomColor: '#e2e8f0', borderBottomWidth: 1, alignItems: 'center', minHeight: 24 },
-  tableRowHeader: { flexDirection: 'row', backgroundColor: '#f8fafc', borderBottomColor: '#cbd5e1', borderBottomWidth: 1, alignItems: 'center', minHeight: 26 },
+  table: { width: '100%', borderStyle: 'solid', borderColor: '#cbd5e1', borderWidth: 1, borderRadius: 4, overflow: 'hidden' },
+  tableRow: { flexDirection: 'row', borderBottomColor: '#e2e8f0', borderBottomWidth: 1, borderBottomStyle: 'solid', alignItems: 'center', minHeight: 22 },
+  tableRowHeader: { flexDirection: 'row', backgroundColor: '#f1f5f9', borderBottomColor: '#94a3b8', borderBottomWidth: 1.5, borderBottomStyle: 'solid', alignItems: 'center', minHeight: 24 },
   
-  th: { padding: 5, fontFamily: 'Helvetica-Bold', color: '#334155', borderRightColor: '#e2e8f0', borderRightWidth: 1 },
-  td: { padding: 5, color: '#0f172a', borderRightColor: '#e2e8f0', borderRightWidth: 1 },
+  th: { paddingVertical: 4, paddingHorizontal: 3, fontFamily: 'Helvetica-Bold', color: '#1e293b', borderRightColor: '#cbd5e1', borderRightWidth: 1, borderRightStyle: 'solid' },
+  td: { paddingVertical: 4, paddingHorizontal: 3, color: '#0f172a', borderRightColor: '#e2e8f0', borderRightWidth: 1, borderRightStyle: 'solid' },
   
   // Specific table columns width for Matrix
-  colNr: { width: '4%' },
+  colNr: { width: '4%', textAlign: 'center' },
   colStudent: { width: '22%', fontFamily: 'Helvetica-Bold' },
   colGrade: { width: '8%', textAlign: 'center' },
-  colTrend: { width: '10%', textAlign: 'center', backgroundColor: '#eff6ff' },
+  colTrend: { width: '10%', textAlign: 'center', backgroundColor: '#eff6ff', fontFamily: 'Helvetica-Bold' },
   
   // Student report card specific
-  summaryBox: { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 15, marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between' },
+  summaryBox: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'solid', borderRadius: 6, padding: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
   summaryItem: { flex: 1, alignItems: 'center' },
-  summaryLabel: { fontSize: 9, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 },
-  summaryValue: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: '#2563eb' },
-  summaryPercent: { fontSize: 10, color: '#64748b', marginTop: 2 },
+  summaryLabel: { fontSize: 8, color: '#64748b', textTransform: 'uppercase', marginBottom: 3 },
+  summaryValue: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: '#2563eb' },
+  summaryPercent: { fontSize: 9, color: '#64748b', marginTop: 2 },
   
-  sectionTitle: { fontSize: 12, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginBottom: 10, marginTop: 15 },
+  sectionTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#0f172a', marginBottom: 8, marginTop: 12 },
   
   // Specific columns for Student report card
   colCardTitle: { width: '30%', fontFamily: 'Helvetica-Bold' },
@@ -158,7 +178,7 @@ const styles = StyleSheet.create({
   colCompContrib: { width: '20%', textAlign: 'center' },
   
   // Sub-entries for collaboration/presence
-  subEntriesContainer: { paddingLeft: 10, paddingVertical: 4, backgroundColor: '#f8fafc', borderTopColor: '#f1f5f9', borderTopWidth: 1 },
+  subEntriesContainer: { paddingLeft: 10, paddingVertical: 4, backgroundColor: '#f8fafc', borderTopColor: '#f1f5f9', borderTopWidth: 1, borderTopStyle: 'solid' },
   subEntryRow: { flexDirection: 'row', fontSize: 8, color: '#475569', marginVertical: 2 },
   subEntryDot: { width: 12, height: 12, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginRight: 6, fontSize: 7, fontFamily: 'Helvetica-Bold' },
   subEntryText: { flex: 1 }
@@ -192,8 +212,32 @@ export const MatrixPDFDocument = ({
 }) => {
   const actualShowTrend = (course.showTrend !== false) && showTrend;
   const colCount = visibleColumns.length;
-  // Calculate dynamic width for visible grade columns
-  const gradeColWidth = actualShowTrend ? `${64 / colCount}%` : `${74 / colCount}%`;
+  
+  // Dynamic column sizing and typography based on count of selected assessment columns
+  let gradeColWidthPercent = 0;
+  if (colCount > 0) {
+    const remainingPercent = actualShowTrend ? 64 : 74;
+    gradeColWidthPercent = remainingPercent / colCount;
+  }
+  const gradeColWidth = `${gradeColWidthPercent}%`;
+
+  // Scale font size and padding dynamically if there are many columns
+  const fontSize = colCount > 12 ? 6.5 : colCount > 8 ? 7.5 : 8;
+  const cellPaddingVertical = colCount > 12 ? 3 : 4;
+  const cellPaddingHorizontal = colCount > 12 ? 2 : 4;
+
+  const dynamicThStyle = {
+    ...styles.th, 
+    fontSize: fontSize - 0.5, 
+    paddingVertical: cellPaddingVertical, 
+    paddingHorizontal: cellPaddingHorizontal 
+  };
+  const dynamicTdStyle = {
+    ...styles.td, 
+    fontSize, 
+    paddingVertical: cellPaddingVertical, 
+    paddingHorizontal: cellPaddingHorizontal 
+  };
 
   return (
     <Document>
@@ -202,7 +246,7 @@ export const MatrixPDFDocument = ({
         <View style={styles.header}>
           <Text style={styles.appTitle}>CHRONOGRADE</Text>
           <Text style={styles.title}>Leistungsbeurteilung: {course.name}</Text>
-          <Text style={styles.subtitle}>Schuljahr: {course.year}</Text>
+          <Text style={styles.subtitle}>Schuljahr: {course.year} | Anzahl Schüler: {students.length}</Text>
           <View style={styles.metaRow}>
             <Text>Erstellt am: {new Date().toLocaleDateString('de-DE')}</Text>
           </View>
@@ -212,18 +256,28 @@ export const MatrixPDFDocument = ({
         <View style={styles.table}>
           {/* Header Row */}
           <View style={styles.tableRowHeader}>
-            <Text style={[styles.th, styles.colNr]}>#</Text>
-            <Text style={[styles.th, styles.colStudent]}>Schüler</Text>
-            {visibleColumns.map(col => (
-              <Text 
-                key={col.id} 
-                style={[styles.th, { width: gradeColWidth, textAlign: 'center' }]}
-              >
-                {col.title}
+            <Text style={[styles.th, styles.colNr, { fontSize: fontSize - 0.5, paddingVertical: cellPaddingVertical }]}>#</Text>
+            <Text style={[styles.th, styles.colStudent, { fontSize: fontSize - 0.5, paddingVertical: cellPaddingVertical }]}>Schüler</Text>
+            
+            {colCount === 0 ? (
+              <Text style={[styles.th, { flex: 1, textAlign: 'center', fontSize }]}>
+                Keine Beurteilungsspalten gewählt
               </Text>
-            ))}
+            ) : (
+              visibleColumns.map(col => (
+                <Text 
+                  key={col.id} 
+                  style={[dynamicThStyle, { width: gradeColWidth, textAlign: 'center' }]}
+                >
+                  {col.title}
+                </Text>
+              ))
+            )}
+
             {actualShowTrend && (
-              <Text style={[styles.th, styles.colTrend, { fontFamily: 'Helvetica-Bold' }]}>TREND</Text>
+              <Text style={[styles.th, styles.colTrend, { fontSize: fontSize - 0.5, paddingVertical: cellPaddingVertical }]}>
+                TREND
+              </Text>
             )}
           </View>
 
@@ -232,61 +286,93 @@ export const MatrixPDFDocument = ({
             const isDeregistered = Boolean(course.deregisteredStudents?.includes(student.id));
             const liveSummary = isDeregistered 
               ? { grade: null, percent: null }
-              : calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+              : calculateAverage(
+                  student.id, 
+                  course.columns, 
+                  grades, 
+                  undefined, 
+                  course.roundingRule || 'commercial', 
+                  course.collaborationCalcMode || 'weighted'
+                );
             
             return (
               <View 
                 key={student.id} 
                 style={[
                   styles.tableRow,
-                  index % 2 === 1 ? { backgroundColor: '#f8fafc' } : {},
-                  isDeregistered ? { opacity: 0.5 } : {}
+                  index % 2 === 1 ? { backgroundColor: '#f8fafc' } : { backgroundColor: '#ffffff' },
+                  isDeregistered ? { opacity: 0.55 } : {}
                 ]}
+                wrap={false}
               >
-                <Text style={[styles.td, styles.colNr, { color: '#64748b' }]}>{index + 1}</Text>
-                <Text style={[styles.td, styles.colStudent]}>
+                <Text style={[styles.td, styles.colNr, { color: '#64748b', fontSize }]}>{index + 1}</Text>
+                <Text style={[styles.td, styles.colStudent, { fontSize }]}>
                   {student.lastName}, {student.firstName}
+                  {isDeregistered ? ' (abgemeldet)' : ''}
                 </Text>
                 
-                {visibleColumns.map(col => {
-                  let grade = grades[student.id]?.[col.id];
-                  
-                  if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                    const calculated = isDeregistered
-                      ? { grade: null }
-                      : calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
-                    grade = { 
-                      value: calculated.grade || undefined
-                    };
-                  }
+                {colCount === 0 ? (
+                  <Text style={[styles.td, { flex: 1, textAlign: 'center', fontSize, color: '#94a3b8' }]}>-</Text>
+                ) : (
+                  visibleColumns.map(col => {
+                    let grade = grades[student.id]?.[col.id];
+                    
+                    if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
+                      const calculated = isDeregistered
+                        ? { grade: null }
+                        : calculateAverage(
+                            student.id, 
+                            course.columns, 
+                            grades, 
+                            col.cutoffDate, 
+                            course.roundingRule || 'commercial', 
+                            course.collaborationCalcMode || 'weighted'
+                          );
+                      grade = { 
+                        value: calculated.grade || undefined
+                      };
+                    }
 
-                  let displayValue = '';
-                  if (isDeregistered) {
-                    displayValue = '-';
-                  } else if (grade?.value !== undefined && grade.value !== '') {
-                    displayValue = String(grade.value);
-                  } else if (col.type === 'collaborationSum') {
-                    const p = getCollaborationPercentage(grade?.entries);
-                    displayValue = p !== null ? `${p}%` : '-';
-                  } else if (col.type === 'presenceSum') {
-                    const p = getPresencePercentage(grade?.entries);
-                    displayValue = p !== null ? `${p}%` : '-';
-                  } else {
-                    displayValue = '-';
-                  }
+                    let displayValue = '';
+                    if (isDeregistered) {
+                      displayValue = '-';
+                    } else if (grade?.value !== undefined && grade.value !== '') {
+                      displayValue = String(grade.value);
+                    } else if (col.type === 'collaborationSum') {
+                      const p = getCollaborationPercentage(grade?.entries);
+                      displayValue = p !== null ? `${p}%` : '-';
+                    } else if (col.type === 'presenceSum') {
+                      const p = getPresencePercentage(grade?.entries);
+                      displayValue = p !== null ? `${p}%` : '-';
+                    } else {
+                      displayValue = '-';
+                    }
 
-                  return (
-                    <Text 
-                      key={col.id} 
-                      style={[styles.td, { width: gradeColWidth, textAlign: 'center', color: isDeregistered ? '#94a3b8' : undefined }]}
-                    >
-                      {displayValue}
-                    </Text>
-                  );
-                })}
+                    return (
+                      <Text 
+                        key={col.id} 
+                        style={[
+                          dynamicTdStyle, 
+                          { width: gradeColWidth, textAlign: 'center', color: isDeregistered ? '#94a3b8' : undefined }
+                        ]}
+                      >
+                        {displayValue}
+                      </Text>
+                    );
+                  })
+                )}
 
                 {actualShowTrend && (
-                  <Text style={[styles.td, styles.colTrend, { fontFamily: 'Helvetica-Bold', color: (isDeregistered || !liveSummary.grade) ? '#94a3b8' : '#2563eb' }]}>
+                  <Text 
+                    style={[
+                      dynamicTdStyle, 
+                      styles.colTrend, 
+                      { 
+                        color: (isDeregistered || !liveSummary.grade) ? '#94a3b8' : '#2563eb',
+                        fontFamily: 'Helvetica-Bold'
+                      }
+                    ]}
+                  >
                     {liveSummary.grade ? `${liveSummary.grade} (${liveSummary.percent}%)` : '-'}
                   </Text>
                 )}
@@ -294,6 +380,13 @@ export const MatrixPDFDocument = ({
             );
           })}
         </View>
+
+        {/* Footer with page numbering */}
+        <Text 
+          style={{ position: 'absolute', bottom: 12, left: 25, right: 25, textAlign: 'center', fontSize: 7, color: '#94a3b8' }}
+          render={({ pageNumber, totalPages }) => `Seite ${pageNumber} von ${totalPages} • Chronograde Notenmatrix`}
+          fixed
+        />
       </Page>
     </Document>
   );
@@ -411,7 +504,7 @@ export const StudentReportPDFDocument = ({
           {student.photoBase64 && (
             <Image 
               src={student.photoBase64} 
-              style={{ width: 60, height: 60, borderRadius: 30, objectFit: 'cover', border: '1px solid #e2e8f0' }} 
+              style={{ width: 60, height: 60, borderRadius: 30, objectFit: 'cover', borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'solid' }} 
             />
           )}
         </View>
@@ -436,7 +529,7 @@ export const StudentReportPDFDocument = ({
               grade = { value: calculated.grade || undefined };
             }
             return (
-              <View key={ms.id} style={[styles.summaryItem, { borderLeft: '1px solid #e2e8f0' }]}>
+              <View key={ms.id} style={[styles.summaryItem, { borderLeftWidth: 1, borderLeftColor: '#e2e8f0', borderLeftStyle: 'solid' }]}>
                 <Text style={styles.summaryLabel}>{ms.title}</Text>
                 <Text style={styles.summaryValue}>
                   {grade?.value !== undefined ? String(grade.value) : '-'}
@@ -479,7 +572,7 @@ export const StudentReportPDFDocument = ({
               ))}
 
               {/* Sum / Result Row */}
-              <View style={[styles.tableRow, { backgroundColor: '#eff6ff', borderTopColor: '#cbd5e1', borderTopWidth: 1 }]}>
+              <View style={[styles.tableRow, { backgroundColor: '#eff6ff', borderTopColor: '#cbd5e1', borderTopWidth: 1, borderTopStyle: 'solid' }]}>
                 <Text style={[styles.td, styles.colCompTitle, { fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }]}>
                   Gesamtergebnis (rechnerischer Schnitt)
                 </Text>
@@ -501,7 +594,7 @@ export const StudentReportPDFDocument = ({
             </Text>
 
             {/* Grade key box */}
-            <View style={{ marginTop: 6, padding: '5 8', backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 4, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: '#334155' }}>
+            <View style={{ marginTop: 6, paddingVertical: 5, paddingHorizontal: 8, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#cbd5e1', borderStyle: 'solid', borderRadius: 4, flexDirection: 'row', justifyContent: 'space-between', fontSize: 7, color: '#334155' }}>
               <Text style={{ fontFamily: 'Helvetica-Bold', color: '#0f172a' }}>Notenschlüssel (Österreich):</Text>
               <Text>1 (Sehr gut) ≥ 90%</Text>
               <Text>2 (Gut) ≥ 80%</Text>
@@ -533,7 +626,11 @@ export const StudentReportPDFDocument = ({
             gradesList.map(({ col, grade }) => {
               let displayValue = '';
               if (grade?.value !== undefined && grade.value !== '') {
-                displayValue = String(grade.value);
+                if (col.calcType === 'sign') {
+                  displayValue = `Zeichen ${grade.value}`;
+                } else {
+                  displayValue = String(grade.value);
+                }
               } else if (col.type === 'collaborationSum') {
                 const p = getCollaborationPercentage(grade?.entries);
                 displayValue = p !== null ? `${p}%` : '-';
@@ -545,9 +642,13 @@ export const StudentReportPDFDocument = ({
               }
 
               const displayNote = grade?.note || '';
-              const dateStr = col.type === 'calculated' 
+              let dateStr = col.type === 'calculated' 
                 ? (col.cutoffDate ? formatDate(col.cutoffDate) : '') 
                 : (col.date ? formatDate(col.date) : '');
+
+              if (grade?.date) {
+                dateStr = formatDate(grade.date) + (grade.time ? ` ${grade.time}` : '');
+              }
 
               return (
                 <View key={col.id} style={{ flexDirection: 'column', borderBottomColor: '#e2e8f0', borderBottomWidth: 1 }}>

@@ -84,6 +84,7 @@ export interface GradeEntry {
 export interface Grade {
   value?: string | number; // Die eigentliche Note (z.B. 2, "1+", oder "Fehlt")
   date?: string;           // Datum der Leistung
+  time?: string;           // Optional: Uhrzeit der Leistung (z.B. "10:30")
   note?: string;          // Optionales Hover-Kommentar (Text)
   isOverridden?: boolean; // Nur für calculated: Manuell überschrieben
   entries?: GradeEntry[]; // Für collaborationSum/presenceSum

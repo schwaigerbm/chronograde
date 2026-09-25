@@ -1510,29 +1510,46 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           studentName={activeManualCell.studentName}
           column={activeManualCell.column}
           currentValue={activeManualCell.grade?.value}
+          currentGrade={activeManualCell.grade}
           isCalculated={activeManualCell.column.type === 'calculated'}
-          onSave={async (val) => {
+          onSave={async (val, note, date, time) => {
             const { studentId, column } = activeManualCell;
+            const targetDate = date || new Date().toISOString();
             
             if (column.type === 'calculated') {
               if (val === null) {
                 await updateGrade(studentId, column.id, { 
                   value: '', 
-                  date: new Date().toISOString(),
+                  date: targetDate,
+                  time: undefined,
+                  note: undefined,
                   isOverridden: false 
                 });
               } else {
                 await updateGrade(studentId, column.id, { 
                   value: val, 
-                  date: new Date().toISOString(),
+                  date: targetDate,
+                  time: time || undefined,
+                  note: note || undefined,
                   isOverridden: true 
                 });
               }
             } else {
-              await updateGrade(studentId, column.id, { 
-                value: val !== null ? val : '', 
-                date: new Date().toISOString() 
-              });
+              if (val === null) {
+                await updateGrade(studentId, column.id, { 
+                  value: '', 
+                  date: targetDate,
+                  time: undefined,
+                  note: undefined
+                });
+              } else {
+                await updateGrade(studentId, column.id, { 
+                  value: val, 
+                  date: targetDate,
+                  time: time || undefined,
+                  note: note || undefined
+                });
+              }
             }
             setActiveManualCell(null);
           }}
@@ -1747,11 +1764,22 @@ const GradeCell = ({
         );
       
       case 'manual':
+        let cellTitle = undefined;
+        if (grade?.value !== undefined && grade.value !== '') {
+          const rawDate = grade.date ? (grade.date.includes('T') ? grade.date.split('T')[0] : grade.date) : '';
+          const dateFormatted = rawDate ? rawDate.split('-').reverse().join('.') : '';
+          const timeFormatted = grade.time ? ` ${grade.time}` : '';
+          const dateTimeStr = dateFormatted ? ` (${dateFormatted}${timeFormatted})` : '';
+          const noteStr = grade.note ? ` - ${grade.note}` : '';
+          cellTitle = `${column.title}: ${grade.value}${dateTimeStr}${noteStr}`;
+        }
+
         return (
           <div 
             className="manual-cell-content"
             onClick={() => onOpenManualEdit(studentId, column, grade)}
             style={{ color: heatmapStyle?.color }}
+            title={cellTitle}
           >
             {grade?.value || <span className="empty-placeholder">-</span>}
           </div>
