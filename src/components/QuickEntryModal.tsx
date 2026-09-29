@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Minus, Trash2, ArrowRight, ArrowLeft, Check, Zap } from 'lucide-react';
+import { X, Save, Plus, Minus, Trash2, ArrowRight, ArrowLeft, Check, Zap, Filter } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
-import type { Student, Course, PredefinedComment } from '../schema';
+import type { Student, Course, Grade, PredefinedComment } from '../schema';
 
 interface QuickEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: Course;
   students: Student[];
+  grades?: Record<string, Record<string, Grade>>;
   onSave: (data: {
     attendance?: {
       columnId: string;
@@ -23,9 +24,10 @@ interface QuickEntryModalProps {
   }) => void;
 }
 
-export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: QuickEntryModalProps) => {
+export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, onSave }: QuickEntryModalProps) => {
   const presenceCol = course.columns.find(col => col.type === 'presenceSum' && col.isVisible !== false);
   const collabCol = course.columns.find(col => col.type === 'collaborationSum' && col.isVisible !== false);
+  const groupCol = course.columns.find(col => col.type === 'groupAssignment' && col.isVisible !== false);
 
   const [flowStep, setFlowStep] = useState<'setup' | 'attendance' | 'collaboration' | 'empty'>('empty');
   
@@ -40,6 +42,24 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
   const [selectedCollabStudentIds, setSelectedCollabStudentIds] = useState<Set<string>>(new Set());
   const [collabSessionEntries, setCollabSessionEntries] = useState<Record<string, { value: '+' | '-' | '~'; note: string }>>({});
   const [collabCustomNote, setCollabCustomNote] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<string>('ALL');
+
+  // Gather available group names
+  const availableGroups = Array.from(
+    new Set(
+      students
+        .map(s => (groupCol && grades?.[s.id]?.[groupCol.id]?.value ? String(grades[s.id][groupCol.id].value).trim() : ''))
+        .filter(Boolean)
+    )
+  ).sort();
+
+  // Filter students by selected group for collaboration
+  const displayCollabStudents = students.filter(s => {
+    if (!groupCol || selectedGroup === 'ALL') return true;
+    const gVal = grades?.[s.id]?.[groupCol.id]?.value ? String(grades[s.id][groupCol.id].value).trim() : '';
+    if (selectedGroup === 'NONE') return !gVal;
+    return gVal === selectedGroup;
+  });
 
   // Initialize flow on open
   useEffect(() => {
@@ -102,7 +122,18 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
 
   // Collaboration Handlers
   const handleSelectAllCollab = () => {
-    setSelectedCollabStudentIds(new Set(students.map(s => s.id)));
+    setSelectedCollabStudentIds(new Set(displayCollabStudents.map(s => s.id)));
+  };
+
+  const handleSelectMissingCollab = () => {
+    const missingIds = displayCollabStudents.filter(s => {
+      if (!collabCol) return true;
+      const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
+      const hasEntryOnDate = existingEntries.some(e => e.date === collabDate);
+      return !hasEntryOnDate;
+    }).map(s => s.id);
+
+    setSelectedCollabStudentIds(new Set(missingIds));
   };
 
   const handleClearCollabSelection = () => {
@@ -366,15 +397,32 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                 
                 {/* LINKE SPALTE: Schülerliste */}
                 <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', backgroundColor: '#f8fafc' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
                       Schüler auswählen ({selectedCollabStudentIds.size} markiert)
                     </span>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {groupCol && availableGroups.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+                          <Filter size={12} style={{ color: 'var(--text-muted)' }} />
+                          <select 
+                            className="form-input" 
+                            style={{ padding: '2px 4px', fontSize: '11px', height: '24px' }}
+                            value={selectedGroup}
+                            onChange={(e) => setSelectedGroup(e.target.value)}
+                          >
+                            <option value="ALL">Alle ({students.length})</option>
+                            {availableGroups.map(g => (
+                              <option key={g} value={g}>Gr. {g}</option>
+                            ))}
+                            <option value="NONE">Ohne Gr.</option>
+                          </select>
+                        </div>
+                      )}
                       <button 
                         type="button" 
                         className="btn-secondary btn-xs" 
-                        style={{ padding: '2px 8px', fontSize: '11px' }}
+                        style={{ padding: '2px 6px', fontSize: '11px' }}
                         onClick={handleSelectAllCollab}
                       >
                         Alle
@@ -382,7 +430,16 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                       <button 
                         type="button" 
                         className="btn-secondary btn-xs" 
-                        style={{ padding: '2px 8px', fontSize: '11px' }}
+                        style={{ padding: '2px 6px', fontSize: '11px', color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}
+                        onClick={handleSelectMissingCollab}
+                        title="Schüler ohne heutigen bzw. gewählten Eintrag in der Matrix auswählen"
+                      >
+                        Ohne Eintrag
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn-secondary btn-xs" 
+                        style={{ padding: '2px 6px', fontSize: '11px' }}
                         onClick={handleClearCollabSelection}
                       >
                         Keine
@@ -400,7 +457,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
                         </tr>
                       </thead>
                       <tbody>
-                        {students.map((student) => {
+                        {displayCollabStudents.map((student) => {
                           const isSelected = selectedCollabStudentIds.has(student.id);
                           const entry = collabSessionEntries[student.id];
                           return (
@@ -611,25 +668,40 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, onSave }: Q
           )}
 
           {flowStep === 'attendance' && (
-            <button 
-              className="btn-primary" 
-              onClick={handleNextStep}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto' }}
-              disabled={Object.values(attendanceEntries).every(v => v === 'unset')}
-            >
-              {collabCol ? (
-                <>Weiter zur Mitarbeit <ArrowRight size={18} /></>
-              ) : (
-                <><Save size={18} /> Speichern</>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {collabCol && (
+                <button 
+                  className="btn-secondary" 
+                  onClick={handleFinalSave}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', width: 'auto' }}
+                  disabled={Object.values(attendanceEntries).every(v => v === 'unset')}
+                >
+                  <Save size={16} /> Anwesenheit speichern & Beenden
+                </button>
               )}
-            </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleNextStep}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto' }}
+                disabled={Object.values(attendanceEntries).every(v => v === 'unset')}
+              >
+                {collabCol ? (
+                  <>Weiter zur Mitarbeit <ArrowRight size={18} /></>
+                ) : (
+                  <><Save size={18} /> Speichern</>
+                )}
+              </button>
+            </div>
           )}
 
           {flowStep === 'collaboration' && (
             <button 
               className="btn-primary" 
               onClick={handleFinalSave}
-              disabled={Object.keys(collabSessionEntries).length === 0}
+              disabled={
+                Object.keys(collabSessionEntries).length === 0 && 
+                (!presenceCol || Object.values(attendanceEntries).every(v => v === 'unset'))
+              }
               style={{ display: 'flex', alignItems: 'center', gap: '8px', width: 'auto' }}
             >
               <Save size={18} /> Speichern

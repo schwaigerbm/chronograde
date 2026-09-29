@@ -1195,6 +1195,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         isOpen={isCollaborationModalOpen}
         onClose={() => setIsCollaborationModalOpen(false)}
         students={students}
+        course={course}
+        grades={grades}
         onSave={handleSaveCollaborationBulk}
       />
 
@@ -1203,6 +1205,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsQuickEntryModalOpen(false)}
         course={course}
         students={students}
+        grades={grades}
         onSave={handleSaveQuickEntry}
       />
 
