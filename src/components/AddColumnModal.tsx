@@ -14,7 +14,8 @@ import {
   Trash2,
   Sparkles
 } from 'lucide-react';
-import type { CourseEntry, SubTask } from '../schema';
+import type { CourseEntry, SubTask, CourseEntryTemplate } from '../schema';
+import { sqliteService } from '../services/sqliteService';
 
 interface AddColumnModalProps {
   isOpen: boolean;
@@ -27,6 +28,18 @@ type Step = 1 | 2;
 export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps) => {
   const [step, setStep] = useState<Step>(1);
   const [type, setType] = useState<CourseEntry['type']>('manual');
+  
+  // Templates state
+  const [templates, setTemplates] = useState<CourseEntryTemplate[]>([]);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      sqliteService.getEvaluationTemplates().then(setTemplates);
+    }
+  }, [isOpen]);
+
   
   // Step 2 fields
   const [title, setTitle] = useState('');
@@ -67,6 +80,25 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
 
   if (!isOpen) return null;
 
+  const handleSelectTemplate = (tplId: string) => {
+    const tpl = templates.find(t => t.id === tplId);
+    if (!tpl) return;
+    setType(tpl.type || 'evaluation');
+    setTitle(tpl.title || tpl.name);
+    setCalcFactor(tpl.calcFactor ?? 100);
+    setCalcType(tpl.calcType || 'grade');
+    if (tpl.subTasks && tpl.subTasks.length > 0) {
+      setSubTasks(tpl.subTasks);
+    }
+    if (tpl.gradingKey) {
+      setGrade1MinPoints(tpl.gradingKey.grade1MinPoints);
+      setGrade2MinPoints(tpl.gradingKey.grade2MinPoints);
+      setGrade3MinPoints(tpl.gradingKey.grade3MinPoints);
+      setGrade4MinPoints(tpl.gradingKey.grade4MinPoints);
+    }
+    setStep(2);
+  };
+
   const handleNext = () => {
     if ((type === 'manual' || type === 'calculated' || type === 'evaluation') && step === 1) {
       setStep(2);
@@ -105,6 +137,30 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
         grade3MinPoints,
         grade4MinPoints
       };
+
+      if (saveAsTemplate) {
+        const nameToUse = templateName.trim() || title.trim() || 'Auswertungs-Vorlage';
+        const newTpl: CourseEntryTemplate = {
+          id: 'tpl_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5),
+          name: nameToUse,
+          description: `${subTasks.length} Teilaufgaben, ${totalMaxPoints} Gesamtpunkte`,
+          type: 'evaluation',
+          title: title.trim() || 'Auswertung',
+          calcFactor,
+          calcType: 'grade',
+          subTasks,
+          gradingKey: {
+            grade1MinPoints,
+            grade2MinPoints,
+            grade3MinPoints,
+            grade4MinPoints
+          },
+          createdAt: new Date().toISOString()
+        };
+        sqliteService.getEvaluationTemplates().then(existing => {
+          sqliteService.saveEvaluationTemplates([...existing, newTpl]);
+        });
+      }
     }
 
     onSave(newColumn);
@@ -122,6 +178,8 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
     setCalcFactor(100);
     setShowDateInHeader(true);
     setIsColorEnabled(true);
+    setSaveAsTemplate(false);
+    setTemplateName('');
     setSubTasks([{ id: '1', title: 'Aufgabe 1', maxPoints: 10 }]);
     setGrade1MinPoints(9);
     setGrade2MinPoints(8);
@@ -141,9 +199,32 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
         <div className="modal-body">
           {step === 1 ? (
             <div className="step-container">
+              {templates.length > 0 && (
+                <div style={{ marginBottom: '20px', padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', color: '#7e22ce' }}>
+                    <Sparkles size={16} /> Aus gespeicherter Beurteilungsvorlage erstellen:
+                  </div>
+                  <select 
+                    className="form-input text-xs" 
+                    defaultValue="" 
+                    onChange={(e) => {
+                      if (e.target.value) handleSelectTemplate(e.target.value);
+                    }}
+                  >
+                    <option value="" disabled>-- Vorlage auswählen --</option>
+                    {templates.map(tpl => (
+                      <option key={tpl.id} value={tpl.id}>
+                        {tpl.name} ({tpl.subTasks?.length || 0} Aufgaben)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <p className="step-description" style={{ marginBottom: '16px', color: 'var(--text-muted)', fontSize: '14px' }}>
-                Wählen Sie die Art der neuen Beurteilungsspalte aus:
+                Oder wählen Sie die Art der neuen Beurteilungsspalte aus:
               </p>
+
               <div className="type-card-grid">
                 {[
                   { id: 'groupAssignment', label: 'Gruppenzuordnung', desc: 'Schülern Gruppen (Zahlen 1-9) zuweisen', icon: Users, tint: 'group' },
@@ -663,8 +744,43 @@ export const AddColumnModal = ({ isOpen, onClose, onSave }: AddColumnModalProps)
                         </div>
                       )}
                     </div>
+
+                    {/* Sektion "Als Vorlage speichern" */}
+                    <div className="evaluation-section" style={{ marginTop: '16px' }}>
+                      <h4 className="evaluation-section-title" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#7e22ce' }}>
+                        <Sparkles size={16} /> Beurteilungsvorlage
+                      </h4>
+                      <div className="switch-container" style={{ padding: 0, margin: 0, border: 'none' }}>
+                        <div className="switch-label-group">
+                          <label htmlFor="save-template-switch" className="switch-title" style={{ fontSize: '13px', fontWeight: '600' }}>Als wiederverwendbare Vorlage speichern</label>
+                          <span className="switch-description" style={{ fontSize: '11px' }}>Speichert diese Teilaufgaben-Konfiguration &amp; Notenschlüssel in der Vorlagen-Bibliothek.</span>
+                        </div>
+                        <label className="custom-switch">
+                          <input
+                            id="save-template-switch"
+                            type="checkbox"
+                            checked={saveAsTemplate}
+                            onChange={e => setSaveAsTemplate(e.target.checked)}
+                          />
+                          <span className="custom-switch-slider"></span>
+                        </label>
+                      </div>
+                      {saveAsTemplate && (
+                        <div className="form-group" style={{ marginTop: '12px', marginBottom: 0 }}>
+                          <label className="form-label text-xs">Name der Vorlage</label>
+                          <input
+                            type="text"
+                            className="form-input text-xs"
+                            placeholder="z.B. Standard 40P Schularbeit"
+                            value={templateName}
+                            onChange={e => setTemplateName(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+
               ) : (
                 <>
                   <div className="form-group">

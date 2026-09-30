@@ -43,7 +43,7 @@ Das Modal ist als zentrales Einstellungsfenster für den Kurs konzipiert und bie
 ### 2.3 Snapshot erstellen
 * Ermöglicht die Erstellung einer neuen berechneten Meilenstein-Spalte.
 * Berechnet den Snapshot-Trend für alle Schüler auf Basis der im Modal gewählten Spaltengewichtungen und der ausgewählten Rundungsregel.
-* Erstellt die Spalte in Firestore und befüllt die Noten für alle Schüler als überschriebene Meilenstein-Werte.
+* Erstellt die Spalte in SQLite und befüllt die Noten für alle Schüler als überschriebene Meilenstein-Werte.
 
 ### 2.4 Trend-Farbmodus (Heatmap)
 * Ermöglicht das Ein- und Ausschalten des Farbmodus (Heatmap) für die Trend-Spalte.

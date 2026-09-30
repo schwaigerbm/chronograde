@@ -19,7 +19,11 @@ import { GradesMatrix } from './components/GradesMatrix';
 import { SettingsView } from './components/SettingsView';
 import { RemindersWidget } from './components/RemindersWidget';
 import { firebaseService } from './services/firebaseService';
-import type { Course } from './schema';
+import { sqliteService } from './services/sqliteService';
+import { VaultLockScreen } from './components/VaultLockScreen';
+import { ADDialogModal } from './components/ADDialogModal';
+import { useInactivityTimer } from './hooks/useInactivityTimer';
+import type { Course, Student } from './schema';
 
 // --- LOGIN VIEW ---
 interface LoginViewProps {
@@ -161,14 +165,35 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState('start');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+
+  const [enableADDialog, setEnableADDialog] = useState<boolean>(true);
+  const [adModalCourse, setAdModalCourse] = useState<Course | null>(null);
+
+  useEffect(() => {
+    firebaseService.getStudents().then(setStudents);
+    sqliteService.getSetting<boolean>('enable_ad_dialog', true).then(setEnableADDialog);
+
+    const handleSyncSetting = () => {
+      sqliteService.getSetting<boolean>('enable_ad_dialog', true).then(setEnableADDialog);
+    };
+    window.addEventListener('storage_enableADDialog', handleSyncSetting);
+    return () => window.removeEventListener('storage_enableADDialog', handleSyncSetting);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = firebaseService.subscribeToCourses(false, (data) => {
-      setCourses(data);
+      setCourses(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(data)) return prev;
+        return data;
+      });
       // Sync selectedCourse if it exists
       setSelectedCourse(prev => {
         if (!prev) return null;
-        return data.find(c => c.id === prev.id) || null;
+        const updated = data.find(c => c.id === prev.id);
+        if (!updated) return null;
+        if (JSON.stringify(prev) === JSON.stringify(updated)) return prev;
+        return updated;
       });
     });
     return () => unsubscribe();
@@ -410,6 +435,18 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                                           <div className="timetable-course-card-link">
                                             Matrix öffnen <ChevronRight size={11} />
                                           </div>
+                                          {enableADDialog && (
+                                            <div 
+                                              className="timetable-course-card-link"
+                                              style={{ marginTop: '4px', color: '#10b981', fontWeight: 600 }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setAdModalCourse(course);
+                                              }}
+                                            >
+                                              A & D Dialog <ChevronRight size={11} />
+                                            </div>
+                                          )}
                                         </div>
                                       );
                                     })}
@@ -457,6 +494,18 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                               <div className="timetable-course-card-link">
                                 Matrix öffnen <ChevronRight size={11} />
                               </div>
+                              {enableADDialog && (
+                                <div 
+                                  className="timetable-course-card-link"
+                                  style={{ marginTop: '4px', color: '#10b981', fontWeight: 600 }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAdModalCourse(course);
+                                  }}
+                                >
+                                  A & D Dialog <ChevronRight size={11} />
+                                </div>
+                              )}
                             </div>
                           );
                         })
@@ -478,8 +527,8 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
                   <GraduationCap size={32} />
                 </div>
                 <div>
-                  <h1 className="main-title">Willkommen bei Chronograde</h1>
-                  <h2 className="sub-title">Ihr intelligenter Noten- und Anwesenheitsmanager</h2>
+                  <h1 className="main-title">Chronograde</h1>
+                  <h2 className="sub-title">Noten- und Unterrichtsmanagement</h2>
                 </div>
               </div>
             </div>
@@ -573,13 +622,62 @@ const Dashboard = ({ onLogout }: DashboardProps) => {
       <main className="main-content">
         {renderContent()}
       </main>
+
+      {adModalCourse && (
+        <ADDialogModal
+          isOpen={Boolean(adModalCourse)}
+          onClose={() => setAdModalCourse(null)}
+          course={adModalCourse}
+          students={students}
+          onSaveAttendance={async (date, _hours, attendanceMap) => {
+            const updates = Object.entries(attendanceMap).map(([studentId, val]) => ({
+              studentId,
+              columnId: 'presence_' + date,
+              grade: { value: val === 'check' ? 'p' : 'x', date }
+            }));
+            for (const item of updates) {
+              await sqliteService.saveGrade(item.studentId, adModalCourse.id, { [item.columnId]: item.grade });
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
 
 // --- MAIN APP COMPONENT ---
 const App = () => {
-  const { logout } = useAuth();
+  const isDesktop = sqliteService.isDesktopAvailable();
+  const [isVaultLocked, setIsVaultLocked] = useState<boolean>(isDesktop);
+  const { isAuthenticated, login, logout, loading } = useAuth();
+
+  // Automatic 5-minute inactivity lock for Desktop mode
+  useInactivityTimer(isVaultLocked, () => {
+    if (isDesktop) {
+      setIsVaultLocked(true);
+    }
+  });
+
+  if (isDesktop) {
+    if (isVaultLocked) {
+      return <VaultLockScreen onUnlock={() => setIsVaultLocked(false)} />;
+    }
+    return <Dashboard onLogout={() => setIsVaultLocked(true)} />;
+  }
+
+  // Web mode (Firebase Auth)
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-app)' }}>
+        <div className="spinner" style={{ width: '36px', height: '36px' }} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginView onLogin={login} />;
+  }
+
   return <Dashboard onLogout={logout} />;
 };
 

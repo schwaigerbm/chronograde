@@ -53,11 +53,14 @@ export interface Course {
   priority: number;    // int: Zum Ordnen in der Seitenleiste/Übersicht
   archived: boolean;   // true = wird im Dashboard nicht mehr angezeigt
   showTrend?: boolean; // Sichtbarkeit der Sticky TREND Spalte
+  showStudentNumber?: boolean; // Sichtbarkeit der 1-basierten laufenden Nummer in der Schülerspalte
   roundingRule?: 'commercial' | 'studentFriendly'; // Globale Rundungsregel für den Trend
+
   isTrendColorEnabled?: boolean; // Farbmodus (Heatmap) für den Trend aktiv
   collaborationCalcMode?: 'linear' | 'weighted'; // Berechnungsmodus für die Mitarbeit
   columns: CourseEntry[]; 
   enrolledStudents: string[]; // Liste der Schüler-IDs (Enrollment)
+  deregisteredStudents?: string[]; // Liste der IDs ausgestrichener/abgemeldeter Schüler
   timetableDay?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | null;
   timetableSlot?: 'morning' | 'afternoon' | null;
   attendanceAnomalySettings?: {
@@ -81,6 +84,7 @@ export interface GradeEntry {
 export interface Grade {
   value?: string | number; // Die eigentliche Note (z.B. 2, "1+", oder "Fehlt")
   date?: string;           // Datum der Leistung
+  time?: string;           // Optional: Uhrzeit der Leistung (z.B. "10:30")
   note?: string;          // Optionales Hover-Kommentar (Text)
   isOverridden?: boolean; // Nur für calculated: Manuell überschrieben
   entries?: GradeEntry[]; // Für collaborationSum/presenceSum
@@ -117,21 +121,55 @@ export interface PredefinedCommentsSettings {
 }
 
 // 8. ERINNERUNGEN / TERMINE (Attendance Clarifications & Custom Reminders)
+export interface ReminderCategory {
+  id: string;
+  name: string;
+  color: string; // Hex or CSS color string
+  icon: string;  // Lucide icon identifier (e.g., 'BookOpen', 'FileText', 'AlertTriangle', 'Calendar', etc.)
+  isFixed?: boolean; // Fixed categories (like Fehlzeiten) cannot be deleted or modified
+}
+
 export interface Reminder {
   id: string;
   studentId?: string;
   studentName?: string;
   courseId: string;
   courseName: string;
-  type?: 'attendance_anomaly' | 'exam' | 'assignment' | 'general' | 'prep_reminder';
+  type?: 'attendance_anomaly' | 'exam' | 'assignment' | 'general' | string;
+  categoryId?: string;
   targetType?: 'course' | 'student';
   title?: string;
-  color?: string; // 'blue' | 'purple' | 'emerald' | 'amber' | 'rose'
+  description?: string; // Mehrzeiliger Notiz- / Beschreibungstext
+  color?: string; // 'blue' | 'purple' | 'emerald' | 'amber' | 'rose' or hex
   anomalyType: string; // Detailbeschreibung / Anomaly text
   date: string;        // Due date (YYYY-MM-DD)
   dueTime?: string;    // Fälligkeits-Uhrzeit (Standard: "07:00")
-  prepDays?: 1 | 3 | 7 | null;
-  parentReminderId?: string;
   resolved: boolean;   // Whether the task is completed
   createdAt: string;
 }
+
+// 9. KURS-JOURNAL (Journal-Einträge pro Kurs)
+export interface JournalEntry {
+  id: string;
+  courseId: string;
+  groupId?: string;   // Gruppenzuordnung (z.B. "1", "2", ... oder null/undefined für alle)
+  date: string;       // YYYY-MM-DD
+  title: string;      // Name / Titel des Eintrags
+  content: string;    // Formatiertes HTML/Text
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// 10. BEURTEILUNGSVORLAGEN (Evaluation Templates)
+export interface CourseEntryTemplate {
+  id: string;
+  name: string;          // Name der Vorlage (z.B. "Standard-Schularbeit 40 Pkt")
+  description?: string;   // Beschreibung der Vorlage
+  type: 'evaluation' | 'manual' | 'collaborationSum' | 'presenceSum';
+  title: string;          // Spaltentitel (z.B. "1. Schularbeit")
+  calcFactor: number;     // Gewichtung (z.B. 100%)
+  calcType: 'percent' | 'grade' | 'sign';
+  subTasks?: SubTask[];   // Teilaufgaben
+  gradingKey?: EvaluationGradingKey; // Notenschlüssel
+  createdAt: string;
+}

@@ -182,6 +182,18 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
     await firebaseService.saveCourse(updatedCourse as any);
   };
 
+  const toggleDeregisterStudent = async (studentId: string) => {
+    if (!currentCourse?.id) return;
+    const currentDeregistered = currentCourse.deregisteredStudents || [];
+    const isDeregistered = currentDeregistered.includes(studentId);
+    const newList = isDeregistered
+      ? currentDeregistered.filter(id => id !== studentId)
+      : [...currentDeregistered, studentId];
+    const updatedCourse = { ...currentCourse, deregisteredStudents: newList };
+    setCurrentCourse(updatedCourse);
+    await firebaseService.saveCourse(updatedCourse as any);
+  };
+
   const moveStudent = async (index: number, direction: 'up' | 'down') => {
     if (!currentCourse?.id || !currentCourse.enrolledStudents) return;
     
@@ -432,6 +444,7 @@ export const CourseManager = ({ onOpenMatrix }: { onOpenMatrix: (course: Course)
           students={students}
           onEnroll={addStudentToCourse}
           onUnenroll={removeStudentFromCourse}
+          onToggleDeregister={toggleDeregisterStudent}
           onReorder={moveStudent}
         />
       )}

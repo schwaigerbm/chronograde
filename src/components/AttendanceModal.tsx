@@ -7,12 +7,15 @@ interface AttendanceModalProps {
   onClose: () => void;
   students: Student[];
   onSave: (date: string, hours: number, attendance: Record<string, 'check' | 'x'>) => void;
+  availableGroups?: string[];
+  studentGroupMap?: Record<string, string>;
 }
 
-export const AttendanceModal = ({ isOpen, onClose, students, onSave }: AttendanceModalProps) => {
+export const AttendanceModal = ({ isOpen, onClose, students, onSave, availableGroups = [], studentGroupMap = {} }: AttendanceModalProps) => {
   const [step, setStep] = useState<'setup' | 'entry'>('setup');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [hours, setHours] = useState<number>(1);
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
   
   // Use 'unset' as initial state to avoid pre-selection
   const [attendance, setAttendance] = useState<Record<string, 'check' | 'x' | 'unset'>>(
@@ -25,11 +28,16 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
       setStep('setup');
       setDate(new Date().toISOString().split('T')[0]);
       setHours(1);
+      setSelectedGroup('all');
       setAttendance(Object.fromEntries(students.map(s => [s.id, 'unset'])));
     }
   }, [isOpen, students]);
 
   if (!isOpen) return null;
+
+  const displayedStudents = selectedGroup === 'all' 
+    ? students 
+    : students.filter(s => (studentGroupMap[s.id] || '') === selectedGroup);
 
   const toggleAttendance = (studentId: string) => {
     setAttendance(prev => {
@@ -42,7 +50,13 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
   };
 
   const handleSetAllAttendance = (value: 'check' | 'x' | 'unset') => {
-    setAttendance(Object.fromEntries(students.map(s => [s.id, value])));
+    setAttendance(prev => {
+      const next = { ...prev };
+      displayedStudents.forEach(s => {
+        next[s.id] = value;
+      });
+      return next;
+    });
   };
 
   const handleSave = () => {
@@ -145,6 +159,23 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
                 </button>
               </div>
 
+              {availableGroups.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', background: '#f1f5f9', padding: '8px 12px', borderRadius: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569', margin: 0 }}>Gruppe filtern:</label>
+                  <select 
+                    className="form-select" 
+                    style={{ padding: '4px 8px', fontSize: '13px', borderRadius: '6px', maxWidth: '180px' }}
+                    value={selectedGroup}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                  >
+                    <option value="all">Alle Gruppen ({students.length})</option>
+                    {availableGroups.map(g => (
+                      <option key={g} value={g}>Gruppe {g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '16px' }}>
                 <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
                   Klicken Sie auf die Zeilen der Schüler, um zwischen Anwesend (Häkchen), Abwesend (X) und Nicht gesetzt zu wechseln.
@@ -187,7 +218,7 @@ export const AttendanceModal = ({ isOpen, onClose, students, onSave }: Attendanc
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map((student, index) => (
+                    {displayedStudents.map((student, index) => (
                       <tr key={student.id} onClick={() => toggleAttendance(student.id)} style={{ cursor: 'pointer' }}>
                         <td>{index + 1}</td>
                         <td>{student.lastName}, {student.firstName}</td>

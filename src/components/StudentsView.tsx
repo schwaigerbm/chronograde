@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Wrench, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Wrench, Trash2, AlertTriangle, Upload } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import type { Student } from '../schema';
 import { StudentEditModal } from './StudentEditModal';
+import { CSVImportModal } from './CSVImportModal';
 
 export const StudentsView = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
   const [showAvatars, setShowAvatars] = useState<boolean>(() => {
     const saved = localStorage.getItem("showAvatars");
     return saved !== 'false';
@@ -118,10 +120,13 @@ export const StudentsView = () => {
       <div className="view-header">
         <div className="title-group">
           <h1 className="main-title">Schüler</h1>
-          <div className="subtitle-wrapper">
+          <div className="subtitle-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h2 className="sub-title">Verwaltung aller Schüler</h2>
             <button className="btn-primary btn-sm" onClick={handleOpenAdd}>
               <Plus size={16} /> Hinzufügen
+            </button>
+            <button className="btn-secondary btn-sm" onClick={() => setIsCSVModalOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Upload size={16} /> Importieren (CSV)
             </button>
           </div>
         </div>
@@ -158,25 +163,42 @@ export const StudentsView = () => {
             ) : visibleStudents.map(student => (
               <tr key={student.id}>
                 {showAvatars && (
-                  <td>
-                    <div className="avatar-preview-container" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <td className="has-avatar-tooltip">
+                    <div className="avatar-preview-container" style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                       {student.photoBase64 ? (
-                        <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                       ) : (
                         <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>
                           {student.firstName[0]}{student.lastName[0]}
                         </span>
                       )}
+                      {student.photoBase64 && (
+                        <div className="student-avatar-tooltip">
+                          <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                        </div>
+                      )}
                     </div>
                   </td>
                 )}
-                <td>{student.firstName}</td>
-                <td>
+                <td className="has-avatar-tooltip" style={{ position: 'relative' }}>
+                  {student.firstName}
+                  {student.photoBase64 && (
+                    <div className="student-avatar-tooltip">
+                      <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                    </div>
+                  )}
+                </td>
+                <td className="has-avatar-tooltip" style={{ position: 'relative' }}>
                   {student.lastName}
                   {student.excludeFromPublicStats && (
                     <span style={{ fontSize: '12px', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#fee2e2', color: '#991b1b', marginLeft: '6px', fontWeight: 'bold' }}>
                       Privat
                     </span>
+                  )}
+                  {student.photoBase64 && (
+                    <div className="student-avatar-tooltip">
+                      <img src={student.photoBase64} alt={`${student.firstName} ${student.lastName}`} className="student-avatar-img" />
+                    </div>
                   )}
                 </td>
                 <td className="text-right actions-cell">
@@ -249,6 +271,15 @@ export const StudentsView = () => {
           </div>
         </div>
       )}
+
+      {/* CSV Import Modal */}
+      <CSVImportModal
+        isOpen={isCSVModalOpen}
+        onClose={() => setIsCSVModalOpen(false)}
+        onImportSuccess={() => {
+          // Refresh students if needed
+        }}
+      />
     </div>
   );
 };

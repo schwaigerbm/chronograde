@@ -1,4 +1,4 @@
-# Spezifikation: GUI Schülerverwaltung (Firebase Service-Architektur)
+# Spezifikation: GUI Schülerverwaltung (Standalone Electron SQLite-Architektur)
 
 ## 1. Seitenstruktur & Header
 Die Kopfzeile dient der Identifikation der Ansicht und bietet die primäre Aktion zum Erstellen neuer Datensätze.
@@ -10,25 +10,27 @@ Die Kopfzeile dient der Identifikation der Ansicht und bietet die primäre Aktio
     * **Stil:** Primär-Button (hervorgehoben).
 
 ## 2. Datenanbindung & Architektur
-* **Backend:** Firebase Firestore (Collection: `students`).
-* **Service-Layer:** Die GUI kommuniziert **nicht direkt** mit Firebase, sondern ausschließlich über die Klasse/das Modul `serviceFirebase`.
+* **Backend:** Lokale SQLite-Datenbank (Tabelle: `students`).
+* **Service-Layer:** Die GUI kommuniziert **nicht direkt** mit SQLite, sondern ausschließlich über die Service-Klasse `sqliteService` via Electron IPC.
 * **Funktionsaufrufe:** 
-    * Daten laden: `serviceFirebase.getStudents()`
-    * Daten aktualisieren: `serviceFirebase.updateStudent(id, data)`
-    * Daten löschen: `serviceFirebase.deleteStudent(id)`
-    * Schüler hinzufügen: `serviceFirebase.addStudent(data)`
+    * Daten laden: `sqliteService.getStudents()`
+    * Daten aktualisieren: `sqliteService.updateStudent(id, data)`
+    * Daten löschen: `sqliteService.deleteStudent(id)`
+    * Schüler hinzufügen: `sqliteService.addStudent(data)`
 
 ## 3. Suche & Filterung
 * **Typ:** Live-Suche (Echtzeit-Filterung während der Eingabe).
-* **Verhalten:** Die Tabelle filtert die über `serviceFirebase` bereitgestellten Daten sofort basierend auf den Übereinstimmungen im Vor- oder Nachnamen.
-* **Avatar-Sichtbarkeit:** Die Anzeige der Profilbilder (Avatare) richtet sich nach der globalen Benutzerpräferenz im LocalStorage (`showAvatars`). Ein lokaler Toggle im Suchbereich entfällt.
+* **Verhalten:** Die Tabelle filtert die über `sqliteService` bereitgestellten Daten sofort basierend auf den Übereinstimmungen im Vor- oder Nachnamen.
+* **Avatar-Sichtbarkeit & Hover-Vorschau:**
+  * Die Anzeige der Profilbilder (Avatare) richtet sich nach der globalen Benutzerpräferenz in den Einstellungen (`showAvatars`).
+  * **Große Vorschau (ca. 50 % vergrößert):** Beim Fahren über den Namen oder **direkt über den runden Avatar-Kreis** öffnet sich ein eleganter Vorschau-Tooltip mit dem groß skalierten Profilbild (144x144 Pixel).
 
 ## 4. Daten-Tabelle
-Anzeige der Schülerdatensätze aus der `students` Collection via `serviceFirebase`.
+Anzeige der Schülerdatensätze aus der Tabelle `students` via `sqliteService`.
 
 | Foto (Optional) | Vorname | Nachname | Aktionen |
 | :--- | :--- | :--- | :--- |
-| [Avatar] | [Vorname] | [Nachname] | 🔧 (Bearbeiten) 🗑️ (Löschen) |
+| [Avatar (mit Hover-Vorschau)] | [Vorname] | [Nachname] | 🔧 (Bearbeiten) 🗑️ (Löschen) |
 
 ### Aktions-Icons:
 * **Schraubenschlüssel-Icon:** Öffnet den Bearbeitungs-Dialog.
@@ -45,8 +47,11 @@ Der Schüler-Dialog ist als eigenständige, wiederverwendbare React-Komponente (
 * **Profilbild-Sektion:**
     * Zeigt eine runde Bild-Vorschau (Avatar) des Schülers.
     * Bei vorhandenem Bild gibt es ein kleines Kreuz-Icon, um das Bild zu löschen.
-    * Button `Foto auswählen` (mit Kamera-Icon) zum Auswählen eines neuen Bildes.
-    * Das ausgewählte Bild wird direkt im Browser auf maximal **120x120 Pixel** herunterskaliert, mit einer JPEG-Qualität von **70 %** komprimiert und als Base64-Daten-URL im Feld `photoBase64` gespeichert.
+    * Button `Foto auswählen` (mit Kamera-Icon) zum Auswählen eines lokalen Bildes.
+    * Button **`Aus Zwischenablage einfügen`** (mit Clipboard-Icon) zum direkten Übernehmen eines aus dem Klassenbuch oder Web kopierten Bildes.
+    * **Tastatur-Shortcut:** Drücken von `Ctrl+V` bei geöffnetem Schüler-Modal liest automatisch ein in der Zwischenablage befindliches Bild aus und setzt dieses als Profilbild.
+    * Das ausgewählte/eingefügte Bild wird direkt in der Anwendung auf maximal **120x120 Pixel** herunterskaliert, mit einer JPEG-Qualität von **70 %** komprimiert und als Base64-Daten-URL im Feld `photoBase64` gespeichert.
+
 * **Felder:**
     * Input: `Vorname` (erhält beim Öffnen automatisch den Fokus)
     * Input: `Nachname`
@@ -81,11 +86,11 @@ Der Schüler-Dialog ist als eigenständige, wiederverwendbare React-Komponente (
 * **Auslöser:** Klick auf das Mistkübel-Icon.
 * **Nachricht:** "Wollen Sie den Schüler {Vorname} {Nachname} wirklich löschen?"
 * **Buttons:**
-    * `Ja` (Farbe: **Grün**): Ruft die Lösch-Funktion in `serviceFirebase` auf.
+    * `Ja` (Farbe: **Grün**): Ruft die Lösch-Funktion in `sqliteService.deleteStudent` auf.
     * `Nein` (Farbe: **Rot**): Bricht den Vorgang ab.
 
 ## 6. Lazy Loading & Paginierung
-* **Standard-Limit:** Die Tabelle rendert initial maximal 50 Schüler, um die Ladezeit im Browser und die Render-Performance gering zu halten.
+* **Standard-Limit:** Die Tabelle rendert initial maximal 50 Schüler, um die Ladezeit in der Anwendung und die Render-Performance gering zu halten.
 * **Mehr laden Button:**
   * Befinden sich in der gefilterten Liste mehr Schüler als das aktuelle Limit, wird unter der Tabelle ein Button „Mehr laden“ angezeigt.
   * Klick auf diesen Button erhöht das Limit um jeweils 50 weitere Schüler.

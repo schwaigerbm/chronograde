@@ -15,7 +15,13 @@ Das Modal öffnet sich als zentriertes Overlay über der Gruppenverwaltung:
   * Zeigt bis zu 5 Schüler an, die noch nicht in der Gruppe eingeschrieben sind und auf den Suchbegriff passen.
   * Das Dropdown schwebt absolut positioniert über dem restlichen Inhalt.
 * **Teilnehmerliste:**
-  * Eine Liste der aktuell der Gruppe zugewiesenen Schüler (mit laufender Nummer, Name, Sortier-Buttons für Reihenfolge und Entfernen-Button).
+  * Eine Liste der aktuell der Gruppe zugewiesenen Schüler (mit laufender Nummer, Name, Sortier-Buttons für Reihenfolge, Entfernen-Button und Ausstreich-Button).
+  * **Anordnung der Aktions-Buttons:** Die Aktions-Buttons pro Zeile stehen in der Reihenfolge `[Hoch] [Runter] [Entfernen] [Ausstreichen/Rückgängig]` (der Ausstreich-Button befindet sich ganz rechts neben dem Entfernen-Button).
+  * **Schüler ausstreichen (Striking out):**
+    * Jede Schülerzeile enthält ganz rechts ein Icon zum Ausstreichen des Schülers (`Strikethrough` / `UserX`).
+    * Ein Klick auf diesen Button markiert den Schüler als ausgestrichen (`deregisteredStudents`).
+    * **Rückgängig-Funktion:** Ist ein Schüler ausgestrichen, wandelt sich das Icon in ein Rückgängig-Symbol (`RotateCcw`). Ein erneuter Klick hebt das Ausstreichen wieder auf.
+    * Ausgestrichene Schüler werden in der Teilnehmerliste optisch mit durchgestrichenem Namen dargestellt (ohne Text-Badges wie „Abgemeldet“).
   * **Sicherheitsabfrage bei Schüler-Entfernung:** Ein Klick auf das Entfernen-Symbol (`UserMinus`) löscht den Schüler nicht direkt, sondern fordert eine kurze Bestätigung über einen Bestätigungs-Dialog, um unbeabsichtigte Löschungen im schnellen Arbeitsfluss zu vermeiden.
 
 ---

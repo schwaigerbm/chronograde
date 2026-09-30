@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Plus, 
@@ -27,12 +27,11 @@ import { EditColumnModal } from './EditColumnModal';
 import { AttendanceModal } from './AttendanceModal';
 import { CollaborationBulkModal } from './CollaborationBulkModal';
 import { DialogModal } from './DialogModal';
-import { formatDate } from '../lib/utils';
+import { formatDate, formatDateDDMM } from '../lib/utils';
 import type { Course, Student, CourseEntry, Grade, GradeEntry, PredefinedComment, Reminder } from '../schema';
 import { checkAttendanceAnomalies } from '../lib/anomalyDetector';
 import { AttendanceAnomaliesModal } from './AttendanceAnomaliesModal';
 import type { AnomalyResult } from './AttendanceAnomaliesModal';
-import { exportMatrixPDF } from './PDFExports';
 import { StudentPerformanceDashboard } from './StudentPerformanceDashboard';
 import { TrendSettingsModal } from './TrendSettingsModal';
 import { calculateAverage, getCollaborationPercentage, getPresencePercentage } from '../lib/averageCalculator';
@@ -40,6 +39,12 @@ import { EvaluationEntryModal } from './EvaluationEntryModal';
 import { ManualEntryModal } from './ManualEntryModal';
 import { EnrollmentModal } from './EnrollmentModal';
 import { QuickEntryModal } from './QuickEntryModal';
+import { JournalView } from './JournalView';
+import { JournalEntryModal } from './JournalEntryModal';
+import { exportJournalPDF } from './PDFExports';
+import { sqliteService } from '../services/sqliteService';
+import type { JournalEntry } from '../schema';
+
 
 interface GradesMatrixProps {
   course: Course;
@@ -86,8 +91,67 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   // Cell Hover Tracking for Quick Entry
   const [hoveredCell, setHoveredCell] = useState<{ studentId: string, column: CourseEntry } | null>(null);
 
+  // View Mode: 'matrix' (default) or 'journal'
+  const [viewMode, setViewMode] = useState<'matrix' | 'journal'>('matrix');
+  const [isJournalModalOpen, setIsJournalModalOpen] = useState(false);
+  const [editingJournalEntry, setEditingJournalEntry] = useState<JournalEntry | null>(null);
+  const [journalEntriesForExport, setJournalEntriesForExport] = useState<JournalEntry[]>([]);
+
+  const handleSaveJournalEntry = async (data: { id?: string; groupId?: string; date: string; title: string; content: string }): Promise<string> => {
+    const savedId = await sqliteService.saveJournalEntry({
+      id: data.id || editingJournalEntry?.id,
+      courseId: course.id,
+      groupId: data.groupId,
+      date: data.date,
+      title: data.title,
+      content: data.content
+    });
+    return savedId;
+  };
+
+  const handleDeleteJournalEntry = (entry: JournalEntry) => {
+    showDialog({
+      title: 'Journaleintrag löschen?',
+      message: `Möchten Sie den Eintrag "${entry.title}" wirklich löschen?`,
+      type: 'danger',
+      confirmLabel: 'Löschen',
+      onConfirm: async () => {
+        await sqliteService.deleteJournalEntry(entry.id, course.id);
+      }
+    });
+  };
+
   // Student Dashboard Overlay State
   const [selectedStudentForDashboard, setSelectedStudentForDashboard] = useState<Student | null>(null);
+
+  // Group Assignment mapping computation
+  const { availableGroups, studentGroupMap } = useMemo(() => {
+    const groupCol = course.columns.find(c => c.type === 'groupAssignment');
+    if (!groupCol || !grades) return { availableGroups: [], studentGroupMap: {} };
+
+    const map: Record<string, string> = {};
+    const groupSet = new Set<string>();
+
+    Object.entries(grades).forEach(([studentId, colMap]) => {
+      const val = colMap[groupCol.id]?.value;
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        const gStr = String(val).trim();
+        map[studentId] = gStr;
+        groupSet.add(gStr);
+      }
+    });
+
+    const available = Array.from(groupSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return { availableGroups: available, studentGroupMap: map };
+  }, [course.columns, grades]);
+
+  const [selectedMatrixGroupFilter, setSelectedMatrixGroupFilter] = useState<string>('all');
+
+  const displayedMatrixStudents = useMemo(() => {
+    if (selectedMatrixGroupFilter === 'all') return students;
+    return students.filter(s => (studentGroupMap[s.id] || '') === selectedMatrixGroupFilter);
+  }, [students, selectedMatrixGroupFilter, studentGroupMap]);
+
 
   // Enrollment Modal States
   const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
@@ -123,7 +187,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
   useEffect(() => {
     setHoveredCell(null);
     setActiveManualCell(null);
-  }, [course]);
+  }, [course?.id]);
 
   // Load all students for enrollment search
   useEffect(() => {
@@ -162,6 +226,19 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
     const updatedCourse = {
       ...course,
       enrolledStudents: newList
+    };
+    await firebaseService.saveCourse(updatedCourse);
+  };
+
+  const handleToggleDeregister = async (studentId: string) => {
+    const deregistered = course.deregisteredStudents || [];
+    const isDeregistered = deregistered.includes(studentId);
+    const newList = isDeregistered
+      ? deregistered.filter(id => id !== studentId)
+      : [...deregistered, studentId];
+    const updatedCourse = {
+      ...course,
+      deregisteredStudents: newList
     };
     await firebaseService.saveCourse(updatedCourse);
   };
@@ -244,6 +321,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
       };
 
       // --- Direkteingabe (Noten / Zeichen / Löschen) ---
+      if (course.deregisteredStudents?.includes(studentId)) return;
+
       if (column.type === 'manual' || column.type === 'calculated') {
         if (column.calcType === 'grade') {
           if (e.key >= '1' && e.key <= '5') {
@@ -825,89 +904,182 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         <div className="title-group">
           <h1 className="main-title">Leistungsbeurteilung</h1>
           <div className="subtitle-wrapper" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <h2 className="sub-title" style={{ margin: 0 }}>{course.name}</h2>
-            </div>
-            <div className="dropdown-container">
-              <button 
-                className="btn-secondary btn-sm"
-                onClick={() => setIsActionsDropdownOpen(!isActionsDropdownOpen)}
-                style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Aktionen</span>
-                <ChevronDown size={16} />
-              </button>
               
-              {isActionsDropdownOpen && (
-                <>
-                  <div 
-                    className="dropdown-overlay" 
-                    onClick={() => setIsActionsDropdownOpen(false)}
-                  />
-                  <div className="dropdown-menu">
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsQuickEntryModalOpen(true);
-                      }}
-                    >
-                      <Zap size={16} />
-                      <span>Schnelleingabe</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsAddColumnModalOpen(true);
-                      }}
-                    >
-                      <Plus size={16} />
-                      <span>Beurteilungsspalte hinzufügen</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setTrendSettingsInitialTab('layout');
-                        setIsTrendSettingsModalOpen(true);
-                      }}
-                    >
-                      <Settings size={16} />
-                      <span>Ansicht konfigurieren</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsEnrollmentModalOpen(true);
-                      }}
-                    >
-                      <Users size={16} />
-                      <span>Gruppe ändern</span>
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        setIsActionsDropdownOpen(false);
-                        setIsPDFColumnSelectModalOpen(true);
-                      }}
-                    >
-                      <FileDown size={16} />
-                      <span>PDF Export</span>
-                    </button>
-                  </div>
-                </>
-              )}
+              {/* Segmented View Switcher: Matrix vs Journal */}
+              <div style={{
+                display: 'flex',
+                backgroundColor: '#f1f5f9',
+                padding: '3px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('matrix')}
+                  style={{
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: viewMode === 'matrix' ? '#ffffff' : 'transparent',
+                    color: viewMode === 'matrix' ? 'var(--primary-color)' : '#64748b',
+                    boxShadow: viewMode === 'matrix' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Matrix
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('journal')}
+                  style={{
+                    padding: '5px 14px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: viewMode === 'journal' ? '#ffffff' : 'transparent',
+                    color: viewMode === 'journal' ? 'var(--primary-color)' : '#64748b',
+                    boxShadow: viewMode === 'journal' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Journal
+                </button>
+              </div>
             </div>
+
+            {viewMode === 'matrix' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {availableGroups.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <Users size={14} style={{ color: '#64748b' }} />
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Gruppe:</span>
+                    <select
+                      className="form-select"
+                      value={selectedMatrixGroupFilter}
+                      onChange={(e) => setSelectedMatrixGroupFilter(e.target.value)}
+                      style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid #cbd5e1', backgroundColor: 'white', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      <option value="all">Alle Gruppen ({students.length})</option>
+                      {availableGroups.map(g => (
+                        <option key={g} value={g}>Gruppe {g}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="dropdown-container">
+                <button 
+                  className="btn-secondary btn-sm"
+                  onClick={() => setIsActionsDropdownOpen(!isActionsDropdownOpen)}
+                  style={{ width: 'auto', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <span>Aktionen</span>
+                  <ChevronDown size={16} />
+                </button>
+                
+                {isActionsDropdownOpen && (
+                  <>
+                    <div 
+                      className="dropdown-overlay" 
+                      onClick={() => setIsActionsDropdownOpen(false)}
+                    />
+                    <div className="dropdown-menu">
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsQuickEntryModalOpen(true);
+                        }}
+                      >
+                        <Zap size={16} />
+                        <span>Schnelleingabe</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsAddColumnModalOpen(true);
+                        }}
+                      >
+                        <Plus size={16} />
+                        <span>Beurteilungsspalte hinzufügen</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setTrendSettingsInitialTab('layout');
+                          setIsTrendSettingsModalOpen(true);
+                        }}
+                      >
+                        <Settings size={16} />
+                        <span>Ansicht konfigurieren</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsEnrollmentModalOpen(true);
+                        }}
+                      >
+                        <Users size={16} />
+                        <span>Gruppe ändern</span>
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsActionsDropdownOpen(false);
+                          setIsPDFColumnSelectModalOpen(true);
+                        }}
+                      >
+                        <FileDown size={16} />
+                        <span>PDF Export</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  className="btn-primary btn-sm"
+                  onClick={() => {
+                    setEditingJournalEntry(null);
+                    setIsJournalModalOpen(true);
+                  }}
+                  style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Plus size={16} />
+                  <span>Neuer Eintrag</span>
+                </button>
+                <button
+                  className="btn-secondary btn-sm"
+                  onClick={() => exportJournalPDF(course, journalEntriesForExport)}
+                  style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <FileDown size={16} />
+                  <span>PDF Export</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="matrix-scroll-area">
-        <table className="data-table matrix-table">
-          <thead>
-            <tr>
+      {viewMode === 'matrix' ? (
+        <div className="matrix-scroll-area">
+          <table className="data-table matrix-table">
+            <thead>
+              <tr>
+
               <th className="sticky-col student-header">
                 <div className="header-content">
                   <div className="header-level-1">SCHÜLER</div>
@@ -935,7 +1107,7 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                         
                         {col.showDateInHeader !== false && col.type !== 'presenceSum' && col.type !== 'collaborationSum' && (
                           <div className="horizontal-date">
-                            {col.type === 'calculated' ? (col.cutoffDate ? formatDate(col.cutoffDate) : '') : formatDate(col.date, false)}
+                            {col.type === 'calculated' ? (col.cutoffDate ? formatDateDDMM(col.cutoffDate) : '') : formatDateDDMM(col.date)}
                           </div>
                         )}
                       </div>
@@ -1029,16 +1201,21 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
             </tr>
           </thead>
           <tbody>
-            {students.map((student, index) => {
-              const liveSummary = calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+            {displayedMatrixStudents.map((student, index) => {
+              const isDeregistered = Boolean(course.deregisteredStudents?.includes(student.id));
+              const liveSummary = isDeregistered
+                ? { grade: null, percent: null, breakdown: [] }
+                : calculateAverage(student.id, course.columns, grades, undefined, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
               
               return (
-                <tr key={student.id}>
-                  <td className="sticky-col">
+                <tr key={student.id} className={isDeregistered ? 'deregistered-row' : ''}>
+                  <td className={`sticky-col ${isDeregistered ? 'deregistered-sticky-col' : ''}`}>
                     <div className="student-cell-content has-avatar-tooltip">
-                      <span className="student-number">{index + 1}</span>
-                      <span className="student-lastname">{student.lastName}</span>
-                      <span className="student-firstname">{student.firstName}</span>
+                      {course.showStudentNumber !== false && (
+                        <span className="student-number" style={isDeregistered ? { color: '#64748b' } : undefined}>{index + 1}</span>
+                      )}
+                      <span className="student-lastname" style={isDeregistered ? { textDecoration: 'line-through', color: '#64748b' } : undefined}>{student.lastName}</span>
+                      <span className="student-firstname" style={isDeregistered ? { textDecoration: 'line-through', color: '#64748b' } : undefined}>{student.firstName}</span>
                       <button 
                         className="btn-student-analysis"
                         onClick={(e) => {
@@ -1060,7 +1237,9 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     let grade = grades[student.id]?.[col.id];
                     
                     if (col.type === 'calculated' && (!grade || !grade.isOverridden)) {
-                      const calculated = calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
+                      const calculated = isDeregistered
+                        ? { grade: null }
+                        : calculateAverage(student.id, course.columns, grades, col.cutoffDate, course.roundingRule || 'commercial', course.collaborationCalcMode || 'weighted');
                       grade = { 
                         value: calculated.grade || undefined,
                         date: new Date().toISOString()
@@ -1082,17 +1261,44 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           } ${
                             flashedCell?.studentId === student.id && flashedCell?.columnId === col.id ? 'animate-flash-green' : ''
                           }`}
-                          onClick={() => setFocusedCell({ studentId: student.id, columnId: col.id })}
+                          onClick={() => {
+                            if (!isDeregistered) {
+                              setFocusedCell({ studentId: student.id, columnId: col.id });
+                            }
+                          }}
                           onMouseEnter={() => {
-                            setHoveredColId(col.id);
-                            setHoveredCell({ studentId: student.id, column: col });
+                            if (!isDeregistered) {
+                              setHoveredColId(col.id);
+                              setHoveredCell({ studentId: student.id, column: col });
+                            }
                           }}
                           onMouseLeave={() => {
                             setHoveredColId(null);
                             setHoveredCell(null);
                           }}
-                          style={heatmapStyle}
+                          style={{
+                            ...heatmapStyle,
+                            ...(isDeregistered ? {
+                              opacity: 0.45,
+                              pointerEvents: 'none',
+                              position: 'relative'
+                            } : {})
+                          }}
                         >
+                        {isDeregistered && (
+                          <div 
+                            style={{ 
+                              position: 'absolute', 
+                              top: '50%', 
+                              left: 0, 
+                              right: 0, 
+                              height: '2px', 
+                              backgroundColor: '#94a3b8', 
+                              zIndex: 10,
+                              pointerEvents: 'none'
+                            }} 
+                          />
+                        )}
                         <GradeCell 
                           studentId={student.id}
                           column={col}
@@ -1106,11 +1312,13 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                           onHoverAttendanceDate={setHoveredAttendanceDate}
                           heatmapStyle={heatmapStyle}
                           onOpenEvaluation={() => {
+                            if (isDeregistered) return;
                             setActiveEvaluationColumn(col);
                             setActiveEvaluationStudent({ id: student.id, name: `${student.firstName} ${student.lastName}` });
                             setIsEvaluationModalOpen(true);
                           }}
                           onOpenManualEdit={(studentId, column, currentGrade) => {
+                            if (isDeregistered) return;
                             setActiveManualCell({
                               studentId,
                               studentName: `${student.lastName}, ${student.firstName}`,
@@ -1123,6 +1331,19 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
                     );
                   })}
                   {course.showTrend !== false && (() => {
+                    if (isDeregistered) {
+                      return (
+                        <td 
+                          className="sticky-col-right summary-cell"
+                          style={{ opacity: 0.45, pointerEvents: 'none', position: 'relative' }}
+                        >
+                          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '2px', backgroundColor: '#94a3b8', zIndex: 10 }} />
+                          <div className="summary-content">
+                            <span className="summary-grade" style={{ color: '#94a3b8' }}>-</span>
+                          </div>
+                        </td>
+                      );
+                    }
                     const trendHeatmapStyle = course.isTrendColorEnabled && liveSummary.grade
                       ? getHeatmapStyle(
                           { calcType: 'grade', isColorEnabled: true } as any, 
@@ -1158,6 +1379,34 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           </tbody>
         </table>
       </div>
+      ) : (
+        <JournalView 
+          course={course}
+          availableGroups={availableGroups}
+          onEditEntry={(entry) => {
+            setEditingJournalEntry(entry);
+            setIsJournalModalOpen(true);
+          }}
+          onDeleteEntry={handleDeleteJournalEntry}
+          onEntriesLoaded={setJournalEntriesForExport}
+          onOpenNewModal={() => {
+            setEditingJournalEntry(null);
+            setIsJournalModalOpen(true);
+          }}
+        />
+      )}
+
+      <JournalEntryModal 
+        isOpen={isJournalModalOpen}
+        onClose={() => {
+          setIsJournalModalOpen(false);
+          setEditingJournalEntry(null);
+        }}
+        onSave={handleSaveJournalEntry}
+        initialData={editingJournalEntry}
+        availableGroups={availableGroups}
+      />
+
 
       <AddColumnModal 
         isOpen={isAddColumnModalOpen}
@@ -1172,12 +1421,15 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onSave={handleEditColumn}
         students={students}
         grades={grades}
+        deregisteredStudentIds={course.deregisteredStudents}
       />
 
       <AttendanceModal 
         isOpen={isAttendanceModalOpen}
         onClose={() => setIsAttendanceModalOpen(false)}
         students={students}
+        availableGroups={availableGroups}
+        studentGroupMap={studentGroupMap}
         onSave={handleSaveAttendance}
       />
 
@@ -1206,6 +1458,8 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         course={course}
         students={students}
         grades={grades}
+        availableGroups={availableGroups}
+        studentGroupMap={studentGroupMap}
         onSave={handleSaveQuickEntry}
       />
 
@@ -1220,14 +1474,16 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         isTrendColorEnabled={!!course.isTrendColorEnabled}
         collaborationCalcMode={course.collaborationCalcMode || 'weighted'}
         showTrend={course.showTrend}
+        showStudentNumber={course.showStudentNumber}
         initialTab={trendSettingsInitialTab}
-        onSave={(updatedCols, rule, colorEnabled, collabMode, showTrendVal) => 
+        onSave={(updatedCols, rule, colorEnabled, collabMode, showTrendVal, showStudentNumVal) => 
           handleUpdateCourseSettings({ 
             columns: updatedCols, 
             roundingRule: rule, 
             isTrendColorEnabled: colorEnabled, 
             collaborationCalcMode: collabMode,
-            showTrend: showTrendVal
+            showTrend: showTrendVal,
+            showStudentNumber: showStudentNumVal
           })
         }
         showDialog={showDialog}
@@ -1257,32 +1513,62 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           studentName={activeManualCell.studentName}
           column={activeManualCell.column}
           currentValue={activeManualCell.grade?.value}
+          currentGrade={activeManualCell.grade}
           isCalculated={activeManualCell.column.type === 'calculated'}
-          onSave={async (val) => {
+          onSave={async (val, note, date, time) => {
             const { studentId, column } = activeManualCell;
+            const targetDate = date || new Date().toISOString();
             
             if (column.type === 'calculated') {
               if (val === null) {
                 await updateGrade(studentId, column.id, { 
                   value: '', 
-                  date: new Date().toISOString(),
+                  date: targetDate,
+                  time: undefined,
+                  note: undefined,
                   isOverridden: false 
                 });
               } else {
                 await updateGrade(studentId, column.id, { 
                   value: val, 
-                  date: new Date().toISOString(),
+                  date: targetDate,
+                  time: time || undefined,
+                  note: note || undefined,
                   isOverridden: true 
                 });
               }
             } else {
-              await updateGrade(studentId, column.id, { 
-                value: val !== null ? val : '', 
-                date: new Date().toISOString() 
-              });
+              if (val === null) {
+                await updateGrade(studentId, column.id, { 
+                  value: '', 
+                  date: targetDate,
+                  time: undefined,
+                  note: undefined
+                });
+              } else {
+                await updateGrade(studentId, column.id, { 
+                  value: val, 
+                  date: targetDate,
+                  time: time || undefined,
+                  note: note || undefined
+                });
+              }
             }
             setActiveManualCell(null);
           }}
+        />
+      )}
+
+      {isEnrollmentModalOpen && (
+        <EnrollmentModal 
+          isOpen={isEnrollmentModalOpen}
+          onClose={() => setIsEnrollmentModalOpen(false)}
+          course={course}
+          students={allStudents.length > 0 ? allStudents : students}
+          onEnroll={handleEnroll}
+          onUnenroll={handleUnenroll}
+          onToggleDeregister={handleToggleDeregister}
+          onReorder={handleReorder}
         />
       )}
 
@@ -1299,8 +1585,9 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
         onClose={() => setIsPDFColumnSelectModalOpen(false)}
         columns={course.columns}
         course={course}
-        onConfirm={(selectedColIds, includeTrend) => {
+        onConfirm={async (selectedColIds, includeTrend) => {
           const selectedColumns = course.columns.filter(col => selectedColIds.includes(col.id));
+          const { exportMatrixPDF } = await import('./PDFExports');
           exportMatrixPDF(course, students, grades, selectedColumns, includeTrend);
           setIsPDFColumnSelectModalOpen(false);
         }}
@@ -1324,18 +1611,6 @@ export const GradesMatrix = ({ course }: GradesMatrixProps) => {
           grades={grades}
           visibleColumns={visibleColumns}
           onClose={() => setSelectedStudentForDashboard(null)}
-        />
-      )}
-
-      {isEnrollmentModalOpen && (
-        <EnrollmentModal
-          isOpen={isEnrollmentModalOpen}
-          onClose={() => setIsEnrollmentModalOpen(false)}
-          course={course}
-          students={allStudents}
-          onEnroll={handleEnroll}
-          onUnenroll={handleUnenroll}
-          onReorder={handleReorder}
         />
       )}
     </div>
@@ -1492,11 +1767,22 @@ const GradeCell = ({
         );
       
       case 'manual':
+        let cellTitle = undefined;
+        if (grade?.value !== undefined && grade.value !== '') {
+          const rawDate = grade.date ? (grade.date.includes('T') ? grade.date.split('T')[0] : grade.date) : '';
+          const dateFormatted = rawDate ? rawDate.split('-').reverse().join('.') : '';
+          const timeFormatted = grade.time ? ` ${grade.time}` : '';
+          const dateTimeStr = dateFormatted ? ` (${dateFormatted}${timeFormatted})` : '';
+          const noteStr = grade.note ? ` - ${grade.note}` : '';
+          cellTitle = `${column.title}: ${grade.value}${dateTimeStr}${noteStr}`;
+        }
+
         return (
           <div 
             className="manual-cell-content"
             onClick={() => onOpenManualEdit(studentId, column, grade)}
             style={{ color: heatmapStyle?.color }}
+            title={cellTitle}
           >
             {grade?.value || <span className="empty-placeholder">-</span>}
           </div>

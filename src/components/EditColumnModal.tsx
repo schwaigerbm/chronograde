@@ -10,6 +10,7 @@ interface EditColumnModalProps {
   onSave: (updatedColumn: CourseEntry) => void;
   students: Student[];
   grades: GradesState;
+  deregisteredStudentIds?: string[];
 }
 
 export const EditColumnModal = ({ 
@@ -18,7 +19,8 @@ export const EditColumnModal = ({
   column, 
   onSave,
   students = [],
-  grades = {}
+  grades = {},
+  deregisteredStudentIds = []
 }: EditColumnModalProps) => {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -860,6 +862,7 @@ export const EditColumnModal = ({
           column={column}
           students={students}
           grades={grades}
+          deregisteredStudentIds={deregisteredStudentIds}
         />
       )}
     </div>

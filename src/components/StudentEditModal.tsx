@@ -1,7 +1,7 @@
 // src/components/StudentEditModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, User, Camera } from 'lucide-react';
+import { X, User, Camera, Clipboard } from 'lucide-react';
 import type { Student } from '../schema';
 import { compressImageToBase64 } from '../lib/utils';
 import { DialogModal } from './DialogModal';
@@ -40,6 +40,34 @@ export const StudentEditModal = ({
   const saveAndContinueRef = useRef<HTMLButtonElement>(null);
   const isEditMode = !!student?.id;
 
+  const processImageFile = async (file: File) => {
+    try {
+      const base64 = await compressImageToBase64(file);
+      setPhotoBase64(base64);
+    } catch (err) {
+      console.error("Error compressing image:", err);
+    }
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imageType = item.types.find(t => t.startsWith('image/'));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            const file = new File([blob], 'clipboard-image.png', { type: imageType });
+            await processImageFile(file);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Clipboard read API failed or permission denied, falling back:", err);
+    }
+  };
+
   // Sync state with student prop when modal opens/changes
   useEffect(() => {
     if (isOpen) {
@@ -73,6 +101,30 @@ export const StudentEditModal = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Global paste listener for pasting images from clipboard
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          if (blob) {
+            await processImageFile(blob);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -215,26 +267,32 @@ export const StudentEditModal = ({
                 )}
               </div>
               
-              <div className="photo-upload-controls" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label className="btn-secondary btn-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', width: 'fit-content', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '12px', fontWeight: '500' }}>
-                  <Camera size={14} /> Foto auswählen
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          const base64 = await compressImageToBase64(file);
-                          setPhotoBase64(base64);
-                        } catch (err) {
-                          console.error("Error compressing image:", err);
+              <div className="photo-upload-controls" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <label className="btn-secondary btn-xs" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', width: 'fit-content', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '12px', fontWeight: '500' }}>
+                    <Camera size={14} /> Foto auswählen
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          await processImageFile(file);
                         }
-                      }
-                    }}
-                    style={{ display: 'none' }}
-                  />
-                </label>
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs"
+                    onClick={handlePasteFromClipboard}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', width: 'fit-content', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '12px', fontWeight: '500', marginTop: 0 }}
+                    title="Bild aus der Zwischenablage einfügen (Strg+V)"
+                  >
+                    <Clipboard size={14} /> Aus Zwischenablage einfügen
+                  </button>
+                </div>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>JPEG/PNG, wird auto-komprimiert</span>
               </div>
             </div>

@@ -811,6 +811,15 @@ input:checked+.slider:before {
   border-right: 2px solid var(--border-color) !important;
 }
 
+.sticky-col.deregistered-sticky-col,
+tr.deregistered-row td.sticky-col {
+  background-color: #e2e8f0 !important;
+}
+
+tr.deregistered-row {
+  background-color: #f1f5f9;
+}
+
 .matrix-table thead .sticky-col {
   top: 0;
   z-index: 30;
@@ -2189,15 +2198,16 @@ input:checked+.slider:before {
 }
 
 .student-cell-content:hover .student-avatar-tooltip,
-.student-name-cell:hover .student-avatar-tooltip {
+.student-name-cell:hover .student-avatar-tooltip,
+.avatar-preview-container:hover .student-avatar-tooltip {
   visibility: visible;
   opacity: 1;
   transform: scale(1);
 }
 
 .student-avatar-img {
-  width: 96px;
-  height: 96px;
+  width: 144px;
+  height: 144px;
   object-fit: cover;
   border-radius: 6px;
   display: block;

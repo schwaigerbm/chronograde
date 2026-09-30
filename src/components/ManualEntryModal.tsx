@@ -1,8 +1,9 @@
 // src/components/ManualEntryModal.tsx
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X as XIcon, Check, Trash2 } from 'lucide-react';
-import type { CourseEntry } from '../schema';
+import { X as XIcon, Check, Trash2, Calendar, Clock, MessageSquare, Save } from 'lucide-react';
+import type { CourseEntry, Grade, PredefinedComment } from '../schema';
+import { firebaseService } from '../services/firebaseService';
 
 interface ManualEntryModalProps {
   isOpen: boolean;
@@ -10,8 +11,9 @@ interface ManualEntryModalProps {
   studentName: string;
   column: CourseEntry;
   currentValue?: string | number;
+  currentGrade?: Grade;
   isCalculated?: boolean;
-  onSave: (val: string | number | null) => void;
+  onSave: (val: string | number | null, note?: string, date?: string, time?: string) => void;
 }
 
 export const ManualEntryModal = ({
@@ -20,16 +22,43 @@ export const ManualEntryModal = ({
   studentName,
   column,
   currentValue,
+  currentGrade,
   isCalculated,
   onSave
 }: ManualEntryModalProps) => {
   const [val, setVal] = useState<string | number>('');
+  const [date, setDate] = useState<string>('');
+  const [time, setTime] = useState<string>('');
+  const [note, setNote] = useState<string>('');
+  const [predefinedComments, setPredefinedComments] = useState<PredefinedComment[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      setVal(currentValue !== undefined ? currentValue : '');
+      const initialVal = currentValue !== undefined ? currentValue : (currentGrade?.value !== undefined ? currentGrade.value : '');
+      setVal(initialVal);
+
+      // Extract date (YYYY-MM-DD)
+      const rawDate = currentGrade?.date || column.date || new Date().toISOString();
+      const formattedDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate;
+      setDate(formattedDate || new Date().toISOString().split('T')[0]);
+
+      // Extract time (HH:mm)
+      setTime(currentGrade?.time || '');
+
+      // Extract note
+      setNote(currentGrade?.note || '');
     }
-  }, [isOpen, currentValue]);
+  }, [isOpen, currentValue, currentGrade, column.date]);
+
+  // Subscribe to predefined comments
+  useEffect(() => {
+    if (isOpen && column.calcType === 'sign') {
+      const unsubscribe = firebaseService.subscribeToPredefinedComments((comments) => {
+        setPredefinedComments(comments);
+      });
+      return () => unsubscribe();
+    }
+  }, [isOpen, column.calcType]);
 
   // Handle ESC key
   useEffect(() => {
@@ -66,7 +95,7 @@ export const ManualEntryModal = ({
     if (val === '') {
       onSave(null);
     } else {
-      onSave(val);
+      onSave(val, note.trim() || undefined, date || undefined, time || undefined);
     }
   };
 
@@ -74,9 +103,12 @@ export const ManualEntryModal = ({
     onSave(null);
   };
 
+  // Predefined comments for active sign type (+, ~, -)
+  const activePredefinedComments = predefinedComments.filter(c => c.type === val);
+
   return createPortal(
     <div className="modal-overlay" style={{ zIndex: 1100 }}>
-      <div className="modal-card" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card" style={{ maxWidth: column.calcType === 'sign' ? '460px' : '400px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>{studentName}</h3>
@@ -114,7 +146,7 @@ export const ManualEntryModal = ({
                   key={g.num}
                   type="button"
                   className={`manual-modal-option-btn ${val == g.num ? 'active' : ''}`}
-                  onClick={() => onSave(g.num)}
+                  onClick={() => onSave(g.num, note.trim() || undefined, date || undefined, time || undefined)}
                 >
                   <span>{g.label}</span>
                   {val == g.num && <Check size={16} />}
@@ -170,17 +202,98 @@ export const ManualEntryModal = ({
           )}
 
           {column.calcType === 'sign' && (
-            <div className="manual-modal-sign-container">
-              {['+', '~', '-'].map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`manual-modal-sign-btn ${s === '+' ? 'plus' : s === '-' ? 'minus' : 'neutral'} ${val === s ? 'active' : ''}`}
-                  onClick={() => onSave(s)}
-                >
-                  {s}
-                </button>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Zeichen auswahl */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
+                  Bewertungszeichen wählen:
+                </label>
+                <div className="manual-modal-sign-container">
+                  {['+', '~', '-'].map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`manual-modal-sign-btn ${s === '+' ? 'plus' : s === '-' ? 'minus' : 'neutral'} ${val === s ? 'active' : ''}`}
+                      onClick={() => setVal(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Optionale Zusatzfelder: Datum, Uhrzeit & Kommentar */}
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  Optionale Zusatzangaben (muss nicht):
+                </div>
+
+                {/* Datum & Uhrzeit in einer Zeile */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      <Calendar size={12} /> Datum:
+                    </label>
+                    <input 
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="form-input"
+                      style={{ fontSize: '12px', padding: '6px 8px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      <Clock size={12} /> Uhrzeit:
+                    </label>
+                    <input 
+                      type="time"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      className="form-input"
+                      style={{ fontSize: '12px', padding: '6px 8px' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Kommentar / Notiz */}
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    <MessageSquare size={12} /> Kommentar / Notiz:
+                  </label>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Optionaler Kommentar..."
+                    className="form-input"
+                    rows={2}
+                    style={{ fontSize: '12px', resize: 'vertical', width: '100%' }}
+                  />
+                </div>
+
+                {/* Vorgefertigte Kommentare aus den Einstellungen */}
+                {activePredefinedComments.length > 0 && (
+                  <div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                      Vorgefertigte Kommentare ({val}):
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {activePredefinedComments.map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="btn-secondary"
+                          style={{ fontSize: '11px', padding: '3px 8px', marginTop: 0, borderRadius: '12px' }}
+                          onClick={() => setNote(c.text)}
+                          title="Text übernehmen"
+                        >
+                          {c.text}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -202,6 +315,14 @@ export const ManualEntryModal = ({
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" className="btn-secondary" style={{ marginTop: 0 }} onClick={onClose}>
               Abbrechen
+            </button>
+            <button 
+              type="button" 
+              className="btn-primary" 
+              style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '6px' }} 
+              onClick={handleConfirmSave}
+            >
+              <Save size={16} /> Speichern
             </button>
           </div>
         </div>

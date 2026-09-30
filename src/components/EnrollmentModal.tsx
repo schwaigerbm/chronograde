@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Search, ArrowUp, ArrowDown, UserMinus } from 'lucide-react';
+import { X, Search, ArrowUp, ArrowDown, UserMinus, UserX, RotateCcw } from 'lucide-react';
 import type { Course, Student } from '../schema';
 import { DialogModal } from './DialogModal';
 
@@ -11,6 +11,7 @@ interface EnrollmentModalProps {
   students: Student[];
   onEnroll: (studentId: string) => Promise<void>;
   onUnenroll: (studentId: string) => Promise<void>;
+  onToggleDeregister?: (studentId: string) => Promise<void>;
   onReorder: (index: number, direction: 'up' | 'down') => Promise<void>;
 }
 
@@ -21,6 +22,7 @@ export const EnrollmentModal = ({
   students,
   onEnroll,
   onUnenroll,
+  onToggleDeregister,
   onReorder
 }: EnrollmentModalProps) => {
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
@@ -91,6 +93,18 @@ export const EnrollmentModal = ({
       }, 50);
     } catch (err) {
       console.error("Error enrolling student:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggleDeregisterInternal = async (studentId: string) => {
+    if (isSaving || !onToggleDeregister) return;
+    setIsSaving(true);
+    try {
+      await onToggleDeregister(studentId);
+    } catch (err) {
+      console.error("Error toggling deregistration:", err);
     } finally {
       setIsSaving(false);
     }
@@ -192,40 +206,61 @@ export const EnrollmentModal = ({
             ) : (
               <table className="data-table">
                 <tbody>
-                  {enrolledStudents.map((student, index) => (
-                    <tr key={student.id}>
-                      <td style={{ width: '40px', color: '#64748b' }}>{index + 1}</td>
-                      <td>{student.lastName}, {student.firstName}</td>
-                      <td className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button 
-                            className="btn-icon btn-sm" 
-                            onClick={() => onReorder(index, 'up')}
-                            disabled={index === 0 || isSaving}
-                            title="Hoch"
-                          >
-                            <ArrowUp size={14} />
-                          </button>
-                          <button 
-                            className="btn-icon btn-sm" 
-                            onClick={() => onReorder(index, 'down')}
-                            disabled={index === enrolledStudents.length - 1 || isSaving}
-                            title="Runter"
-                          >
-                            <ArrowDown size={14} />
-                          </button>
-                          <button 
-                            className="btn-icon btn-sm danger" 
-                            onClick={() => setStudentToUnenroll(student)}
-                            disabled={isSaving}
-                            title="Entfernen"
-                          >
-                            <UserMinus size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {enrolledStudents.map((student, index) => {
+                    const isDeregistered = Boolean(course.deregisteredStudents?.includes(student.id));
+                    return (
+                      <tr key={student.id} style={{ opacity: isDeregistered ? 0.85 : 1, backgroundColor: isDeregistered ? '#e2e8f0' : 'transparent' }}>
+                        <td style={{ width: '40px', color: '#64748b' }}>{index + 1}</td>
+                        <td>
+                          <span style={{ textDecoration: isDeregistered ? 'line-through' : 'none' }}>
+                            {student.lastName}, {student.firstName}
+                          </span>
+                        </td>
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button 
+                              className="btn-icon btn-sm" 
+                              onClick={() => onReorder(index, 'up')}
+                              disabled={index === 0 || isSaving}
+                              title="Hoch"
+                            >
+                              <ArrowUp size={14} />
+                            </button>
+                            <button 
+                              className="btn-icon btn-sm" 
+                              onClick={() => onReorder(index, 'down')}
+                              disabled={index === enrolledStudents.length - 1 || isSaving}
+                              title="Runter"
+                            >
+                              <ArrowDown size={14} />
+                            </button>
+                            <button 
+                              className="btn-icon btn-sm danger" 
+                              onClick={() => setStudentToUnenroll(student)}
+                              disabled={isSaving}
+                              title="Entfernen"
+                            >
+                              <UserMinus size={14} />
+                            </button>
+                            {onToggleDeregister && (
+                              <button
+                                className={`btn-icon btn-sm ${isDeregistered ? '' : 'warning'}`}
+                                onClick={() => handleToggleDeregisterInternal(student.id)}
+                                disabled={isSaving}
+                                title={isDeregistered ? "Ausstreichen rückgängig machen" : "Schüler ausstreichen"}
+                                style={{ 
+                                  color: isDeregistered ? '#2563eb' : '#d97706',
+                                  background: isDeregistered ? 'rgba(37,99,235,0.1)' : 'rgba(217,119,6,0.1)'
+                                }}
+                              >
+                                {isDeregistered ? <RotateCcw size={14} /> : <UserX size={14} />}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

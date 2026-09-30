@@ -28,7 +28,7 @@ Eine responsive Tabelle zur Anzeige der Gruppenobjekte (intern: courses).
 *   **Schüler (Users Icon):** Öffnet das Enrollment-Modal zur Schüler-Zuweisung.
 *   **Archivieren (Archive Icon):** Nur bei aktiven Gruppen. Bestätigungs-Dialog (Ja/Nein) -> `archived: true`.
 *   **Wiederherstellen (RotateCcw Icon):** Nur bei archivierten Gruppen. Bestätigungs-Dialog (Ja/Nein) -> `archived: false`.
-*   **Löschen (Trash2 Icon):** Nur bei archivierten Gruppen. Bestätigungs-Dialog mit zusätzlicher Sicherheitsabfrage (Eintippen des Gruppennamens zur Freischaltung des Lösch-Buttons) -> Dokument endgültig aus Firestore löschen.
+*   **Löschen (Trash2 Icon):** Nur bei archivierten Gruppen. Bestätigungs-Dialog mit zusätzlicher Sicherheitsabfrage (Eintippen des Gruppennamens zur Freischaltung des Lösch-Buttons) -> Gruppe endgültig aus SQLite-Datenbank löschen.
 
 ---
 
@@ -41,7 +41,7 @@ Eine responsive Tabelle zur Anzeige der Gruppenobjekte (intern: courses).
 *   **Aktionen:** Speichern (Validierung: Name darf nicht leer sein) | Abbrechen.
 
 ### B. Schüler-Zuweisung (Enrollment-Modal)
-*   **Live-Search:** Input-Feld, das während der Eingabe die gesamte `students`-Collection filtert.
+*   **Live-Search:** Input-Feld, das während der Eingabe die gesamten Datensätze aus der Tabelle `students` filtert.
 *   **Zuweisung:** Klick auf ein Suchergebnis fügt den Schüler der Liste `course.enrolledStudents` hinzu.
 *   **Teilnehmerliste:**
     *   **Format:** `[Lfd. Nr.] [Nachname], [Vorname]` (z.B. "1 Schwaiger, Bernhard").
@@ -51,7 +51,7 @@ Eine responsive Tabelle zur Anzeige der Gruppenobjekte (intern: courses).
 ---
 
 ## 4. Technische Anforderungen (Spec-Driven)
-*   **Datenquelle:** `firebaseService.subscribeToCourses`.
-*   **Sortier-Logik:** Die Pfeile in der Tabelle triggern einen lokalen State (`sortKey`, `sortOrder`), der die Anzeige der geladenen Firebase-Daten beeinflusst.
+*   **Datenquelle:** `sqliteService.getCourses` / `sqliteService.subscribeToCourses`.
+*   **Sortier-Logik:** Die Pfeile in der Tabelle triggern einen lokalen State (`sortKey`, `sortOrder`), der die Anzeige der geladenen SQLite-Daten beeinflusst.
 *   **Archiv-Logik:** Die Anzeige wechselt zwischen zwei Query-Zuständen (`where archived == true/false`).
 *   **UI-Library:** Tailwind CSS für das Layout, Lucide-React für die Icons.

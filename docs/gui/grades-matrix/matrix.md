@@ -1,21 +1,21 @@
-# Spezifikation: GUI Leistungsbeurteilung (Firebase Service-Architektur)
+# Spezifikation: GUI Leistungsbeurteilung (Standalone Electron SQLite-Architektur)
 
 ## 1. Seitenstruktur & Header
 Die Kopfzeile dient der Identifikation der Ansicht, zeigt den aktuellen Kurs an und bietet die primäre Aktion zum Hinzufügen neuer Beurteilungen.
 
 * **Hauptüberschrift (H1):** `Leistungsbeurteilung`
 * **Unterüberschrift (H2):** `[Name der Gruppe / Course]`
-* **Gruppen-Schnellauswahl:** (Entfernt) Die Gruppen-Schnellauswahl wurde entfernt. Der Wechsel von Gruppen/Kursen erfolgt ausschließlich über die Sidebar/Hauptnavigation.
+* **Gruppen-Filter (Matrix):** Falls der Kurs eine Spalte vom Typ `groupAssignment` (Gruppenzuordnung) enthält, wird in der Kopfzeile der Notenmatrix ein **Gruppen-Filter-Dropdown** (`Alle Gruppen`, `Gruppe 1`, `Gruppe 2`, ...) angeboten. Bei Auswahl einer spezifischen Gruppe werden in der Matrix nur die Zeilen dieser Gruppe dargestellt; bei Auswahl von `Alle Gruppen` wird wieder der gesamte Klassenbestand angezeigt.
 * **Aktions-Menü (Dropdown):** In der Kopfzeile platziert (Label: `Aktionen`, Icon: `ChevronDown`). Bietet folgende Aktionen:
     * `Schnelleingabe` (Icon: `Zap`) - Startet einen kombinierten Workflow zur schnellen Erfassung von Anwesenheit und Mitarbeit nacheinander.
     * `Beurteilungsspalte hinzufügen` (Icon: `Plus`) - Öffnet das Multi-Step-Modal zum Hinzufügen einer Beurteilungsspalte.
     * `Ansicht konfigurieren` (Icon: `Settings`) - Öffnet das Modal zur Spaltenkonfiguration.
-    * `Gruppe ändern` (Icon: `Users`) - Öffnet das `EnrollmentModal` zur Schüler-Zuweisung, um Schüler der Gruppe hinzuzufügen, zu entfernen oder neu zu reihen.
+    * `Gruppe ändern` (Icon: `Users`) - Öffnet das `EnrollmentModal` zur Schüler-Zuweisung und Schüler-Verwaltung, in dem Schüler der Gruppe hinzugefügt, entfernt, neu gereiht sowie **ausgestrichen bzw. wieder aktiviert (Durchstreich-Funktion)** werden können (identischer Dialog wie im Gruppen-Manager).
     * `PDF Export` (Icon: `FileDown`) - Öffnet das Modal zur Spaltenauswahl für den PDF-Export der Gesamtmatrix.
 
 ## 2. Datenanbindung & Architektur
-* **Backend:** Firebase Firestore (Collections: `courses`, `students`, `course_entries`, `grades`).
-* **Service-Layer:** Die GUI kommuniziert **nicht direkt** mit Firebase, sondern ausschließlich über die erweiterte Service-Klasse (z.B. `serviceFirebase`).
+* **Backend:** Lokale SQLite-Datenbank (Tabellen: `courses`, `students`, `course_entries`, `grades`, `attendance_events`, `collaboration_events`).
+* **Service-Layer:** Die GUI kommuniziert **nicht direkt** mit SQLite, sondern ausschließlich über die erweiterte Service-Klasse `sqliteService` via Electron IPC.
 * **Architektur-Vorgabe (WICHTIG):** Vor der Implementierung dieser GUI müssen das Daten-Schema und die Service-Klasse zwingend überprüft und so umgebaut/ergänzt werden, dass sie alle unten beschriebenen Entitäten (Courses, Course Entries mit den verschiedenen Typen, Grades mit Historie/Mehrfacheinträgen) vollumfänglich unterstützen.
 
 ## 3. Daten-Tabelle (Notenübersicht)
@@ -26,12 +26,19 @@ Anzeige der Leistungsmatrix für die gewählte Gruppe.
 * **UX-Vorgabe (Scrollbalken-Verbot):** Es darf **unter keinen Umständen** vorkommen, dass beim Öffnen von Kontextmenüs oder Modals innerhalb der Matrix rechtsseitige Scrollbalken am Matrix-Fenster erscheinen. Die Menüs müssen so aufgebaut sein, dass sie außerhalb des Tabellenflusses (z.B. via Portals oder intelligenter Positionierung) schweben.
 * **UX-Vorgabe (Crosshair-Highlighting):** Um die Navigation in großen Tabellen zu erleichtern, muss ein "Crosshair"-Effekt implementiert werden: Beim Hover über eine Zelle sollen sowohl die gesamte Zeile als auch die dazugehörige Spalte dezent visuell hervorgehoben werden.
 * **Zeilen (Schüler-Zelle & Layout):** Entsprechen den Schülern des Kurses. Die Schüler-Spalte ist wie folgt aufgebaut:
-    * **Laufende Nummer:** Ganz links steht eine 1-basierte laufende Nummer (1, 2, 3, etc.).
+    * **Laufende Nummer (Konfigurierbar):** Ganz links steht eine 1-basierte laufende Nummer (1, 2, 3, etc.). Die Anzeige der laufenden Nummer kann in den Ansichtseinstellungen (`TrendSettingsModal`) über den Schalter **"Laufende Nummer anzeigen"** global für den Kurs ein- oder ausgeschaltet werden. Bei Deaktivierung wird die Nummer ausgeblendet; die Sortierung und Namensstruktur bleiben erhalten.
+
     * **Name & Ausrichtung:** Es folgt der Nachname (in **Fettschrift**) und anschließend der Vorname. Nachname und Vorname stehen sauber in Spalten untereinander, ausgerichtet an derselben vertikalen Kante (Fluchtlinie des ersten Buchstabens).
     * **Profilbild-Vorschau (Hover):** Wenn ein Schüler ein Profilbild hinterlegt hat, öffnet sich beim Fahren über den Namen ein eleganter Tooltip mit der Bildvorschau rechts neben der Zelle (mit sanfter Skalierungs- und Einblendanimation). Um ein Abschneiden des Tooltips am unteren Rand der Tabelle (insbesondere beim letzten Schüler) zu verhindern, wird die Unterkante des Tooltips bündig zur Unterkante der Zelle ausgerichtet (nach oben hin ausdehnend).
     * Die Spalte bleibt beim horizontalen Scrollen fixiert (Sticky).
-* **Spalten:** Entsprechen den definierten Beurteilungen (`course entries`). Das Datum der Beurteilung muss in der Kopfzeile im Format `DD.MM.YY` angezeigt werden (sofern die Anzeige aktiviert ist).
-* **Zellen (Schnittpunkt):** Hier wird die jeweilige Note/Bewertung (`grade`) eingetragen und angezeigt. Leere Zellen ("Empty State") sollen mit einem sehr dezenten/hellen Grau (z.B. ein helles Minus-Zeichen) dargestellt werden, um visuelle Unruhe zu vermeiden. Auch bei Hover-Effekten (Tooltips) für Einzeleinträge (z.B. Mitarbeit oder Anwesenheit) soll das Datum einheitlich im Format `DD.MM.YY` erscheinen.
+    * **Ausgestrichene Schüler:**
+        * **Name nicht durchgestrichen:** Der Name des Schülers in der ersten Spalte bleibt **unverändert lesbar und wird NICHT durchgestrichen** (ohne jeglichen Textzusatz oder Badges wie „Abgemeldet“).
+        * **Zellen-Durchstreichung:** Sämtliche Bewertungs- und Datenzellen dieser Zeile (alle Spalten außer der Namensspalte) werden **vollständig visuell durchgestrichen** (feine horizontale Streichlinie über die Datenzellen) und leicht gedimmt dargestellt (`opacity: 0.5`).
+        * **Eingabesperre:** Auf allen Zellen eines ausgestrichenen Schülers sind keine Noten- oder Zeichenänderungen, Erfassungen oder Modals mehr möglich (`pointer-events: none`). Hover-Direkteingaben werden blockiert.
+        * **Ausschluss von Berechnungen:** Der ausgestrichene Schüler wird vollständig von allen Kursberechnungen (Live-Trend-Note, Kursdurchschnitte, Notenspiegel, Klassensammlungen, Auswertungsstatistiken und Podium/Top 3) ausgeschlossen.
+        * **Aktionsmenü „Gruppe ändern“:** Das `EnrollmentModal` kann direkt in der Notenmatrix über den Aktionsmenü-Eintrag `Gruppe ändern` aufgerufen werden, um Schüler auszustreichen oder Ausstreichungen rückgängig zu machen.
+* **Spalten:** Entsprechen den definierten Beurteilungen (`course entries`). Das Datum der Beurteilung muss **ausschließlich in der Kopfzeile der Notenmatrix** im kompakten Format `DD.MM` (z. B. `21.05`) angezeigt werden (sofern die Anzeige aktiviert ist).
+* **Zellen (Schnittpunkt):** Hier wird die jeweilige Note/Bewertung (`grade`) eingetragen und angezeigt. Leere Zellen ("Empty State") sollen mit einem sehr dezenten/hellen Grau (z.B. ein helles Minus-Zeichen) dargestellt werden, um visuelle Unruhe zu vermeiden. Auch bei Hover-Effekten (Tooltips) für Einzeleinträge (z.B. Mitarbeit oder Anwesenheit) erscheint das Datum im Format `DD.MM.YY`.
 
 ## 4. Dialog-Fenster (Modals): Spalte hinzufügen
 Dieser Dialog führt den Benutzer über mehrere Seiten/Schritte (Multi-Step-Modal), um einen neuen `Course Entry` anzulegen.
@@ -99,13 +106,21 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
         * Bietet einen Schieberegler (Slider, 0 - 100%) und eine Direkteingabe (Number-Input) nebeneinander.
         * Beide Eingabemöglichkeiten sind synchronisiert. Der Wert der Direkteingabe wird auf den Bereich 0 - 100 beschränkt.
     * **Beurteilungstyp "Zeichen" (`sign`):**
-        * Anzeige von drei großen, sauberen Symbolen (`+`, `~`, `-`) als Schaltflächen.
+        * Anzeige von drei großen, sauberen Symbolen (`+`, `~`, `-`) als Schaltflächen zur Auswahl des Bewertungszeichens.
+        * **Erweiterte optionale Angaben (muss nicht angegeben werden):**
+            * **Datum (`date`):** Optionale Eingabe eines spezifischen Datums (Standard: aktuelles Erfassungsdatum `YYYY-MM-DD`).
+            * **Uhrzeit (`time`):** Optionale Eingabe einer Uhrzeit im Format `HH:mm`.
+            * **Kommentar / Notiz (`note`):** Optionales Freitextfeld für Anmerkungen oder Notizen zu dieser Zeichenbewertung.
+            * **Schnellauswahl vorgefertigter Kommentare:** Falls in den Einstellungen vorgefertigte Kommentare für das selektierte Zeichen (`+`, `~`, `-`) hinterlegt sind, werden diese als klickbare Vorlagen (Badges) angeboten. Ein Klick übernimmt den Text direkt in das Notizfeld.
+        * **Speichern & Löschen:**
+            * Klick auf ein Zeichen speichert dieses sofort oder ermöglicht die Anpassung der optionalen Zusatzfelder (Datum, Uhrzeit, Notiz) mit anschließendem Speichern über den Bestätigungs-Button.
+            * Der Button "Eintrag löschen" entfernt den Bewertungseintrag inklusive Datum, Uhrzeit und Notiz.
     * Das Modal enthält zusätzlich:
         * Einen Button "Eintrag löschen" (oder ähnlich), um den aktuellen Wert zu entfernen.
-        * Eine "Abbrechen" (Stil: Sekundär) Schaltfläche im Footer (keine globale "Speichern" Schaltfläche).
-        * **Sofortiges Speichern und Schließen:**
-            * Bei Auswahl einer Note oder eines Zeichens wird der Wert sofort gespeichert und das Modal schließt sich.
-            * Bei Prozenten wird das Modal geschlossen und der Wert gespeichert, sobald der Schieberegler losgelassen wird (MouseUp/TouchEnd) oder die Eingabe im Textfeld bestätigt wird (durch Drücken der Enter-Taste oder Klick auf ein Bestätigungssymbol neben der Eingabe).
+        * Eine "Abbrechen" (Stil: Sekundär) Schaltfläche im Footer.
+        * **Speicherverhalten:**
+            * Bei Auswahl einer Note oder bei Zeichen ohne weitere Modifikationen wird der Wert sofort gespeichert und das Modal schließt sich. Bei Angabe optionaler Felder (Datum, Uhrzeit, Kommentar) wird der Wert per Klick auf "Speichern" gesichert.
+            * Bei Prozenten wird das Modal geschlossen und der Wert gespeichert, sobald der Schieberegler losgelassen wird (MouseUp/TouchEnd) oder die Eingabe im Textfeld bestätigt wird.
 * **Keyboard-Navigation (Vollständige Matrix-Navigation):**
     * Mit den Pfeiltasten (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`) kann der Fokus frei durch alle Zellen der Tabelle navigiert werden.
     * Drücken von **`Tab`** oder **`Enter`** in einer aktiven Zelle speichert den Wert und springt **vertikal nach unten zum nächsten Schüler in derselben Spalte** (nächste Zeile).
@@ -134,9 +149,10 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 #### Modal zur Mitarbeit-Schnellerfassung ("+" Button)
 * **Design & Layout:** Sehr großes, präsentes modales Dialogfenster (Breite: 98vw, Höhe: 95vh, maxWidth: 1600px, maxHeight: 95vh, fühlt sich wie ein eigenes Fenster an). Verwendet die Klasse `collaboration-bulk-modal` zur Vermeidung von Breiten-Konflikten mit dem Standard-Kollaborations-Modal. Zweispaltiges Layout (Aufteilung ca. 2/3 links, 1/3 rechts):
     *   **Links (Schülerliste):** Eine breite Liste aller Schüler des Kurses (nimmt ca. 2/3 der Gesamtbreite ein, mit Checkboxen für Mehrfachauswahl, komfortablen Schaltflächen für „Alle auswählen“, „Auswahl aufheben“, „Gruppenauswahl“, „Ohne Eintrag heute“ und „Fehlende mit Neutral (~) auffüllen“). In jeder Zeile wird eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen) angezeigt.
-        *   **Gruppenauswahl:** Falls im Kurs eine Gruppenzuordnungsspalte (`groupAssignment`) existiert, befindet sich oberhalb/im Header der Schülerliste eine Gruppenauswahl (Filter-Dropdown), um die Schülerliste gezielt nach einer bestimmten Gruppe (z. B. Gruppe A, Gruppe B, Ohne Gruppe oder Alle Gruppen) zu filtern.
-        *   **Schnellauswahl "Ohne Eintrag":** Eine Schaltfläche („Ohne heutigen Eintrag“ / „Noch ohne Mitarbeit“), die automatisch genau jene Schüler markiert, die für das gewählte Erfassungsdatum in der Notenmatrix noch keinen Mitarbeitseintrag erhalten haben.
-        *   **Lückenlose Tages-/Einheits-Erfassung („Fehlende mit Neutral (~) auffüllen“):** Eine Schaltfläche, die für alle Schüler der aktuell gewählten Gruppe bzw. Klasse, die am gewählten Erfassungsdatum noch keinen Mitarbeitseintrag besitzen, automatisch einen neutralen Eintrag (`~`) mit Voreinstellung setzt. So kann nach einzelnen Aufzeichnungen (z. B. vereinzelte `+` oder `-` während des Unterrichts) am Ende der Stunde für die gesamte Gruppe/Klasse mit einem Klick eine vollständige Erfassung für jeden Schüler garantiert werden.
+        *   **Gruppenauswahl (im oberen Teil):** Falls im Kurs eine Gruppenzuordnungsspalte (`groupAssignment`) existiert, befindet sich im oberen Teil des Dialogs (direkt neben dem Erfassungsdatum) eine Gruppenauswahl (Filter-Dropdown), um die Schülerliste gezielt nach einer bestimmten Gruppe (z. B. Gruppe A, Gruppe B, Ohne Gruppe oder Alle Gruppen) zu filtern.
+        *   **Sperre für abwesende Schüler (Anwesenheitsprüfung):** Falls im Kurs eine Anwesenheitsspalte (`presenceSum`) existiert und für einen Schüler am gewählten Datum ein Abwesenheitseintrag (`X`) vorliegt, ist die Mitarbeitseingabe für diesen Schüler an diesem Datum **gesperrt**. Der Schüler wird mit einem roten Badge („Abwesend“) hervorgehoben, die Checkbox ist deaktiviert und er wird bei Gruppen-Aktionen („Alle“, „Ohne Eintrag“, „Fehlende auffüllen“) automatisch übersprungen.
+        *   **Schnellauswahl "Ohne Eintrag":** Eine Schaltfläche („Ohne heutigen Eintrag“ / „Noch ohne Mitarbeit“), die automatisch genau jene anwesenden Schüler markiert, die für das gewählte Erfassungsdatum in der Notenmatrix noch keinen Mitarbeitseintrag erhalten haben.
+        *   **Lückenlose Tages-/Einheits-Erfassung („Fehlende mit Neutral (~) auffüllen“):** Eine Schaltfläche, die für alle anwesenden Schüler der aktuell gewählten Gruppe bzw. Klasse, die am gewählten Erfassungsdatum noch keinen Mitarbeitseintrag besitzen, automatisch einen neutralen Eintrag (`~`) mit Voreinstellung setzt. So kann nach einzelnen Aufzeichnungen (z. B. vereinzelte `+` oder `-` während des Unterrichts) am Ende der Stunde für die gesamte Gruppe/Klasse mit einem Klick eine vollständige Erfassung für jeden Schüler garantiert werden.
         *   **Name:** Die Schüler werden als `[Nachname], [Vorname]` dargestellt, wobei der Nachname fett gedruckt ist.
         *   **Profilbild-Hover:** Beim Bewegen des Mauszeigers (Hover) über den Namen eines Schülers wird dessen Profilbild (falls vorhanden) in einem schwebenden Tooltip angezeigt.
         *   **Schriftgröße:** Die Namen und Badges haben eine lesbare Schriftgröße (13px).
@@ -149,12 +165,12 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
             *   Kommentar-Schaltflächen und Eingabefelder haben eine Schriftgröße von 13px bzw. 14px.
         *   **Kontraste:** Umrisse (Borders) der Kommentarbereiche und Buttons sind farblich verstärkt (z.B. 40% Deckkraft statt 20%), um sich klarer vom Hintergrund abzuheben. Die Hintergrundfarben der linken Spalte und Tabellenköpfe sind für einen besseren Graustufen-Kontrast abgedunkelt.
 * **Interaktions-Ablauf:**
-    * Markieren eines oder mehrerer Schüler in der Liste (manuell, über "Alle", per Gruppen-Filter oder über "Ohne heutigen Eintrag").
+    * Markieren eines oder mehrerer Schüler in der Liste.
     * Klick auf einen vorgefertigten Kommentar (z.B. `+ Sehr aktiv`): Trägt diesen Eintrag für alle markierten Schüler sofort in die Session ein. Die Auswahl (Checkboxen) wird automatisch geleert, um die nächste Zuweisung zu vereinfachen.
     * Alternativ: Nutzung von „Fehlende mit Neutral (~) auffüllen“, um verbleibenden Schülern ohne Aufzeichnung direkt ein `~` zuzuweisen.
     * Alternativ: Eingabe einer manuellen Notiz und Klick auf einen der Typ-Buttons (`+`, `~`, `-`).
     * Bereits zugewiesene Einträge werden in der Schülerliste direkt neben dem Namen angezeigt und können per Mülleimer-Icon wieder entfernt werden.
-* **Aktionen:** `Speichern` persistiert alle in der Session erfassten Mitarbeitseinträge in Firestore. `Abbrechen` schließt das Modal.
+* **Aktionen:** `Speichern` persistiert alle in der Session erfassten Mitarbeitseinträge in der SQLite-Datenbank. `Abbrechen` schließt das Modal.
 
 * **Massen-Erfassung:** Über das `Plus-Icon` im Header kann weiterhin für die gesamte Klasse gleichzeitig eine Note (z.B. für eine bestimmte Stunde) vergeben werden.
 
@@ -306,26 +322,38 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
     * Falls die Trend-Spalte im Kurs aktiv ist, wird eine separate Option angeboten, um den **Gesamt-Trend** im PDF ein- oder auszublenden.
     * Es gibt Schnellwahl-Aktionen wie "Alle auswählen" und "Auswahl aufheben".
     * Der Benutzer bestätigt mit dem Button "PDF generieren" (Stil: Primär) oder bricht die Aktion ab.
-* **Layout:** Querformat A4.
-* **Inhalt:**
-    * Briefkopf mit dem Kursnamen, Schuljahr und Datum des Exports. Es werden **keine** Angaben zur Klasse oder Lehrperson aufgedruckt.
-    * Eine saubere, skalierte Tabelle aller aktiven Schüler und der **ausgewählten** Beurteilungsspalten.
-    * Die Tabelle verwendet zur visuellen Strukturierung ein **Streifenmuster (Zebra-Striping)** mit abwechselnden Hintergrundfarben für die Zeilen.
-    * Enthält auch die berechneten Noten/Prozentwerte und die Meilensteine sowie optional die Trend-Spalte (sofern im Auswahldialog ausgewählt).
-    * Kopfzeilen-Texte der Matrix-Spalten werden zur Platzersparnis geneigt oder kompakt dargestellt.
+* **Layout:** Querformat A4 (`size="A4" orientation="landscape"`).
+* **Inhalt & Vektor-Konstruktion:**
+    * **Briefkopf (Header):** App-Titel ("CHRONOGRADE"), Kursname, Schuljahr und Datum des Exports. Es werden **keine** Angaben zur Klasse oder Lehrperson aufgedruckt.
+    * **Strukturierte Notenmatrix-Tabelle:**
+        * Tabellenkopf mit dynamischer Spaltenbreitenanpassung je nach Anzahl ausgewählter Beurteilungsspalten.
+        * Kompakte Kopfzeilen-Texte der Beurteilungsspalten mit klarem Titel.
+        * **Schülerliste:** Nummerierung (`#`), Name (`[Nachname], [Vorname]`), Noten-/Prozentwerte aller gewählten Spalten sowie optional der Gesamttrend (`TREND`).
+        * **Zebra-Striping:** Abwechselnde Hintergrundfarben für Zeilen (`#ffffff` / `#f8fafc`) zur übersichtlichen Lesbarkeit.
+        * **Abgemeldete Schüler:** Optisch dezent hervorgehoben (ausgegraut, mit Statusanzeige).
+    * **Fehlerfreie Render-Vorgaben (@react-pdf/renderer):**
+        * Verwendung rein numerischer Style-Eigenschaften (keine unparsebaren CSS-Shorthands wie `border: '1px solid ...'` oder `padding: '5 8'`), um ein leeres/graues Renderer-Ergebnis zu verhindern.
+        * Dynamische Schriftgrößen- und Zellabstand-Skalierung bei hoher Spaltenanzahl.
+        * Fußzeile mit automatischer Seitennummerierung ("Seite X von Y").
+
+
 
 ### 7.2 Große modale Anzeige der Schülerleistungen & Detail-Dashboard
 * **Aktion:** Ein Klick auf ein Analyse-Icon (TrendingUp/LineChart-Symbol, Stil: Sekundär-Icon) in der Schülerzeile (rechts neben dem Vornamen des Schülers in der Spalte `SCHÜLER`) öffnet eine große, zentrierte Overlay-Ansicht (Modal) mit den detaillierten Leistungen des Schülers.
 * **Layout:** Großes modales Fenster (Breite: 95vw, Höhe: 90vh, abgerundete Ecken) mit einem abgedunkelten Backdrop, so dass die Notenmatrix im Hintergrund dezent sichtbar bleibt. Das Fenster gliedert sich in:
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr und Steuerelemente (PDF-Export, Schließen).
     * **Zweispaltiges Layout im Body (dashboard-body ohne Scrollbalken, Diagramm permanent sichtbar):**
+        * **Typografie & Schriftgrößen (Gesamtes Schüler-Detail-Dashboard):** Das gesamte Modal der Schüler-Leistungsübersicht (sowohl linke Spalte inkl. SVG-Diagramm als auch rechte Spalte inkl. Kärtchen, Notenstrahl, Notizen & Timeline) wird kompakt formatiert:
+            * **Standard-Schriftgröße:** **12px** für normale Fließtexte, Beschreibungen, Achsenbeschriftungen im Diagramm, Datenwerte, Kärtcheninhalte, Notizen, Sub-Entries und Tooltips.
+            * **Überschriften & wichtige Hervorhebungen:** **13px** für Sektionsüberschriften, Modaltitel, Card-Header und wichtige Titel.
         * **Linke Spalte (ca. 2/3 Breite):** Interaktives SVG-basiertes Liniendiagramm zur Visualisierung des Noten-Trends, permanent und vollständig sichtbar (kein Scrollen links).
-        * **Rechte Spalte (ca. 1/3 Breite):** Vertikal scrollbare Leiste (`overflow-y: auto`), die alle Informationskarten untereinander stapelt:
-            1. **Gesamttrend (Live):** Aktuelle Note mit einem umgekehrten, farbsegmentierten Notenstrahl (von links 1 bis rechts 5) und einer floating Prozent-Nadel (Markerl), die bei Mouse-Hover die Tendenzdetails und "Puzzelstücke" (Verbesserungsvorschläge) als Modal-Overlay einblendet.
-            2. **Mitarbeit-Zusammenfassung:** Verteilung der Mitarbeitseinträge (+, ~, -).
-            3. **Anwesenheits-Zusammenfassung:** Prozentuale Anwesenheitsquote und Stundenanzahl.
-            4. **Meilensteine:** Berechnete Noten für definierte Zwischenstände.
-            5. **Detaillierter Verlauf (Timeline Card):** Eine Karte ganz unten in der Scrollliste, in der alle erfassten Einzelleistungen chronologisch aufgeschlüsselt sind, mit Angabe des Ergebnisses, Kommentaren/Einzelleistungen und des jeweiligen Einrechnungsfaktors.
+        * **Rechte Spalte (ca. 1/3 Breite):** Vertikal scrollbare Leiste (`overflow-y: auto`), die alle Informationskarten untereinander stapelt.
+            * **Karten der rechten Spalte:**
+                1. **Gesamttrend (Live):** Aktuelle Note mit einem umgekehrten, farbsegmentierten Notenstrahl (von links 1 bis rechts 5) und einer floating Prozent-Nadel (Markerl), die bei Mouse-Hover die Tendenzdetails und "Puzzelstücke" (Verbesserungsvorschläge) als Modal-Overlay einblendet.
+                2. **Mitarbeit-Zusammenfassung:** Verteilung der Mitarbeitseinträge (+, ~, -).
+                3. **Anwesenheits-Zusammenfassung:** Prozentuale Anwesenheitsquote und Stundenanzahl.
+                4. **Meilensteine:** Berechnete Noten für definierte Zwischenstände.
+                5. **Detaillierter Verlauf (Timeline Card):** Eine Karte ganz unten in der Scrollliste, in der alle erfassten Einzelleistungen chronologisch aufgeschlüsselt sind, mit Angabe des Ergebnisses, Kommentaren/Einzelleistungen und des jeweiligen Einrechnungsfaktors.
     * **Scrollverhalten:** Der Hauptbereich (`dashboard-body`) selbst ist nicht scrollbar (`overflow: hidden`), während die rechte Spalte eine eigene vertikale Scrollleiste besitzt. So bleibt das große Diagramm links immer vollflächig sichtbar.
 * **Inhalt:**
     * **Header:** Vorname und Nachname des Schülers, Profilbild (falls vorhanden) sowie Kursname, Schuljahr. Ein Button zum Generieren des PDF-Einzelberichts (Datenblatt) ist im Header platziert.
@@ -341,12 +369,16 @@ Dieses Feature ermöglicht den Export der gesamten Notenmatrix sowie einzelner S
         * **Mitarbeit-Einzeleinträge:** Bei "Linear mit der Zeit in den Trend einrechnen" erzeugt jeder einzelne erfasste Mitarbeitseintrag (+, ~, -) einen eigenen zeitlichen Datenpunkt auf der Verlaufskurve. Im Standardmodus ("Als gesamte Mitarbeitsnote am Schluss einrechnen") werden keine separaten Mitarbeits-Punkte auf der Verlaufskurve gezeichnet.
         * **Farbliche Markierung:** Die einzelnen Trendpunkte (Datenpunkte) auf der Verlaufslinie sind farblich passend zu der berechneten Note an diesem Stichtag markiert (Note 1 & 2 in Grüntönen, Note 3 in Blau, Note 4 in Orange und Note 5 in Rot).
         * **Direkte Beschriftung:** Die berechnete Note wird direkt über jedem Kurvenpunkt als Zahl (1-5) gerendert. Unterhalb der X-Achsenlinie wird der jeweilige Leistungs- oder Mitarbeitstitel (z. B. "SA 1", "Mitarbeit (+)") gedreht dargestellt, um Überlappungen zu vermeiden.
-    * **Detaillierter Verlauf (Chronologische Liste):** Eine tabellarische oder Feed-basierte Auflistung aller erfassten Noten, Zeichen, Mitarbeitseinträge und Anwesenheiten des Schülers im Kurs, sortiert nach Datum (absteigend), inklusive zugehöriger Kommentare/Notizen.
+    * **Detaillierter Verlauf (Chronologische Liste & Tooltips):** 
+        * Eine chronologische Auflistung aller erfassten Noten, Zeichen, Mitarbeitseinträge und Anwesenheiten des Schülers im Kurs.
+        * **Darstellung von Zeichen-Beurteilungen (`sign`):** Für Beurteilungsspalten vom Typ `sign` (`+`, `~`, `-`) werden im Verlauf das konkrete Erfassungsdatum, die Uhrzeit (falls erfasst) sowie der zugehörige Kommentar/Notiz vollständig angezeigt.
+        * **Hover & Tooltip in der Notenmatrix:** Beim Fahren über Zeichen-Zellen in der Notenmatrix zeigt der Tooltip neben dem Zeichen auch das Datum, die Uhrzeit (falls vorhanden) und den erfassten Kommentar an.
+        * **PDF-Reports & Auswertungen:** In gedruckten Berichten (z. B. Leistungsdatenblatt / PDFExports) werden für Beurteilungen vom Typ `sign` das Zeichen, das genaue Datum inkl. Uhrzeit und die Notiz in der Aufstellung der Einzelbeurteilungen ausgedruckt.
 
 ---
 
 ## 8. Implementierungshinweise & Testing (gemini.md)
-* **Testing der Service-Layer:** Um die oben genannte `serviceFirebase` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollten in Jest zwingend `beforeAll` und `afterAll` Hooks implementiert werden. Dies gewährleistet, dass Testdaten (wie Mock-Schüler oder generierte Noten) vor den Testläufen sauber angelegt und im Nachgang wieder restlos aus der Firestore-Testumgebung gelöscht (Clean-up) werden.
+* **Testing der Service-Layer:** Um die oben genannte `sqliteService` Klasse effektiv zu testen und Seiteneffekte in der Datenbank zu vermeiden, sollte vor Testläufen eine temporäre SQLite-Testdatenbank verwendet werden. Dies gewährleistet, dass Testdaten vor den Testläufen sauber angelegt und im Nachgang wieder restlos bereinigt werden.
 
 ---
 
@@ -360,8 +392,91 @@ Dieses Feature bündelt die schnelle Erfassung von Anwesenheit und Mitarbeit in 
     *   **Phase 1: Anwesenheit** (falls Spalte vorhanden):
         *   Zuerst erscheint die Voreinstellung für Datum und Stundenanzahl (analog zur regulären Anwesenheitserfassung).
         *   Nach Klick auf „Weiter zur Schülerliste“ wird die Schülerliste geladen, in der durch Anklicken der Status (`Check` / `X` / `Unset`) gewählt oder über Schnellauswahl-Buttons alle Schüler auf einmal als 'Anwesend' oder 'Abwesend' markiert werden können.
-        *   Mit Klick auf „Weiter zur Mitarbeit“ gelangt der Lehrer zur zweiten Phase. Ein direkter Speichern-Button („Anwesenheit speichern & Beenden“) ermöglicht das Speichern der Anwesenheit auch ohne anschließende Mitarbeitseingabe.
+        *   Mit Klick auf „Weiter zur Mitarbeit“ (bzw. „Speichern“, falls keine Mitarbeit aktiv ist) gelangt der Lehrer zur zweiten Phase.
     *   **Phase 2: Mitarbeit** (falls Spalte vorhanden):
+        *   Es öffnet sich die Massenerfassung für die Mitarbeit.
+        *   **Gruppenauswahl:** Falls im Kurs Gruppenzuordnungen existieren, können Schüler gezielt nach ihrer Gruppe gefiltert werden.
+        *   **Anwesenheitsprüfung:** Für Schüler, die am betreffenden Datum als abwesend (`X`) erfasst wurden, ist die Mitarbeitseingabe gesperrt.
+        *   **Schnellauswahl "Ohne Eintrag":** Mit einem Klick („Ohne heutigen Eintrag“) werden alle anwesenden Schüler markiert, die am gewählten Datum noch keinen Mitarbeitseintrag besitzen.
+        *   **Lückenlose Erfassung („Fehlende mit Neutral (~) auffüllen“):** Auf Wunsch werden für alle noch nicht erfassten anwesenden Schüler der gewählten Gruppe/Klasse automatisch neutrale Mitarbeitseinträge (`~`) gesetzt.
+        *   Der Lehrer wählt Schüler per Checkbox aus (Mehrfachauswahl) und weist ihnen durch Klick auf einen vorgefertigten oder benutzerdefinierten Kommentar direkt die Bewertung zu.
+        *   Die Schülerliste zeigt eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen).
+    *   **Speichern & Persistieren:** Ein Klick auf „Speichern“ im letzten Schritt schreibt alle erfassten Anwesenheits- und Mitarbeitseinträge gesammelt über den Service-Layer in die SQLite-Datenbank.
+
+---
+
+## 10. Kurs-Journal & Ansichts-Umschalter (Journal Mode)
+
+Dieses Feature ermöglicht Lehrpersonen das Führen eines strukturierten Kurs-Journals direkt in der Leistungsbeurteilung.
+
+### 10.1 Ansichts-Umschalter (View Switcher)
+* **Position:** Oberhalb/neben dem Aktionsbutton im Header der Notenmatrix.
+* **Optionen:** Segmentierter Umschalter zwischen `Matrix` und `Journal`.
+* **Standardwert:** `Matrix` ist beim Öffnen eines Kurses standardmäßig aktiv.
+
+### 10.2 Header-Aktionen im Journal-Modus
+Wenn die Journal-Ansicht aktiv ist, wird das Standard-Aktionsmenü ("Aktionen") durch folgende Buttons ersetzt:
+* `+ Neuer Eintrag` (Stil: Primär, Icon: `Plus`): Öffnet das Modal zum Erstellen eines neuen Journaleintrags.
+* `PDF Export` (Stil: Sekundär, Icon: `FileDown`): Generiert ein druckfertiges PDF-Dokument aller Journaleinträge des gewählten Kurses und startet den Download.
+
+### 10.3 Modaler Dialog "Neuer Eintrag / Eintrag bearbeiten" (`JournalEntryModal`)
+* **Darstellung (WICHTIG):** Sowohl das Erstellen als auch das Bearbeiten eines Journaleintrags erfolgt **ausschließlich über einen zentrierten modalen Dialog (`Modal`)** mit abgedunkeltem Hintergrund-Overlay (`Backdrop`) über dem gesamten Bildschirm – **keinesfalls inline oder unterhalb der Liste/Detailansicht eingebettet**.
+* **Auslöser:** Klick auf `+ Neuer Eintrag` im Header oder Klick auf `Bearbeiten` bei einem bestehenden Eintrag.
+* **Eingabefelder:**
+    * **Datum:** Datepicker, voreingestellt auf das aktuelle Tagesdatum (Format `YYYY-MM-DD`).
+    * **Titel / Name:** Textfeld für die Bezeichnung oder das Thema des Eintrags (Pflichtfeld).
+    * **Gruppenzuordnung:** Falls eine Spalte vom Typ `groupAssignment` (Gruppenzuordnung) im Kurs existiert, wird ein Dropdown-Feld zur Auswahl der zugehörigen Gruppe (`Alle / Keines`, `Gruppe 1`, `Gruppe 2`, ...) angeboten.
+    * **Text / Formatiertes Inhaltfeld:** Interaktiver Rich-Text-Editor mit Werkzeugleiste:
+        * **Fett** (`Bold`)
+        * **Kursiv** (`Italic`)
+        * **Unterstrichen** (`Underline`)
+        * **Aufzählungsliste** (`Unordered List`)
+        * **Formatierung aufheben** (`Clear Formatting`)
+    * **Datei-Uploads:** Ausdrücklich **gesperrt / nicht vorhanden** (keine Dateianhänge möglich).
+* **Automatische Speicherfunktion (Auto-Save):**
+    * **Intervall:** Alle 4 Sekunden erfolgt eine automatische Speicherung im Hintergrund.
+    * **Bedingung:** Die automatische Speicherung wird nur ausgeführt, wenn das Feld **"Titel / Name" (Betreff/Überschrift)** ausgefüllt ist (`title.trim() !== ''`).
+    * **Verhalten:** Bei neu angelegten Einträgen wird beim ersten Auto-Save die generierte ID übernommen, sodass Folge-Auto-Saves denselben Eintrag aktualisieren.
+    * **Statusanzeige:** Im Modal-Dialog zeigt ein visueller Status-Indikator (z. B. "Automatisch gespeichert um HH:MM:SS") den Zeitpunkt des letzten erfolgreichen Auto-Saves an.
+* **Aktionen:** `Speichern` speichert den Eintrag manuell über den SQLite Service-Layer in der Datenbank und schließt den Dialog. `Abbrechen` schließt den Dialog.
+
+### 10.4 Modaler Bestätigungs-Dialog bei Löschen (`DialogModal`)
+* **Lösch-Workflow (WICHTIG):** Bei Klick auf `Löschen` (sowohl in der Eintragsliste links als auch in der Detailansicht rechts) wird **immer ein modaler Nachfragedialog (`DialogModal`)** als Overlay in der Bildschirmmitte eingeblendet.
+* **Inhalt:** Hinweis mit Warn-Icon, Titel "Journaleintrag löschen?" und der Frage "Möchten Sie den Eintrag '[Titel]' wirklich löschen?".
+* **Bestätigung:** Erst nach Klick auf `Löschen` im Bestätigung-Modal wird der Eintrag unwiderruflich aus der SQLite-Datenbank gelöscht. Klick auf `Abbrechen` bricht den Löschvorgang ab.
+
+### 10.5 Zweispaltige Journal-Ansicht (`JournalView`)
+Die Journal-Ansicht teilt sich in zwei Bildschirmhälften:
+
+* **Linke Bildschirmhälfte (Eintragsliste im To-Do-Stil):**
+    * **Header & Filter/Sortier-Leiste:**
+        * Ganz oben befindet sich ein Eintragszähler mit der genauen Anzahl (z. B. `5 Einträge`).
+        * **Gruppen-Filter:** Dropdown-Menü zur Filterung der Einträge nach zugewiesener Gruppe (`Alle Gruppen`, `Gruppe 1`, `Gruppe 2`, ...).
+        * **Sortierung & Richtung:** Dropdown zur Auswahl des Sortierkriteriums (`Datum`, `Gruppenzuordnung`) sowie ein Toggle-Button für die Sortierrichtung (Aufsteigend `⬆` / Absteigend `⬇`).
+    * **Zeilenaufbau:**
+        * Linksbündig: Datum (Format `DD.MM.YYYY`), optionales Gruppen-Badge (z. B. `Gr. 1`) und Titel/Name des Eintrags.
+        * Rechtsbündig: Aktions-Buttons `Bearbeiten` (Pencil-Icon) und `Löschen` (Trash-Icon).
+    * **Interaktion:** Klick auf eine Zeile markiert diese als aktiv und zeigt die vollständigen Details in der rechten Bildschirmhälfte an.
+
+* **Rechte Bildschirmhälfte (Detail-Vorschau):**
+    * **Inhalt:** Zeigt den Namen/Titel des Eintrags, das Vergabedatum sowie den formatierten Inhaltstext im vollen Umfang an.
+    * **Aktionen:** Buttons `Bearbeiten` und `Löschen` im Header der Detailansicht.
+    * **Empty State:** Wenn noch kein Eintrag ausgewählt ist oder der Kurs keine Einträge besitzt, wird eine informative Meldung ("Wählen Sie einen Eintrag aus der Liste oder erstellen Sie einen neuen Eintrag") angezeigt.
+
+### 10.6 Datenhaltung & SQLite-Schema
+Journaleinträge werden persistent in SQLite gespeichert:
+* **Tabelle:** `journal_entries`
+* **Spalten:**
+    * `id` (TEXT PRIMARY KEY)
+    * `courseId` (TEXT, Fremdschlüssel zu `courses.id`)
+    * `date` (TEXT, YYYY-MM-DD)
+    * `title` (TEXT)
+    * `content` (TEXT, HTML-formatiert)
+    * `createdAt` (TEXT, ISO-Timestamp)
+    * `updatedAt` (TEXT, ISO-Timestamp)
+
+
+=======
         *   Es öffnet sich die Massenerfassung für die Mitarbeit.
         *   **Gruppenauswahl:** Falls im Kurs Gruppenzuordnungen existieren, können Schüler gezielt nach ihrer Gruppe gefiltert werden.
         *   **Schnellauswahl "Ohne Eintrag":** Mit einem Klick („Ohne heutigen Eintrag“) werden alle Schüler markiert, die am gewählten Datum noch keinen Mitarbeitseintrag in der Matrix besitzen.
@@ -371,3 +486,4 @@ Dieses Feature bündelt die schnelle Erfassung von Anwesenheit und Mitarbeit in 
     *   **Speichern & Persistieren:** 
         *   Der Speichern-Button ist aktiv, sobald Anwesenheitseinträge und/oder Mitarbeitseinträge erfasst wurden.
         *   Beim Speichern werden sowohl Anwesenheitsdaten als auch Mitarbeitseinträge verlässlich in Firestore geschrieben und unmittelbar in der Matrix visualisiert.
+>>>>>>> 9ffb0d4 (feat(collaboration): add group filtering and bulk fill for missing daily collaboration entries)
