@@ -22,9 +22,15 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
   // Custom manual entry states
   const [customNote, setCustomNote] = useState('');
 
-  // Find group assignment column and collaboration column if any
+  // Find presence column, group assignment column and collaboration column if any
+  const presenceCol = course?.columns.find(col => col.type === 'presenceSum');
   const groupCol = course?.columns.find(col => col.type === 'groupAssignment');
   const collabCol = course?.columns.find(col => col.type === 'collaborationSum');
+
+  const isStudentAbsent = (studentId: string): boolean => {
+    if (!presenceCol || !grades?.[studentId]?.[presenceCol.id]?.entries) return false;
+    return grades[studentId][presenceCol.id].entries!.some(e => e.date === date && e.value === 'x');
+  };
 
   // Gather available group names
   const availableGroups = Array.from(
@@ -62,7 +68,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
   if (!isOpen) return null;
 
   const handleSelectAll = () => {
-    setSelectedStudentIds(new Set(displayStudents.map(s => s.id)));
+    setSelectedStudentIds(new Set(displayStudents.filter(s => !isStudentAbsent(s.id)).map(s => s.id)));
   };
 
   const handleClearSelection = () => {
@@ -71,6 +77,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
 
   const handleSelectMissingEntries = () => {
     const missingIds = displayStudents.filter(s => {
+      if (isStudentAbsent(s.id)) return false;
       if (!collabCol) return true;
       const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
       const hasEntryOnDate = existingEntries.some(e => e.date === date);
@@ -82,6 +89,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
 
   const handleFillMissingNeutral = () => {
     const missingIds = displayStudents.filter(s => {
+      if (isStudentAbsent(s.id)) return false;
       if (sessionEntries[s.id]) return false;
       if (!collabCol) return true;
       const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
@@ -99,7 +107,9 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
       return next;
     });
   };
+
   const handleToggleStudent = (studentId: string) => {
+    if (isStudentAbsent(studentId)) return;
     setSelectedStudentIds(prev => {
       const next = new Set(prev);
       if (next.has(studentId)) {
@@ -260,25 +270,31 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map((student) => {
+                    {displayStudents.map((student) => {
+                      const isAbsent = isStudentAbsent(student.id);
                       const isSelected = selectedStudentIds.has(student.id);
                       const entry = sessionEntries[student.id];
                       return (
                         <tr 
                           key={student.id} 
-                          onClick={() => handleToggleStudent(student.id)}
-                          style={{ cursor: 'pointer', backgroundColor: isSelected ? '#eff6ff' : 'transparent' }}
+                          onClick={() => !isAbsent && handleToggleStudent(student.id)}
+                          style={{ 
+                            cursor: isAbsent ? 'not-allowed' : 'pointer', 
+                            backgroundColor: isAbsent ? '#f1f5f9' : isSelected ? '#eff6ff' : 'transparent',
+                            opacity: isAbsent ? 0.65 : 1
+                          }}
                         >
                           <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                             <input 
                               type="checkbox" 
                               checked={isSelected}
-                              onChange={() => handleToggleStudent(student.id)}
+                              disabled={isAbsent}
+                              onChange={() => !isAbsent && handleToggleStudent(student.id)}
                             />
                           </td>
                           <td 
                             className="student-name-cell"
-                            style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400, position: 'relative' }}
+                            style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400, position: 'relative', color: isAbsent ? '#64748b' : 'inherit' }}
                           >
                             <strong style={{ fontWeight: 'bold' }}>{student.lastName}</strong>, {student.firstName}
                             {student.photoBase64 && (
@@ -288,7 +304,11 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
                             )}
                           </td>
                           <td>
-                            {entry ? (
+                            {isAbsent ? (
+                              <span className="badge badge-danger" style={{ fontSize: '11px', padding: '2px 6px' }}>
+                                Abwesend
+                              </span>
+                            ) : entry ? (
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
                                 <span className={`badge ${entry.value === '+' ? 'badge-success' : entry.value === '-' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '12px', padding: '2px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>
                                   {entry.value} {entry.note}

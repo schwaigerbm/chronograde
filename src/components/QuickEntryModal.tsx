@@ -122,12 +122,21 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
     return groupName === selectedGroup;
   });
 
+  const isStudentAbsentCollab = (studentId: string): boolean => {
+    if (presenceCol && attendanceEntries[studentId] === 'x') return true;
+    if (presenceCol && grades?.[studentId]?.[presenceCol.id]?.entries) {
+      return grades[studentId][presenceCol.id].entries!.some(e => e.date === collabDate && e.value === 'x');
+    }
+    return false;
+  };
+
   const handleSelectAllCollab = () => {
-    setSelectedCollabStudentIds(new Set(displayCollabStudents.map(s => s.id)));
+    setSelectedCollabStudentIds(new Set(displayCollabStudents.filter(s => !isStudentAbsentCollab(s.id)).map(s => s.id)));
   };
 
   const handleSelectMissingCollab = () => {
     const missingIds = displayCollabStudents.filter(s => {
+      if (isStudentAbsentCollab(s.id)) return false;
       if (!collabCol) return true;
       const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
       const hasEntryOnDate = existingEntries.some(e => e.date === collabDate);
@@ -139,6 +148,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
 
   const handleFillMissingNeutralCollab = () => {
     const missingIds = displayCollabStudents.filter(s => {
+      if (isStudentAbsentCollab(s.id)) return false;
       if (collabSessionEntries[s.id]) return false;
       if (!collabCol) return true;
       const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
@@ -162,6 +172,7 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
   };
 
   const handleToggleCollabStudent = (studentId: string) => {
+    if (isStudentAbsentCollab(studentId)) return;
     setSelectedCollabStudentIds(prev => {
       const next = new Set(prev);
       if (next.has(studentId)) {
@@ -487,27 +498,37 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
                         </tr>
                       </thead>
                       <tbody>
-                        {students.map((student) => {
+                        {displayCollabStudents.map((student) => {
+                          const isAbsent = isStudentAbsentCollab(student.id);
                           const isSelected = selectedCollabStudentIds.has(student.id);
                           const entry = collabSessionEntries[student.id];
                           return (
                             <tr 
                               key={student.id} 
-                              onClick={() => handleToggleCollabStudent(student.id)}
-                              style={{ cursor: 'pointer', backgroundColor: isSelected ? '#eff6ff' : 'transparent' }}
+                              onClick={() => !isAbsent && handleToggleCollabStudent(student.id)}
+                              style={{ 
+                                cursor: isAbsent ? 'not-allowed' : 'pointer', 
+                                backgroundColor: isAbsent ? '#f1f5f9' : isSelected ? '#eff6ff' : 'transparent',
+                                opacity: isAbsent ? 0.65 : 1
+                              }}
                             >
                               <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                 <input 
                                   type="checkbox" 
                                   checked={isSelected}
-                                  onChange={() => handleToggleCollabStudent(student.id)}
+                                  disabled={isAbsent}
+                                  onChange={() => !isAbsent && handleToggleCollabStudent(student.id)}
                                 />
                               </td>
-                              <td style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400 }}>
+                              <td style={{ fontSize: '13px', fontWeight: isSelected ? 600 : 400, color: isAbsent ? '#64748b' : 'inherit' }}>
                                 {student.lastName}, {student.firstName}
                               </td>
                               <td>
-                                {entry ? (
+                                {isAbsent ? (
+                                  <span className="badge badge-danger" style={{ fontSize: '11px', padding: '2px 6px' }}>
+                                    Abwesend
+                                  </span>
+                                ) : entry ? (
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
                                     <span className={`badge ${entry.value === '+' ? 'badge-success' : entry.value === '-' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '11px', padding: '2px 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '110px' }}>
                                       {entry.value} {entry.note}
