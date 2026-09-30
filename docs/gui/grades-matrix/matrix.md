@@ -148,7 +148,10 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 
 #### Modal zur Mitarbeit-Schnellerfassung ("+" Button)
 * **Design & Layout:** Sehr großes, präsentes modales Dialogfenster (Breite: 98vw, Höhe: 95vh, maxWidth: 1600px, maxHeight: 95vh, fühlt sich wie ein eigenes Fenster an). Verwendet die Klasse `collaboration-bulk-modal` zur Vermeidung von Breiten-Konflikten mit dem Standard-Kollaborations-Modal. Zweispaltiges Layout (Aufteilung ca. 2/3 links, 1/3 rechts):
-    *   **Links (Schülerliste):** Eine breite Liste aller Schüler des Kurses (nimmt ca. 2/3 der Gesamtbreite ein, mit Checkboxen für Mehrfachauswahl, komfortablen Schaltflächen für „Alle auswählen“ und „Auswahl aufheben“). In jeder Zeile wird eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen) angezeigt.
+    *   **Links (Schülerliste):** Eine breite Liste aller Schüler des Kurses (nimmt ca. 2/3 der Gesamtbreite ein, mit Checkboxen für Mehrfachauswahl, komfortablen Schaltflächen für „Alle auswählen“, „Auswahl aufheben“, „Gruppenauswahl“, „Ohne Eintrag heute“ und „Fehlende mit Neutral (~) auffüllen“). In jeder Zeile wird eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen) angezeigt.
+        *   **Gruppenauswahl:** Falls im Kurs eine Gruppenzuordnungsspalte (`groupAssignment`) existiert, befindet sich oberhalb/im Header der Schülerliste eine Gruppenauswahl (Filter-Dropdown), um die Schülerliste gezielt nach einer bestimmten Gruppe (z. B. Gruppe A, Gruppe B, Ohne Gruppe oder Alle Gruppen) zu filtern.
+        *   **Schnellauswahl "Ohne Eintrag":** Eine Schaltfläche („Ohne heutigen Eintrag“ / „Noch ohne Mitarbeit“), die automatisch genau jene Schüler markiert, die für das gewählte Erfassungsdatum in der Notenmatrix noch keinen Mitarbeitseintrag erhalten haben.
+        *   **Lückenlose Tages-/Einheits-Erfassung („Fehlende mit Neutral (~) auffüllen“):** Eine Schaltfläche, die für alle Schüler der aktuell gewählten Gruppe bzw. Klasse, die am gewählten Erfassungsdatum noch keinen Mitarbeitseintrag besitzen, automatisch einen neutralen Eintrag (`~`) mit Voreinstellung setzt. So kann nach einzelnen Aufzeichnungen (z. B. vereinzelte `+` oder `-` während des Unterrichts) am Ende der Stunde für die gesamte Gruppe/Klasse mit einem Klick eine vollständige Erfassung für jeden Schüler garantiert werden.
         *   **Name:** Die Schüler werden als `[Nachname], [Vorname]` dargestellt, wobei der Nachname fett gedruckt ist.
         *   **Profilbild-Hover:** Beim Bewegen des Mauszeigers (Hover) über den Namen eines Schülers wird dessen Profilbild (falls vorhanden) in einem schwebenden Tooltip angezeigt.
         *   **Schriftgröße:** Die Namen und Badges haben eine lesbare Schriftgröße (13px).
@@ -163,6 +166,7 @@ Dieser Dialog ermöglicht die Verwaltung der Spalten-Sichtbarkeit und der Reihen
 * **Interaktions-Ablauf:**
     * Markieren eines oder mehrerer Schüler in der Liste.
     * Klick auf einen vorgefertigten Kommentar (z.B. `+ Sehr aktiv`): Trägt diesen Eintrag für alle markierten Schüler sofort in die Session ein. Die Auswahl (Checkboxen) wird automatisch geleert, um die nächste Zuweisung zu vereinfachen.
+    * Alternativ: Nutzung von „Fehlende mit Neutral (~) auffüllen“, um verbleibenden Schülern ohne Aufzeichnung direkt ein `~` zuzuweisen.
     * Alternativ: Eingabe einer manuellen Notiz und Klick auf einen der Typ-Buttons (`+`, `~`, `-`).
     * Bereits zugewiesene Einträge werden in der Schülerliste direkt neben dem Namen angezeigt und können per Mülleimer-Icon wieder entfernt werden.
 * **Aktionen:** `Speichern` persistiert alle in der Session erfassten Mitarbeitseinträge in der SQLite-Datenbank. `Abbrechen` schließt das Modal.
@@ -389,8 +393,11 @@ Dieses Feature bündelt die schnelle Erfassung von Anwesenheit und Mitarbeit in 
         *   Nach Klick auf „Weiter zur Schülerliste“ wird die Schülerliste geladen, in der durch Anklicken der Status (`Check` / `X` / `Unset`) gewählt oder über Schnellauswahl-Buttons alle Schüler auf einmal als 'Anwesend' oder 'Abwesend' markiert werden können.
         *   Mit Klick auf „Weiter zur Mitarbeit“ (bzw. „Speichern“, falls keine Mitarbeit aktiv ist) gelangt der Lehrer zur zweiten Phase.
     *   **Phase 2: Mitarbeit** (falls Spalte vorhanden):
-        *   Es öffnet sich die neue Massenerfassung für die Mitarbeit.
-        *   Der Lehrer wählt Schüler per Checkbox aus (Mehrfachauswahl) und weist ihnen durch Klick auf einen vorgefertigten Kommentar (z. B. `+ Sehr aktiv`) direkt die Bewertung zu.
+        *   Es öffnet sich die Massenerfassung für die Mitarbeit.
+        *   **Gruppenauswahl:** Falls im Kurs Gruppenzuordnungen existieren, können Schüler gezielt nach ihrer Gruppe gefiltert werden.
+        *   **Schnellauswahl "Ohne Eintrag":** Mit einem Klick („Ohne heutigen Eintrag“) werden alle Schüler markiert, die am gewählten Datum noch keinen Mitarbeitseintrag in der Matrix besitzen.
+        *   **Lückenlose Erfassung („Fehlende mit Neutral (~) auffüllen“):** Auf Wunsch werden für alle noch nicht erfassten Schüler der gewählten Gruppe/Klasse automatisch neutrale Mitarbeitseinträge (`~`) gesetzt, um eine lückenlose Erfassung pro Tag/Einheit sicherzustellen.
+        *   Der Lehrer wählt Schüler per Checkbox aus (Mehrfachauswahl) und weist ihnen durch Klick auf einen vorgefertigten oder benutzerdefinierten Kommentar direkt die Bewertung zu.
         *   Die Schülerliste zeigt eine Live-Vorschau der in dieser Session vergebenen Einträge (mit Mülleimer-Icon zum Löschen).
     *   **Speichern & Persistieren:** Ein Klick auf „Speichern“ im letzten Schritt schreibt alle erfassten Anwesenheits- und Mitarbeitseinträge gesammelt über den Service-Layer in die SQLite-Datenbank.
 
@@ -467,3 +474,14 @@ Journaleinträge werden persistent in SQLite gespeichert:
     * `updatedAt` (TEXT, ISO-Timestamp)
 
 
+=======
+        *   Es öffnet sich die Massenerfassung für die Mitarbeit.
+        *   **Gruppenauswahl:** Falls im Kurs Gruppenzuordnungen existieren, können Schüler gezielt nach ihrer Gruppe gefiltert werden.
+        *   **Schnellauswahl "Ohne Eintrag":** Mit einem Klick („Ohne heutigen Eintrag“) werden alle Schüler markiert, die am gewählten Datum noch keinen Mitarbeitseintrag in der Matrix besitzen.
+        *   **Lückenlose Erfassung („Fehlende mit Neutral (~) auffüllen“):** Auf Wunsch werden für alle noch nicht erfassten Schüler der gewählten Gruppe/Klasse automatisch neutrale Mitarbeitseinträge (`~`) gesetzt, um eine lückenlose Erfassung pro Tag/Einheit sicherzustellen.
+        *   Der Lehrer weist den markierten Schülern per Klick auf vorgefertigte oder benutzerdefinierte Kommentare Bewertungen zu.
+        *   Die Schülerliste zeigt eine Live-Vorschau der in dieser Session vergebenen Einträge.
+    *   **Speichern & Persistieren:** 
+        *   Der Speichern-Button ist aktiv, sobald Anwesenheitseinträge und/oder Mitarbeitseinträge erfasst wurden.
+        *   Beim Speichern werden sowohl Anwesenheitsdaten als auch Mitarbeitseinträge verlässlich in Firestore geschrieben und unmittelbar in der Matrix visualisiert.
+>>>>>>> 9ffb0d4 (feat(collaboration): add group filtering and bulk fill for missing daily collaboration entries)

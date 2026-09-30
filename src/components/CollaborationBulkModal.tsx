@@ -44,6 +44,36 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
     setSelectedStudentIds(new Set());
   };
 
+  const handleSelectMissingEntries = () => {
+    const missingIds = displayStudents.filter(s => {
+      if (!collabCol) return true;
+      const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
+      const hasEntryOnDate = existingEntries.some(e => e.date === date);
+      return !hasEntryOnDate;
+    }).map(s => s.id);
+
+    setSelectedStudentIds(new Set(missingIds));
+  };
+
+  const handleFillMissingNeutral = () => {
+    const missingIds = displayStudents.filter(s => {
+      if (sessionEntries[s.id]) return false;
+      if (!collabCol) return true;
+      const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
+      const hasEntryOnDate = existingEntries.some(e => e.date === date);
+      return !hasEntryOnDate;
+    }).map(s => s.id);
+
+    if (missingIds.length === 0) return;
+
+    setSessionEntries(prev => {
+      const next = { ...prev };
+      missingIds.forEach(id => {
+        next[id] = { value: '~', note: '' };
+      });
+      return next;
+    });
+  };
   const handleToggleStudent = (studentId: string) => {
     setSelectedStudentIds(prev => {
       const next = new Set(prev);
@@ -152,6 +182,21 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   <button 
                     type="button" 
                     className="btn-secondary btn-xs" 
+                    style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}
+                    onClick={handleSelectMissingEntries}
+                    title="Schüler ohne heutigen bzw. gewählten Eintrag in der Matrix auswählen"
+                  >
+                    Ohne Eintrag heute
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs" 
+                    style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--warning-color)', borderColor: 'rgba(245, 158, 11, 0.5)', backgroundColor: 'rgba(245, 158, 11, 0.05)' }}
+                    onClick={handleFillMissingNeutral}
+                    title="Allen Schülern der gewählten Gruppe/Klasse ohne heutigen Eintrag einen neutralen Eintrag (~) zuweisen"
+                  >
+                    Fehlende mit Neutral (~) auffüllen
+                  </button>
                     style={{ padding: '2px 8px', fontSize: '11px' }}
                     onClick={handleClearSelection}
                   >
