@@ -130,6 +130,33 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
     return false;
   };
 
+  // Clean up selected and staged collaboration entries when student becomes absent (e.g. date change or attendance change)
+  useEffect(() => {
+    if (presenceCol) {
+      setSelectedCollabStudentIds(prev => {
+        const next = new Set<string>();
+        prev.forEach(id => {
+          if (!isStudentAbsentCollab(id)) {
+            next.add(id);
+          }
+        });
+        return next;
+      });
+
+      setCollabSessionEntries(prev => {
+        const next = { ...prev };
+        let changed = false;
+        Object.keys(next).forEach(id => {
+          if (isStudentAbsentCollab(id)) {
+            delete next[id];
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [collabDate, attendanceEntries]);
+
   const handleSelectAllCollab = () => {
     setSelectedCollabStudentIds(new Set(displayCollabStudents.filter(s => !isStudentAbsentCollab(s.id)).map(s => s.id)));
   };
@@ -161,7 +188,9 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
     setCollabSessionEntries(prev => {
       const next = { ...prev };
       missingIds.forEach(id => {
-        next[id] = { value: '~', note: '' };
+        if (!isStudentAbsentCollab(id)) {
+          next[id] = { value: '~', note: '' };
+        }
       });
       return next;
     });
@@ -190,7 +219,9 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
     setCollabSessionEntries(prev => {
       const next = { ...prev };
       selectedCollabStudentIds.forEach(id => {
-        next[id] = { value: type, note: noteText };
+        if (!isStudentAbsentCollab(id)) {
+          next[id] = { value: type, note: noteText };
+        }
       });
       return next;
     });
@@ -237,17 +268,21 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, ava
 
     // 2. Process Collaboration
     if (collabCol && Object.keys(collabSessionEntries).length > 0) {
-      const updates = Object.entries(collabSessionEntries).map(([studentId, entry]) => ({
-        studentId,
-        value: entry.value,
-        note: entry.note
-      }));
+      const updates = Object.entries(collabSessionEntries)
+        .filter(([studentId]) => !isStudentAbsentCollab(studentId))
+        .map(([studentId, entry]) => ({
+          studentId,
+          value: entry.value,
+          note: entry.note
+        }));
 
-      dataToSave.collaboration = {
-        columnId: collabCol.id,
-        date: collabDate,
-        updates
-      };
+      if (updates.length > 0) {
+        dataToSave.collaboration = {
+          columnId: collabCol.id,
+          date: collabDate,
+          updates
+        };
+      }
     }
 
     onSave(dataToSave);

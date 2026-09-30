@@ -49,6 +49,33 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
     return gVal === selectedGroup;
   });
 
+  // Clean up selection and staged entries when date changes if students become absent
+  useEffect(() => {
+    if (presenceCol) {
+      setSelectedStudentIds(prev => {
+        const next = new Set<string>();
+        prev.forEach(id => {
+          if (!isStudentAbsent(id)) {
+            next.add(id);
+          }
+        });
+        return next;
+      });
+
+      setSessionEntries(prev => {
+        const next = { ...prev };
+        let changed = false;
+        Object.keys(next).forEach(id => {
+          if (isStudentAbsent(id)) {
+            delete next[id];
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [date]);
+
   // Subscribe to predefined comments when open
   useEffect(() => {
     if (isOpen) {
@@ -102,7 +129,9 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
     setSessionEntries(prev => {
       const next = { ...prev };
       missingIds.forEach(id => {
-        next[id] = { value: '~', note: '' };
+        if (!isStudentAbsent(id)) {
+          next[id] = { value: '~', note: '' };
+        }
       });
       return next;
     });
@@ -127,7 +156,9 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
     setSessionEntries(prev => {
       const next = { ...prev };
       selectedStudentIds.forEach(id => {
-        next[id] = { value: type, note: noteText };
+        if (!isStudentAbsent(id)) {
+          next[id] = { value: type, note: noteText };
+        }
       });
       return next;
     });
@@ -152,11 +183,13 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
   };
 
   const handleSave = () => {
-    const updates = Object.entries(sessionEntries).map(([studentId, entry]) => ({
-      studentId,
-      value: entry.value,
-      note: entry.note
-    }));
+    const updates = Object.entries(sessionEntries)
+      .filter(([studentId]) => !isStudentAbsent(studentId))
+      .map(([studentId, entry]) => ({
+        studentId,
+        value: entry.value,
+        note: entry.note
+      }));
 
     if (updates.length === 0) return;
     onSave(date, updates);
@@ -187,14 +220,36 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
         
         <div className="modal-body p-8" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
-          <div className="form-group" style={{ marginBottom: '20px', maxWidth: '250px' }}>
-            <label className="form-label" style={{ fontSize: '12px' }}>Erfassungsdatum</label>
-            <input 
-              type="date" 
-              className="form-input" 
-              value={date} 
-              onChange={(e) => setDate(e.target.value)} 
-            />
+          <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ marginBottom: 0, minWidth: '200px' }}>
+              <label className="form-label" style={{ fontSize: '12px', fontWeight: 600 }}>Erfassungsdatum</label>
+              <input 
+                type="date" 
+                className="form-input" 
+                value={date} 
+                onChange={(e) => setDate(e.target.value)} 
+              />
+            </div>
+
+            {groupCol && availableGroups.length > 0 && (
+              <div className="form-group" style={{ marginBottom: 0, minWidth: '220px' }}>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Filter size={13} style={{ color: 'var(--text-muted)' }} /> Gruppenauswahl / Filter
+                </label>
+                <select 
+                  className="form-input" 
+                  style={{ fontSize: '13px' }}
+                  value={selectedGroup}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                >
+                  <option value="ALL">Alle Gruppen ({students.length})</option>
+                  {availableGroups.map(g => (
+                    <option key={g} value={g}>Gruppe {g}</option>
+                  ))}
+                  <option value="NONE">Ohne Gruppe</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', alignItems: 'stretch', flex: 1, minHeight: 0 }}>
@@ -206,23 +261,6 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grad
                   Schüler auswählen ({selectedStudentIds.size} markiert)
                 </span>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {groupCol && availableGroups.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
-                      <Filter size={13} style={{ color: 'var(--text-muted)' }} />
-                      <select 
-                        className="form-input" 
-                        style={{ padding: '2px 6px', fontSize: '11px', height: '26px' }}
-                        value={selectedGroup}
-                        onChange={(e) => setSelectedGroup(e.target.value)}
-                      >
-                        <option value="ALL">Alle Gruppen ({students.length})</option>
-                        {availableGroups.map(g => (
-                          <option key={g} value={g}>Gruppe {g}</option>
-                        ))}
-                        <option value="NONE">Ohne Gruppe</option>
-                      </select>
-                    </div>
-                  )}
                   <button 
                     type="button" 
                     className="btn-secondary btn-xs" 
