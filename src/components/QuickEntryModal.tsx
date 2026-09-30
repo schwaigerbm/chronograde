@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Plus, Minus, Trash2, ArrowRight, ArrowLeft, Check, Zap } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
-import type { Student, Course, PredefinedComment } from '../schema';
+import type { Student, Course, Grade, PredefinedComment } from '../schema';
 
 interface QuickEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: Course;
   students: Student[];
+  grades?: Record<string, Record<string, Grade>>;
   availableGroups?: string[];
   studentGroupMap?: Record<string, string>;
   onSave: (data: {
@@ -25,7 +26,7 @@ interface QuickEntryModalProps {
   }) => void;
 }
 
-export const QuickEntryModal = ({ isOpen, onClose, course, students, availableGroups = [], studentGroupMap = {}, onSave }: QuickEntryModalProps) => {
+export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, availableGroups = [], studentGroupMap = {}, onSave }: QuickEntryModalProps) => {
   const presenceCol = course.columns.find(col => col.type === 'presenceSum' && col.isVisible !== false);
   const collabCol = course.columns.find(col => col.type === 'collaborationSum' && col.isVisible !== false);
 
@@ -114,8 +115,26 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, availableGr
   };
 
   // Collaboration Handlers
+  const displayCollabStudents = students.filter(s => {
+    if (selectedGroup === 'all') return true;
+    const groupName = studentGroupMap[s.id] || '';
+    if (selectedGroup === 'none') return !groupName;
+    return groupName === selectedGroup;
+  });
+
   const handleSelectAllCollab = () => {
-    setSelectedCollabStudentIds(new Set(students.map(s => s.id)));
+    setSelectedCollabStudentIds(new Set(displayCollabStudents.map(s => s.id)));
+  };
+
+  const handleSelectMissingCollab = () => {
+    const missingIds = displayCollabStudents.filter(s => {
+      if (!collabCol) return true;
+      const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
+      const hasEntryOnDate = existingEntries.some(e => e.date === collabDate);
+      return !hasEntryOnDate;
+    }).map(s => s.id);
+
+    setSelectedCollabStudentIds(new Set(missingIds));
   };
 
   const handleFillMissingNeutralCollab = () => {

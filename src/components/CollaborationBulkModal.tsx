@@ -1,23 +1,47 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Minus, Trash2 } from 'lucide-react';
+import { X, Save, Plus, Minus, Trash2, Filter } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
-import type { Student, PredefinedComment } from '../schema';
+import type { Student, Course, Grade, PredefinedComment } from '../schema';
 
 interface CollaborationBulkModalProps {
   isOpen: boolean;
   onClose: () => void;
   students: Student[];
+  course?: Course;
+  grades?: Record<string, Record<string, Grade>>;
   onSave: (date: string, updates: { studentId: string; value: '+' | '-' | '~'; note: string }[]) => void;
 }
 
-export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: CollaborationBulkModalProps) => {
+export const CollaborationBulkModal = ({ isOpen, onClose, students, course, grades, onSave }: CollaborationBulkModalProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [predefinedComments, setPredefinedComments] = useState<PredefinedComment[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   const [sessionEntries, setSessionEntries] = useState<Record<string, { value: '+' | '-' | '~'; note: string }>>({});
+  const [selectedGroup, setSelectedGroup] = useState<string>('ALL');
   
   // Custom manual entry states
   const [customNote, setCustomNote] = useState('');
+
+  // Find group assignment column and collaboration column if any
+  const groupCol = course?.columns.find(col => col.type === 'groupAssignment');
+  const collabCol = course?.columns.find(col => col.type === 'collaborationSum');
+
+  // Gather available group names
+  const availableGroups = Array.from(
+    new Set(
+      students
+        .map(s => (groupCol && grades?.[s.id]?.[groupCol.id]?.value ? String(grades[s.id][groupCol.id].value).trim() : ''))
+        .filter(Boolean)
+    )
+  ).sort();
+
+  // Filter students by selected group
+  const displayStudents = students.filter(s => {
+    if (!groupCol || selectedGroup === 'ALL') return true;
+    const gVal = grades?.[s.id]?.[groupCol.id]?.value ? String(grades[s.id][groupCol.id].value).trim() : '';
+    if (selectedGroup === 'NONE') return !gVal;
+    return gVal === selectedGroup;
+  });
 
   // Subscribe to predefined comments when open
   useEffect(() => {
@@ -29,6 +53,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
       setSelectedStudentIds(new Set());
       setSessionEntries({});
       setCustomNote('');
+      setSelectedGroup('ALL');
       setDate(new Date().toISOString().split('T')[0]);
       return () => unsubscribe();
     }
@@ -37,7 +62,7 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
   if (!isOpen) return null;
 
   const handleSelectAll = () => {
-    setSelectedStudentIds(new Set(students.map(s => s.id)));
+    setSelectedStudentIds(new Set(displayStudents.map(s => s.id)));
   };
 
   const handleClearSelection = () => {
@@ -170,7 +195,24 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                 <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-main)' }}>
                   Schüler auswählen ({selectedStudentIds.size} markiert)
                 </span>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {groupCol && availableGroups.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+                      <Filter size={13} style={{ color: 'var(--text-muted)' }} />
+                      <select 
+                        className="form-input" 
+                        style={{ padding: '2px 6px', fontSize: '11px', height: '26px' }}
+                        value={selectedGroup}
+                        onChange={(e) => setSelectedGroup(e.target.value)}
+                      >
+                        <option value="ALL">Alle Gruppen ({students.length})</option>
+                        {availableGroups.map(g => (
+                          <option key={g} value={g}>Gruppe {g}</option>
+                        ))}
+                        <option value="NONE">Ohne Gruppe</option>
+                      </select>
+                    </div>
+                  )}
                   <button 
                     type="button" 
                     className="btn-secondary btn-xs" 
@@ -197,6 +239,9 @@ export const CollaborationBulkModal = ({ isOpen, onClose, students, onSave }: Co
                   >
                     Fehlende mit Neutral (~) auffüllen
                   </button>
+                  <button 
+                    type="button" 
+                    className="btn-secondary btn-xs" 
                     style={{ padding: '2px 8px', fontSize: '11px' }}
                     onClick={handleClearSelection}
                   >
