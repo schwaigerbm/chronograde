@@ -136,6 +136,26 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, onS
     setSelectedCollabStudentIds(new Set(missingIds));
   };
 
+  const handleFillMissingNeutralCollab = () => {
+    const missingIds = displayCollabStudents.filter(s => {
+      if (collabSessionEntries[s.id]) return false;
+      if (!collabCol) return true;
+      const existingEntries = grades?.[s.id]?.[collabCol.id]?.entries || [];
+      const hasEntryOnDate = existingEntries.some(e => e.date === collabDate);
+      return !hasEntryOnDate;
+    }).map(s => s.id);
+
+    if (missingIds.length === 0) return;
+
+    setCollabSessionEntries(prev => {
+      const next = { ...prev };
+      missingIds.forEach(id => {
+        next[id] = { value: '~', note: '' };
+      });
+      return next;
+    });
+  };
+
   const handleClearCollabSelection = () => {
     setSelectedCollabStudentIds(new Set());
   };
@@ -435,6 +455,15 @@ export const QuickEntryModal = ({ isOpen, onClose, course, students, grades, onS
                         title="Schüler ohne heutigen bzw. gewählten Eintrag in der Matrix auswählen"
                       >
                         Ohne Eintrag
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn-secondary btn-xs" 
+                        style={{ padding: '2px 6px', fontSize: '11px', color: 'var(--warning-color)', borderColor: 'rgba(245, 158, 11, 0.5)', backgroundColor: 'rgba(245, 158, 11, 0.05)' }}
+                        onClick={handleFillMissingNeutralCollab}
+                        title="Allen Schülern der gewählten Gruppe/Klasse ohne heutigen Eintrag einen neutralen Eintrag (~) zuweisen"
+                      >
+                        Fehlende mit Neutral (~) auffüllen
                       </button>
                       <button 
                         type="button" 
