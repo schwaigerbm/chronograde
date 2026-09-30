@@ -12,8 +12,9 @@ function createWindow() {
     title: 'Chronograde',
     autoHideMenuBar: true,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false
     }
   });
 
